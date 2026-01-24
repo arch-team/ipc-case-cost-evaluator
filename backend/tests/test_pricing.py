@@ -1,0 +1,190 @@
+"""AWS 定价模型测试
+
+测试 S3 定价模型和定价数据加载器的功能。
+包括区域定价加载、价格查询和缓存机制测试。
+"""
+import pytest
+from app.models.pricing import S3Pricing, PricingLoader, StorageClassPricing
+from app.models.enums import StorageClass
+
+
+class TestStorageClassPricing:
+    """存储类型定价模型测试"""
+
+    def test_create_storage_class_pricing(self):
+        """测试创建存储类型定价"""
+        pricing = StorageClassPricing(
+            storage_per_gb_month=0.025,
+            put_per_1000=0.0047,
+            get_per_1000=0.0004,
+            retrieval_per_gb=0,
+            lifecycle_transition_per_1000=0,
+        )
+        assert pricing.storage_per_gb_month == 0.025
+        assert pricing.put_per_1000 == 0.0047
+        assert pricing.get_per_1000 == 0.0004
+        assert pricing.retrieval_per_gb == 0
+        assert pricing.lifecycle_transition_per_1000 == 0
+
+    def test_glacier_ir_pricing(self):
+        """测试 Glacier IR 定价包含检索费用"""
+        pricing = StorageClassPricing(
+            storage_per_gb_month=0.005,
+            put_per_1000=0.02,
+            get_per_1000=0.01,
+            retrieval_per_gb=0.03,
+            lifecycle_transition_per_1000=0.02,
+        )
+        assert pricing.retrieval_per_gb == 0.03
+        assert pricing.lifecycle_transition_per_1000 == 0.02
+
+
+class TestS3Pricing:
+    """S3 区域定价模型测试"""
+
+    def test_load_ap_northeast_1(self):
+        """测试加载东京区域定价"""
+        pricing = PricingLoader.load("ap-northeast-1")
+        assert pricing.region == "ap-northeast-1"
+        assert pricing.region_name == "Asia Pacific (Tokyo)"
+        assert pricing.currency == "USD"
+        assert StorageClass.STANDARD in pricing.storage_classes
+        standard = pricing.storage_classes[StorageClass.STANDARD]
+        assert standard.storage_per_gb_month > 0
+
+    def test_get_storage_price(self):
+        """测试获取存储价格"""
+        pricing = PricingLoader.load("ap-northeast-1")
+        price = pricing.get_storage_price(StorageClass.STANDARD)
+        assert price == pytest.approx(0.025, rel=0.01)
+
+    def test_get_put_request_price(self):
+        """测试获取 PUT 请求价格"""
+        pricing = PricingLoader.load("ap-northeast-1")
+        price = pricing.get_put_price(StorageClass.STANDARD)
+        assert price == pytest.approx(0.0047, rel=0.01)
+
+    def test_get_get_request_price(self):
+        """测试获取 GET 请求价格"""
+        pricing = PricingLoader.load("ap-northeast-1")
+        price = pricing.get_get_price(StorageClass.STANDARD)
+        assert price == pytest.approx(0.0004, rel=0.01)
+
+    def test_get_retrieval_price_standard(self):
+        """测试 Standard 存储没有检索费用"""
+        pricing = PricingLoader.load("ap-northeast-1")
+        price = pricing.get_retrieval_price(StorageClass.STANDARD)
+        assert price == 0
+
+    def test_get_retrieval_price_glacier_ir(self):
+        """测试 Glacier IR 存储有检索费用"""
+        pricing = PricingLoader.load("ap-northeast-1")
+        price = pricing.get_retrieval_price(StorageClass.GLACIER_IR)
+        assert price == pytest.approx(0.03, rel=0.01)
+
+    def test_get_lifecycle_price(self):
+        """测试获取生命周期转换费用"""
+        pricing = PricingLoader.load("ap-northeast-1")
+        price = pricing.get_lifecycle_price(StorageClass.GLACIER_IR)
+        assert price == pytest.approx(0.02, rel=0.01)
+
+    def test_all_storage_classes_loaded(self):
+        """测试所有存储类型都已加载"""
+        pricing = PricingLoader.load("ap-northeast-1")
+        assert StorageClass.STANDARD in pricing.storage_classes
+        assert StorageClass.GLACIER_IR in pricing.storage_classes
+        assert StorageClass.DEEP_ARCHIVE in pricing.storage_classes
+
+
+class TestDataTransferPricing:
+    """数据传输定价测试"""
+
+    def test_get_data_transfer_price_small(self):
+        """测试小数据量传输价格 (10TB 以内)"""
+        pricing = PricingLoader.load("ap-northeast-1")
+        price = pricing.get_data_transfer_price(100)  # 100 GB
+        assert price == pytest.approx(0.114, rel=0.01)
+
+    def test_get_data_transfer_price_medium(self):
+        """测试中等数据量传输价格 (10-50TB)"""
+        pricing = PricingLoader.load("ap-northeast-1")
+        price = pricing.get_data_transfer_price(15 * 1024)  # 15 TB
+        assert price == pytest.approx(0.089, rel=0.01)
+
+    def test_get_data_transfer_price_large(self):
+        """测试大数据量传输价格 (50-150TB)"""
+        pricing = PricingLoader.load("ap-northeast-1")
+        price = pricing.get_data_transfer_price(100 * 1024)  # 100 TB
+        assert price == pytest.approx(0.086, rel=0.01)
+
+    def test_get_data_transfer_price_very_large(self):
+        """测试超大数据量传输价格 (150TB 以上)"""
+        pricing = PricingLoader.load("ap-northeast-1")
+        price = pricing.get_data_transfer_price(200 * 1024)  # 200 TB
+        assert price == pytest.approx(0.084, rel=0.01)
+
+    def test_get_data_transfer_price_zero(self):
+        """测试零数据量传输价格"""
+        pricing = PricingLoader.load("ap-northeast-1")
+        price = pricing.get_data_transfer_price(0)
+        assert price == 0
+
+    def test_get_data_transfer_price_negative(self):
+        """测试负数据量返回零"""
+        pricing = PricingLoader.load("ap-northeast-1")
+        price = pricing.get_data_transfer_price(-100)
+        assert price == 0
+
+
+class TestPricingLoader:
+    """定价加载器测试"""
+
+    def test_load_invalid_region(self):
+        """测试加载不存在的区域抛出异常"""
+        with pytest.raises(ValueError, match="不支持的区域"):
+            PricingLoader.load("invalid-region")
+
+    def test_available_regions(self):
+        """测试获取可用区域列表"""
+        regions = PricingLoader.available_regions()
+        assert "ap-northeast-1" in regions
+
+    def test_caching(self):
+        """测试定价数据缓存机制"""
+        PricingLoader.clear_cache()  # 清除缓存确保测试独立
+        pricing1 = PricingLoader.load("ap-northeast-1")
+        pricing2 = PricingLoader.load("ap-northeast-1")
+        assert pricing1 is pricing2  # 应该是同一个对象实例
+
+    def test_clear_cache(self):
+        """测试清除缓存"""
+        pricing1 = PricingLoader.load("ap-northeast-1")
+        PricingLoader.clear_cache()
+        pricing2 = PricingLoader.load("ap-northeast-1")
+        assert pricing1 is not pricing2  # 清除缓存后应该是不同对象
+
+
+class TestPricingComparison:
+    """定价对比测试"""
+
+    def test_glacier_ir_cheaper_storage(self):
+        """测试 Glacier IR 存储费用低于 Standard"""
+        pricing = PricingLoader.load("ap-northeast-1")
+        standard_storage = pricing.get_storage_price(StorageClass.STANDARD)
+        glacier_storage = pricing.get_storage_price(StorageClass.GLACIER_IR)
+        assert glacier_storage < standard_storage
+
+    def test_glacier_ir_more_expensive_put(self):
+        """测试 Glacier IR PUT 请求费用高于 Standard"""
+        pricing = PricingLoader.load("ap-northeast-1")
+        standard_put = pricing.get_put_price(StorageClass.STANDARD)
+        glacier_put = pricing.get_put_price(StorageClass.GLACIER_IR)
+        assert glacier_put > standard_put
+
+    def test_deep_archive_cheapest_storage(self):
+        """测试 Deep Archive 存储费用最低"""
+        pricing = PricingLoader.load("ap-northeast-1")
+        standard_storage = pricing.get_storage_price(StorageClass.STANDARD)
+        glacier_storage = pricing.get_storage_price(StorageClass.GLACIER_IR)
+        deep_archive_storage = pricing.get_storage_price(StorageClass.DEEP_ARCHIVE)
+        assert deep_archive_storage < glacier_storage < standard_storage
