@@ -7,9 +7,9 @@
 
 这三类维度共同构成成本计算的输入参数。
 """
-from typing import Optional
+from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.models.enums import (
     RecordingMode,
@@ -20,16 +20,61 @@ from app.models.enums import (
 )
 
 
+class LifecycleStage(BaseModel):
+    """生命周期阶段
+
+    表示存储周期中的单个阶段，定义该阶段的时间范围和存储类型。
+
+    Attributes:
+        start_day: 开始天数（从第 1 天起）
+        end_day: 结束天数
+        storage_class: 该阶段使用的存储类型
+    """
+
+    start_day: int = Field(
+        ...,
+        ge=1,
+        description="开始天数（从第 1 天起）",
+    )
+    end_day: int = Field(
+        ...,
+        ge=1,
+        description="结束天数",
+    )
+    storage_class: StorageClass = Field(
+        ...,
+        description="该阶段使用的存储类型",
+    )
+
+    @property
+    def duration_days(self) -> int:
+        """获取阶段持续天数"""
+        return self.end_day - self.start_day + 1
+
+    @model_validator(mode="after")
+    def validate_day_range(self) -> "LifecycleStage":
+        """验证天数范围的有效性"""
+        if self.end_day < self.start_day:
+            raise ValueError(
+                f"结束天数 ({self.end_day}) 不能小于开始天数 ({self.start_day})"
+            )
+        return self
+
+
 class LifecyclePolicy(BaseModel):
     """生命周期策略
 
     定义 S3 对象的生命周期转换策略。
-    可用于将对象从一个存储类自动转换到另一个存储类。
+    支持两种模式：
+    1. 简单模式：单一转换（enabled + transition_days + target_class）
+    2. 多阶段模式：多个存储阶段（stages）
 
     Attributes:
         enabled: 是否启用生命周期策略
-        transition_days: 转换天数，对象创建后多少天进行转换
-        target_class: 目标存储类型
+        transition_days: 转换天数（简单模式）
+        target_class: 目标存储类型（简单模式）
+        stages: 多阶段配置列表（多阶段模式）
+        template_id: 使用的预设模板 ID（可选）
     """
 
     enabled: bool = False
@@ -39,6 +84,52 @@ class LifecyclePolicy(BaseModel):
         description="转换天数，对象创建后多少天进行转换",
     )
     target_class: StorageClass = StorageClass.GLACIER_IR
+    stages: Optional[List[LifecycleStage]] = Field(
+        default=None,
+        description="多阶段配置列表，如果设置则使用多阶段模式",
+    )
+    template_id: Optional[str] = Field(
+        default=None,
+        description="使用的预设模板 ID",
+    )
+
+    @property
+    def is_multi_stage(self) -> bool:
+        """是否为多阶段模式"""
+        return self.stages is not None and len(self.stages) > 0
+
+    @model_validator(mode="after")
+    def validate_stages_continuity(self) -> "LifecyclePolicy":
+        """验证多阶段配置的连续性"""
+        if not self.stages or len(self.stages) == 0:
+            return self
+
+        # 按 start_day 排序
+        sorted_stages = sorted(self.stages, key=lambda s: s.start_day)
+
+        # 验证第一阶段从第 1 天开始
+        if sorted_stages[0].start_day != 1:
+            raise ValueError("第一个阶段必须从第 1 天开始")
+
+        # 验证阶段连续性（无重叠、无间隙）
+        for i in range(1, len(sorted_stages)):
+            prev_end = sorted_stages[i - 1].end_day
+            curr_start = sorted_stages[i].start_day
+            if curr_start != prev_end + 1:
+                raise ValueError(
+                    f"阶段不连续：阶段 {i} 结束于第 {prev_end} 天，"
+                    f"阶段 {i + 1} 开始于第 {curr_start} 天"
+                )
+
+        # 更新 stages 为排序后的列表
+        self.stages = sorted_stages
+        return self
+
+    def get_total_days(self) -> Optional[int]:
+        """获取多阶段模式的总天数"""
+        if not self.stages:
+            return None
+        return self.stages[-1].end_day
 
 
 class FunctionalDimensions(BaseModel):

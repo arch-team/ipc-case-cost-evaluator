@@ -2,9 +2,13 @@
 
 定义成本计算的输出结果，包括费用明细、成本汇总、方案对比等模型。
 """
+from datetime import datetime
+from decimal import Decimal
 from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field, computed_field
+
+from app.models.enums import StorageClass
 
 
 class CostBreakdown(BaseModel):
@@ -255,3 +259,193 @@ class SensitivityAnalysis(BaseModel):
 
     base_monthly_cost: float = Field(..., description="基准月度成本")
     items: List[SensitivityItem] = Field(..., description="分析项列表")
+
+
+# ============================================================
+# 增强型费用明细模型（支持单价、用量、阶梯明细）
+# ============================================================
+
+
+class TierDetail(BaseModel):
+    """阶梯定价明细
+
+    用于展示阶梯定价（如数据传输）的各阶梯详情。
+
+    Attributes:
+        tier_name: 阶梯名称，如 "前 10TB"
+        range_start_gb: 阶梯起始量 (GB)
+        range_end_gb: 阶梯结束量 (GB)，None 表示无上限
+        unit_price: 该阶梯单价 (USD/GB)
+        quantity_gb: 该阶梯实际用量 (GB)
+        amount: 该阶梯费用 (USD)
+    """
+
+    tier_name: str = Field(..., description="阶梯名称")
+    range_start_gb: float = Field(..., ge=0, description="阶梯起始量 (GB)")
+    range_end_gb: Optional[float] = Field(
+        default=None,
+        description="阶梯结束量 (GB)，None 表示无上限",
+    )
+    unit_price: float = Field(..., ge=0, description="该阶梯单价 (USD/GB)")
+    quantity_gb: float = Field(..., ge=0, description="该阶梯实际用量 (GB)")
+    amount: float = Field(..., ge=0, description="该阶梯费用 (USD)")
+
+
+class CostItem(BaseModel):
+    """费用项（含计算明细）
+
+    单个费用项的详细信息，包括单价、用量和计算过程。
+
+    Attributes:
+        name: 费用项名称
+        unit_price: 单价
+        unit_price_unit: 单价单位，如 "USD/GB", "USD/千次"
+        quantity: 用量
+        quantity_unit: 用量单位，如 "GB", "千次"
+        amount: 费用金额 (USD)
+        tiers: 阶梯定价明细（仅阶梯定价项有值）
+    """
+
+    name: str = Field(..., description="费用项名称")
+    unit_price: float = Field(..., ge=0, description="单价")
+    unit_price_unit: str = Field(..., description="单价单位")
+    quantity: float = Field(..., ge=0, description="用量")
+    quantity_unit: str = Field(..., description="用量单位")
+    amount: float = Field(..., ge=0, description="费用金额 (USD)")
+    tiers: Optional[List[TierDetail]] = Field(
+        default=None,
+        description="阶梯定价明细",
+    )
+
+    @property
+    def has_tiers(self) -> bool:
+        """是否包含阶梯明细"""
+        return self.tiers is not None and len(self.tiers) > 0
+
+
+class StageCostBreakdown(BaseModel):
+    """单阶段成本明细
+
+    生命周期中单个存储阶段的成本详情。
+
+    Attributes:
+        start_day: 阶段开始天数
+        end_day: 阶段结束天数
+        storage_class: 存储类型
+        duration_days: 阶段持续天数
+        storage_cost: 存储费用明细
+        request_cost: 请求费用明细（PUT + GET）
+        retrieval_cost: 检索费用明细（仅 Glacier 类）
+        transition_cost: 转换到此阶段的费用明细
+    """
+
+    start_day: int = Field(..., ge=1, description="阶段开始天数")
+    end_day: int = Field(..., ge=1, description="阶段结束天数")
+    storage_class: StorageClass = Field(..., description="存储类型")
+    duration_days: int = Field(..., ge=1, description="阶段持续天数")
+    storage_cost: CostItem = Field(..., description="存储费用明细")
+    request_cost: CostItem = Field(..., description="请求费用明细")
+    retrieval_cost: Optional[CostItem] = Field(
+        default=None,
+        description="检索费用明细",
+    )
+    transition_cost: Optional[CostItem] = Field(
+        default=None,
+        description="转换费用明细",
+    )
+
+    @computed_field
+    @property
+    def stage_total(self) -> float:
+        """该阶段总费用"""
+        total = self.storage_cost.amount + self.request_cost.amount
+        if self.retrieval_cost:
+            total += self.retrieval_cost.amount
+        if self.transition_cost:
+            total += self.transition_cost.amount
+        return total
+
+
+class PricingMetadata(BaseModel):
+    """定价数据元信息
+
+    记录定价数据的来源和更新时间。
+
+    Attributes:
+        source: 数据来源，"AWS_API" 或 "LOCAL_FALLBACK"
+        updated_at: 数据更新时间
+        region: AWS 区域代码
+        is_fallback: 是否为回退数据
+    """
+
+    source: str = Field(..., description="数据来源")
+    updated_at: datetime = Field(..., description="数据更新时间")
+    region: str = Field(..., description="AWS 区域代码")
+    is_fallback: bool = Field(
+        default=False,
+        description="是否为回退数据（API 失败时使用本地数据）",
+    )
+
+
+class DetailedCostBreakdown(BaseModel):
+    """详细费用明细
+
+    增强版费用明细，包含各项费用的计算过程和阶段明细。
+
+    Attributes:
+        storage_costs: 存储费用明细（按阶段分组）
+        put_request_cost: PUT 请求费用明细
+        get_request_cost: GET 请求费用明细
+        retrieval_cost: 检索费用明细
+        data_transfer_cost: 数据传输费用明细（含阶梯）
+        lifecycle_cost: 生命周期转换费用明细
+        stage_breakdowns: 各阶段成本明细（多阶段模式）
+        pricing_metadata: 定价数据元信息
+    """
+
+    storage_costs: List[CostItem] = Field(
+        ...,
+        description="存储费用明细（按阶段/存储类型分组）",
+    )
+    put_request_cost: CostItem = Field(..., description="PUT 请求费用明细")
+    get_request_cost: CostItem = Field(..., description="GET 请求费用明细")
+    retrieval_cost: Optional[CostItem] = Field(
+        default=None,
+        description="检索费用明细",
+    )
+    data_transfer_cost: CostItem = Field(
+        ...,
+        description="数据传输费用明细（含阶梯）",
+    )
+    lifecycle_cost: Optional[CostItem] = Field(
+        default=None,
+        description="生命周期转换费用明细",
+    )
+    stage_breakdowns: Optional[List[StageCostBreakdown]] = Field(
+        default=None,
+        description="各阶段成本明细（多阶段模式）",
+    )
+    pricing_metadata: Optional[PricingMetadata] = Field(
+        default=None,
+        description="定价数据元信息",
+    )
+
+    @computed_field
+    @property
+    def total_storage_cost(self) -> float:
+        """总存储费用"""
+        return sum(item.amount for item in self.storage_costs)
+
+    @computed_field
+    @property
+    def total(self) -> float:
+        """总费用"""
+        total = self.total_storage_cost
+        total += self.put_request_cost.amount
+        total += self.get_request_cost.amount
+        total += self.data_transfer_cost.amount
+        if self.retrieval_cost:
+            total += self.retrieval_cost.amount
+        if self.lifecycle_cost:
+            total += self.lifecycle_cost.amount
+        return total
