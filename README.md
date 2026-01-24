@@ -1,133 +1,154 @@
 # IPC Case Cost Evaluator
 
-AWS S3 云存储成本评估工具，用于计算和对比 IPC（网络摄像头）视频监控数据的存储成本。
+AWS S3 云存储成本评估系统，基于 FastAPI 构建的 Web API，用于计算和对比 IPC（网络摄像头）视频监控数据的存储成本。
 
-## 功能
+## 功能特性
 
 - **多策略对比**: S3 Standard vs S3 Glacier Instant Retrieval vs 混合生命周期策略
+- **三维度建模**: 功能维度 × 技术维度 × 价格维度，灵活组合计算场景
 - **完整成本模型**: PUT/GET 请求费、存储费、数据传输费、生命周期转换费
+- **多区域支持**: 支持不同 AWS 区域的定价计算
 - **批量计算**: 支持从 1 台到 100,000+ 台设备的规模化计算
-- **多存储周期**: 支持 7/30/60/90/180 天存储周期
 
 ## 快速开始
 
 ### 环境要求
 
 - Python 3.11+
-- pandas
-- openpyxl
 
 ### 安装
 
 ```bash
-# 创建虚拟环境
+cd backend
 python3 -m venv .venv
 source .venv/bin/activate  # Linux/macOS
-# .venv\Scripts\activate   # Windows
-
-# 安装依赖
-pip install pandas openpyxl
+pip install -r requirements.txt
 ```
 
-### 使用
+### 运行
+
+```bash
+# 启动开发服务器
+uvicorn app.main:app --reload
+
+# 运行测试
+pytest tests/ -v
+```
+
+### API 使用示例
 
 ```python
-from src.calculator import StandardCalculator, compare_strategies
-from src.models import DeviceParams
+from app.models import FunctionalDimensions, CostCalculationInput
+from app.services.calculator import S3StandardCalculator
 
-# 定义设备参数
-params = DeviceParams(
-    device_count=100000,        # 设备数
-    data_rate_kb=136.533,       # 每秒数据量 (KB)
-    segment_seconds=15,         # 录像分片秒数
-    event_seconds=15,           # 每个事件秒数
-    events_per_day=400,         # 每天事件数
-    get_ratio=0.1,              # GET 比例 (10%)
-    retention_days=30           # 存储天数
+# 定义功能维度参数
+functional = FunctionalDimensions(
+    device_count=100000,          # 设备数
+    recording_mode="event_triggered",  # 录像模式
+    video_quality="1080p",        # 视频质量
+    events_per_day=400,           # 每天事件数
+    event_duration_sec=15,        # 事件时长
+    access_pattern=0.1,           # 回看比例 (10%)
+    retention_days=30,            # 存储天数
 )
 
-# 对比所有策略
-result = compare_strategies(params)
-print(result.summary())
+# 构建计算输入
+input_data = CostCalculationInput(functional=functional)
+
+# 计算成本
+calculator = S3StandardCalculator()
+result = calculator.calculate(input_data)
+
+print(f"月度总成本: ${result.monthly_total:,.2f}")
+print(f"单设备月成本: ${result.per_device_monthly:.4f}")
 ```
 
-## 成本计算模型
+## 三维度成本模型
 
-### 输入参数
+### 功能维度 (FunctionalDimensions)
+
+业务场景相关参数，决定存储需求规模。
 
 | 参数 | 说明 | 典型值 |
-|-----|------|-------|
+|------|------|--------|
 | device_count | 设备数量 | 1 - 100,000+ |
-| data_rate_kb | 每秒数据量 (KB) | 136.533 |
-| segment_seconds | 录像分片秒数 | 15 |
-| event_seconds | 每个事件秒数 | 15 |
-| events_per_day | 每天事件数 | 400 |
-| get_ratio | GET 比例 | 0.1 (10%) |
-| retention_days | 存储天数 | 7/30/60/90/180 |
+| recording_mode | 录像模式 | continuous / event_triggered / scheduled |
+| video_quality | 视频质量 | 720p / 1080p / 2K / 4K |
+| events_per_day | 每日事件数 | 400 |
+| event_duration_sec | 事件时长 (秒) | 15 |
+| access_pattern | 回看比例 | 0.1 (10%) |
+| retention_days | 存储天数 | 7 / 30 / 60 / 90 / 180 |
 
-### 成本组成
+### 技术维度 (TechnicalDimensions)
+
+方案选型相关参数，决定使用何种存储方案。
+
+| 参数 | 说明 | 可选值 |
+|------|------|--------|
+| storage_class | 存储类型 | STANDARD / GLACIER_IR |
+| lifecycle_policy | 生命周期策略 | 启用/禁用，转换天数 |
+
+### 价格维度 (PricingDimensions)
+
+AWS 定价相关参数，影响最终成本。
+
+| 参数 | 说明 | 默认值 |
+|------|------|--------|
+| region | AWS 区域 | ap-northeast-1 |
+| discount_percent | 折扣比例 | 0 (无折扣) |
+
+## 成本计算公式
 
 ```
-总费用 = PUT请求费 + GET请求费 + GET检索费 + 存储费 + 数据传输费 + 生命周期转换费
+总费用 = 存储费 + PUT请求费 + GET请求费 + GET检索费 + 数据传输费 + 生命周期转换费
 ```
+
+### AWS 定价参考 (ap-northeast-1)
 
 | 成本项 | S3 Standard | S3 Glacier IR |
-|-------|-------------|---------------|
-| PUT 请求 | $0.00368/千次 | $0.02/千次 |
-| GET 请求 | $0.00029/千次 | $0.01/千次 |
+|--------|-------------|---------------|
+| 存储 | $0.025/GB | $0.004/GB |
+| PUT 请求 | $0.0047/千次 | $0.02/千次 |
+| GET 请求 | $0.00037/千次 | $0.01/千次 |
 | GET 检索 | - | $0.03/GB |
-| 存储 | $0.01544/GB | $0.004/GB |
-| 数据传输 | $0.0225/GB | $0.0225/GB |
 | 生命周期转换 | - | $0.02/千次 |
+| 数据传输出站 | $0.114/GB | 同左 |
 
 ## 存储策略对比
 
-### 1. S3 Standard
-- 最高性能，最高成本
-- 适合频繁访问的数据
-
-### 2. S3 Glacier Instant Retrieval
-- 低存储成本，高请求成本
-- 适合长期归档，偶尔访问
-
-### 3. 混合策略 (Standard → Glacier)
-- N 天后自动转换到 Glacier
-- 平衡性能和成本
+| 策略 | 特点 | 适用场景 |
+|------|------|----------|
+| S3 Standard | 高性能，高成本 | 频繁访问，短期存储 |
+| S3 Glacier IR | 低存储成本，高检索成本 | 长期归档，偶尔访问 |
+| 混合策略 | N 天后自动转换 | 访问频率随时间递减 |
 
 ## 项目结构
 
 ```
 ipc-case-cost-evaluator/
-├── README.md                 # 项目说明
-├── src/                      # 源代码
-│   ├── calculator/           # 成本计算引擎
-│   ├── models/               # 数据模型
-│   └── io/                   # Excel 读写
-├── tests/                    # 测试用例
-├── docs/                     # 文档
-│   └── CODEMAPS/            # 架构文档
-├── scripts/                  # 工具脚本
-└── AWS S3云存成本V4.xlsx     # 原始数据
+├── backend/                      # 后端服务
+│   ├── app/
+│   │   ├── api/                  # API 路由
+│   │   ├── core/                 # 核心配置
+│   │   ├── models/               # 数据模型 (Pydantic)
+│   │   │   ├── dimensions.py     # 三类维度定义
+│   │   │   ├── enums.py          # 枚举类型
+│   │   │   ├── pricing.py        # AWS 定价模型
+│   │   │   └── results.py        # 计算结果模型
+│   │   ├── services/
+│   │   │   └── calculator/       # 成本计算引擎
+│   │   │       ├── base.py       # 基础计算器
+│   │   │       ├── s3_standard.py
+│   │   │       └── s3_glacier.py
+│   │   └── data/
+│   │       └── aws_pricing/      # 区域定价 JSON
+│   ├── tests/                    # 单元测试
+│   └── requirements.txt
+├── docs/
+│   └── plans/                    # 设计文档
+├── CLAUDE.md                     # Claude Code 指引
+└── README.md
 ```
-
-## 文档
-
-- [架构概览](docs/CODEMAPS/INDEX.md)
-- [计算模块](docs/CODEMAPS/calculator.md)
-- [数据模型](docs/CODEMAPS/models.md)
-- [I/O 模块](docs/CODEMAPS/io.md)
-
-## 示例输出
-
-### 30 天存储，100,000 台设备
-
-| 策略 | 每台/月 | 总费用/月 | vs Standard |
-|-----|--------|----------|-------------|
-| S3 Standard | $0.46 | $45,912 | - |
-| S3 Glacier IR | $0.66 | $65,630 | +43% |
-| STD 3天 → GIR | $0.67 | $67,107 | +46% |
-
-> 注：短期存储 (30天) 时，Standard 更经济；长期存储 (90-180天) 时，Glacier 或混合策略更优。
 
 ## License
 
