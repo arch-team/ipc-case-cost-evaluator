@@ -5,6 +5,7 @@
 from typing import Optional, Protocol, Any, Dict, List
 from app.core.config import settings
 from app.db.local_storage import LocalStorage
+from app.db.dynamodb_client import DynamoDBClient
 
 
 class StorageProtocol(Protocol):
@@ -56,9 +57,7 @@ def get_storage() -> StorageProtocol:
         if settings.USE_LOCAL_STORAGE:
             _storage_instance = LocalStorage()
         else:
-            # TODO: 实现 DynamoDB 客户端
-            # _storage_instance = DynamoDBClient()
-            _storage_instance = LocalStorage()
+            _storage_instance = DynamoDBClient()
 
     return _storage_instance
 
