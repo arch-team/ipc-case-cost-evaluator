@@ -105,8 +105,7 @@ total = storage_cost + put_cost + get_cost + retrieval_cost + transfer_cost + li
 | 生命周期转换 | - | $0.02/千次 |
 | 数据传输出站 | $0.114/GB (前10TB) | 同左 |
 
-## 详细文档
+## 相关文档
 
-- [架构概览](docs/CODEMAPS/INDEX.md)
-- [计算模块](docs/CODEMAPS/calculator.md)
-- [数据模型](docs/CODEMAPS/models.md)
+- [设计文档](docs/plans/2025-01-24-ipc-cost-evaluator-design.md)
+- [实现计划](docs/plans/2025-01-24-implementation-plan.md)
