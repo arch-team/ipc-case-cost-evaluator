@@ -1,33 +1,54 @@
 # IPC Case Cost Evaluator
 
-AWS S3 云存储成本评估系统，基于 FastAPI 构建的 Web API，用于计算和对比 IPC（网络摄像头）视频监控数据的存储成本。
+AWS S3 云存储成本评估系统，用于计算和对比 IPC（网络摄像头）视频监控数据的存储成本。
 
 ## 功能特性
 
+- **精准成本计算**: 基于 AWS S3 官方定价，精确计算存储、请求和传输费用
 - **多策略对比**: S3 Standard vs S3 Glacier Instant Retrieval vs 混合生命周期策略
 - **三维度建模**: 功能维度 × 技术维度 × 价格维度，灵活组合计算场景
-- **完整成本模型**: PUT/GET 请求费、存储费、数据传输费、生命周期转换费
-- **多区域支持**: 支持不同 AWS 区域的定价计算
-- **批量计算**: 支持从 1 台到 100,000+ 台设备的规模化计算
+- **智能推荐**: 基于使用模式提供成本优化建议
+- **导出报告**: 支持导出 Excel 报告
+- **评估管理**: 保存和管理历史评估记录
 
 ## 快速开始
 
-### 环境要求
+### 使用 Docker (推荐)
 
-- Python 3.11+
+```bash
+# 克隆项目
+git clone <repository-url>
+cd ipc-case-cost-evaluator
 
-### 安装
+# 复制环境配置
+cp .env.example .env
+
+# 启动服务
+docker-compose up -d
+
+# 访问应用
+# 前端: http://localhost
+# 后端 API: http://localhost:8000
+# API 文档: http://localhost:8000/docs
+```
+
+### 开发环境
+
+```bash
+# 使用开发模式启动 (支持热重载)
+docker-compose -f docker-compose.dev.yml up
+```
+
+### 本地开发
+
+#### 后端
 
 ```bash
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate  # Linux/macOS
 pip install -r requirements.txt
-```
 
-### 运行
-
-```bash
 # 启动开发服务器
 uvicorn app.main:app --reload
 
@@ -35,39 +56,35 @@ uvicorn app.main:app --reload
 pytest tests/ -v
 ```
 
-### API 使用示例
+#### 前端
 
-```python
-from app.models import FunctionalDimensions, CostCalculationInput
-from app.services.calculator import S3StandardCalculator
+```bash
+cd frontend
+npm install
 
-# 定义功能维度参数
-functional = FunctionalDimensions(
-    device_count=100000,          # 设备数
-    recording_mode="event_triggered",  # 录像模式
-    video_quality="1080p",        # 视频质量
-    events_per_day=400,           # 每天事件数
-    event_duration_sec=15,        # 事件时长
-    access_pattern=0.1,           # 回看比例 (10%)
-    retention_days=30,            # 存储天数
-)
+# 启动开发服务器
+npm run dev
 
-# 构建计算输入
-input_data = CostCalculationInput(functional=functional)
-
-# 计算成本
-calculator = S3StandardCalculator()
-result = calculator.calculate(input_data)
-
-print(f"月度总成本: ${result.monthly_total:,.2f}")
-print(f"单设备月成本: ${result.per_device_monthly:.4f}")
+# 构建生产版本
+npm run build
 ```
+
+## API 端点
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/v1/calculate` | POST | 计算存储成本 |
+| `/api/v1/compare` | POST | 对比多种存储方案 |
+| `/api/v1/scenarios` | GET | 获取预设场景 |
+| `/api/v1/pricing/regions` | GET | 获取支持的区域 |
+| `/api/v1/pricing/{region}` | GET | 获取区域定价 |
+| `/api/v1/export` | POST | 导出 Excel 报告 |
+| `/api/v1/evaluations` | CRUD | 评估记录管理 |
+| `/api/v1/auth/*` | POST | 用户认证 |
 
 ## 三维度成本模型
 
 ### 功能维度 (FunctionalDimensions)
-
-业务场景相关参数，决定存储需求规模。
 
 | 参数 | 说明 | 典型值 |
 |------|------|--------|
@@ -81,8 +98,6 @@ print(f"单设备月成本: ${result.per_device_monthly:.4f}")
 
 ### 技术维度 (TechnicalDimensions)
 
-方案选型相关参数，决定使用何种存储方案。
-
 | 参数 | 说明 | 可选值 |
 |------|------|--------|
 | storage_class | 存储类型 | STANDARD / GLACIER_IR |
@@ -90,20 +105,12 @@ print(f"单设备月成本: ${result.per_device_monthly:.4f}")
 
 ### 价格维度 (PricingDimensions)
 
-AWS 定价相关参数，影响最终成本。
-
 | 参数 | 说明 | 默认值 |
 |------|------|--------|
 | region | AWS 区域 | ap-northeast-1 |
 | discount_percent | 折扣比例 | 0 (无折扣) |
 
-## 成本计算公式
-
-```
-总费用 = 存储费 + PUT请求费 + GET请求费 + GET检索费 + 数据传输费 + 生命周期转换费
-```
-
-### AWS 定价参考 (ap-northeast-1)
+## AWS 定价参考 (ap-northeast-1)
 
 | 成本项 | S3 Standard | S3 Glacier IR |
 |--------|-------------|---------------|
@@ -114,41 +121,76 @@ AWS 定价相关参数，影响最终成本。
 | 生命周期转换 | - | $0.02/千次 |
 | 数据传输出站 | $0.114/GB | 同左 |
 
-## 存储策略对比
-
-| 策略 | 特点 | 适用场景 |
-|------|------|----------|
-| S3 Standard | 高性能，高成本 | 频繁访问，短期存储 |
-| S3 Glacier IR | 低存储成本，高检索成本 | 长期归档，偶尔访问 |
-| 混合策略 | N 天后自动转换 | 访问频率随时间递减 |
-
 ## 项目结构
 
 ```
 ipc-case-cost-evaluator/
-├── backend/                      # 后端服务
+├── backend/                      # 后端服务 (FastAPI)
 │   ├── app/
-│   │   ├── api/                  # API 路由
+│   │   ├── api/routes/           # API 路由
 │   │   ├── core/                 # 核心配置
-│   │   ├── models/               # 数据模型 (Pydantic)
-│   │   │   ├── dimensions.py     # 三类维度定义
-│   │   │   ├── enums.py          # 枚举类型
-│   │   │   ├── pricing.py        # AWS 定价模型
-│   │   │   └── results.py        # 计算结果模型
-│   │   ├── services/
-│   │   │   └── calculator/       # 成本计算引擎
-│   │   │       ├── base.py       # 基础计算器
-│   │   │       ├── s3_standard.py
-│   │   │       └── s3_glacier.py
-│   │   └── data/
-│   │       └── aws_pricing/      # 区域定价 JSON
-│   ├── tests/                    # 单元测试
+│   │   ├── db/                   # 数据层
+│   │   ├── models/               # 数据模型
+│   │   └── services/             # 业务服务
+│   │       ├── calculator/       # 成本计算引擎
+│   │       ├── auth.py           # 认证服务
+│   │       └── excel_export.py   # Excel 导出
+│   ├── tests/                    # 单元测试 (305+)
+│   ├── Dockerfile
 │   └── requirements.txt
-├── docs/
-│   └── plans/                    # 设计文档
-├── CLAUDE.md                     # Claude Code 指引
+├── frontend/                     # 前端应用 (React + TypeScript)
+│   ├── src/
+│   │   ├── api/                  # API 客户端
+│   │   ├── components/           # React 组件
+│   │   ├── pages/                # 页面
+│   │   └── types/                # 类型定义
+│   ├── Dockerfile
+│   └── nginx.conf
+├── docker-compose.yml            # 生产环境编排
+├── docker-compose.dev.yml        # 开发环境编排
 └── README.md
 ```
+
+## 环境变量
+
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| APP_ENV | 运行环境 | production |
+| SECRET_KEY | JWT 密钥 | - |
+| STORAGE_TYPE | 存储类型 | local |
+| VITE_API_BASE_URL | API 地址 | /api/v1 |
+
+## 测试
+
+```bash
+# 后端测试
+cd backend
+pytest tests/ -v
+
+# 测试覆盖率
+pytest tests/ --cov=app --cov-report=html
+```
+
+## 部署
+
+### Docker 部署
+
+```bash
+# 生产环境
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
+```
+
+### 手动部署
+
+1. 后端部署到支持 Python 的服务器
+2. 前端构建后部署到 Nginx/CDN
+3. 配置 Nginx 反向代理到后端 API
 
 ## License
 
