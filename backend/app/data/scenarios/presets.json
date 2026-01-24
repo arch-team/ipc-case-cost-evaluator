@@ -1,0 +1,222 @@
+{
+  "scenarios": [
+    {
+      "id": "small-retail",
+      "name": "小型零售店",
+      "description": "适用于便利店、小型商铺等场景，10-50台设备，事件触发录像",
+      "category": "retail",
+      "functional": {
+        "device_count": 20,
+        "recording_mode": "event_triggered",
+        "video_quality": "1080p",
+        "events_per_day": 200,
+        "event_duration_sec": 30,
+        "retention_days": 30,
+        "access_pattern": 0.05,
+        "segment_strategy": "fixed_duration",
+        "segment_value": 15
+      },
+      "technical": {
+        "storage_class": "STANDARD"
+      },
+      "pricing": {
+        "region": "ap-northeast-1",
+        "discount_percent": 0.0
+      }
+    },
+    {
+      "id": "medium-retail",
+      "name": "中型商超",
+      "description": "适用于超市、购物中心等场景，100-500台设备，事件触发录像",
+      "category": "retail",
+      "functional": {
+        "device_count": 200,
+        "recording_mode": "event_triggered",
+        "video_quality": "1080p",
+        "events_per_day": 300,
+        "event_duration_sec": 20,
+        "retention_days": 30,
+        "access_pattern": 0.1,
+        "segment_strategy": "fixed_duration",
+        "segment_value": 15
+      },
+      "technical": {
+        "storage_class": "STANDARD"
+      },
+      "pricing": {
+        "region": "ap-northeast-1",
+        "discount_percent": 0.0
+      }
+    },
+    {
+      "id": "large-enterprise",
+      "name": "大型企业园区",
+      "description": "适用于企业园区、工业园等场景，1000+台设备，混合录像模式",
+      "category": "enterprise",
+      "functional": {
+        "device_count": 1000,
+        "recording_mode": "event_triggered",
+        "video_quality": "1080p",
+        "events_per_day": 400,
+        "event_duration_sec": 15,
+        "retention_days": 60,
+        "access_pattern": 0.1,
+        "segment_strategy": "fixed_duration",
+        "segment_value": 15
+      },
+      "technical": {
+        "storage_class": "STANDARD"
+      },
+      "pricing": {
+        "region": "ap-northeast-1",
+        "discount_percent": 0.1
+      }
+    },
+    {
+      "id": "smart-home",
+      "name": "智能家居",
+      "description": "适用于家庭安防场景，1-10台设备，事件触发录像",
+      "category": "residential",
+      "functional": {
+        "device_count": 4,
+        "recording_mode": "event_triggered",
+        "video_quality": "1080p",
+        "events_per_day": 50,
+        "event_duration_sec": 30,
+        "retention_days": 7,
+        "access_pattern": 0.2,
+        "segment_strategy": "fixed_duration",
+        "segment_value": 30
+      },
+      "technical": {
+        "storage_class": "STANDARD"
+      },
+      "pricing": {
+        "region": "ap-northeast-1",
+        "discount_percent": 0.0
+      }
+    },
+    {
+      "id": "residential-community",
+      "name": "住宅小区",
+      "description": "适用于住宅小区公共区域，50-200台设备，全天候录像",
+      "category": "residential",
+      "functional": {
+        "device_count": 100,
+        "recording_mode": "continuous",
+        "video_quality": "1080p",
+        "retention_days": 30,
+        "access_pattern": 0.05,
+        "segment_strategy": "fixed_duration",
+        "segment_value": 60
+      },
+      "technical": {
+        "storage_class": "STANDARD"
+      },
+      "pricing": {
+        "region": "ap-northeast-1",
+        "discount_percent": 0.0
+      }
+    },
+    {
+      "id": "traffic-monitoring",
+      "name": "交通监控",
+      "description": "适用于道路、停车场等交通场景，全天候高清录像，长期保留",
+      "category": "traffic",
+      "functional": {
+        "device_count": 500,
+        "recording_mode": "continuous",
+        "video_quality": "2K",
+        "retention_days": 90,
+        "access_pattern": 0.02,
+        "segment_strategy": "fixed_duration",
+        "segment_value": 60
+      },
+      "technical": {
+        "storage_class": "STANDARD"
+      },
+      "pricing": {
+        "region": "ap-northeast-1",
+        "discount_percent": 0.15
+      }
+    },
+    {
+      "id": "bank-branch",
+      "name": "银行网点",
+      "description": "适用于银行网点，高安全要求，全天候录像，长期保留",
+      "category": "finance",
+      "functional": {
+        "device_count": 30,
+        "recording_mode": "continuous",
+        "video_quality": "1080p",
+        "retention_days": 180,
+        "access_pattern": 0.03,
+        "segment_strategy": "fixed_duration",
+        "segment_value": 30
+      },
+      "technical": {
+        "storage_class": "STANDARD"
+      },
+      "pricing": {
+        "region": "ap-northeast-1",
+        "discount_percent": 0.0
+      }
+    },
+    {
+      "id": "warehouse",
+      "name": "仓储物流",
+      "description": "适用于仓库、物流中心，事件触发录像，中等保留期",
+      "category": "logistics",
+      "functional": {
+        "device_count": 150,
+        "recording_mode": "event_triggered",
+        "video_quality": "1080p",
+        "events_per_day": 500,
+        "event_duration_sec": 60,
+        "retention_days": 30,
+        "access_pattern": 0.15,
+        "segment_strategy": "fixed_duration",
+        "segment_value": 15
+      },
+      "technical": {
+        "storage_class": "STANDARD"
+      },
+      "pricing": {
+        "region": "ap-northeast-1",
+        "discount_percent": 0.05
+      }
+    }
+  ],
+  "categories": [
+    {
+      "id": "retail",
+      "name": "零售商业",
+      "description": "零售店铺、商超等商业场景"
+    },
+    {
+      "id": "enterprise",
+      "name": "企业园区",
+      "description": "企业办公、工业园区等场景"
+    },
+    {
+      "id": "residential",
+      "name": "住宅家居",
+      "description": "家庭安防、住宅小区等场景"
+    },
+    {
+      "id": "traffic",
+      "name": "交通监控",
+      "description": "道路、停车场等交通场景"
+    },
+    {
+      "id": "finance",
+      "name": "金融安防",
+      "description": "银行、金融机构等高安全场景"
+    },
+    {
+      "id": "logistics",
+      "name": "仓储物流",
+      "description": "仓库、物流中心等场景"
+    }
+  ]
+}
