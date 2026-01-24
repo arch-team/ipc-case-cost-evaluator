@@ -9,7 +9,36 @@ export type RecordingMode = 'continuous' | 'event_triggered' | 'scheduled';
 export type VideoQuality = '720p' | '1080p' | '2k' | '4k';
 
 // 存储类型
-export type StorageClass = 'STANDARD' | 'GLACIER_IR';
+export type StorageClass = 'STANDARD' | 'GLACIER_IR' | 'DEEP_ARCHIVE';
+
+// 生命周期阶段
+export interface LifecycleStage {
+  start_day: number;
+  end_day: number;
+  storage_class: StorageClass;
+}
+
+// 生命周期策略
+export interface LifecyclePolicy {
+  enabled: boolean;
+  stages?: LifecycleStage[];
+  template_id?: string;
+  // 简单模式字段（向后兼容）
+  transition_days?: number;
+  target_class?: StorageClass;
+}
+
+// 生命周期模板
+export interface LifecycleTemplate {
+  id: string;
+  name: string;
+  description: string;
+  retention_days: number;
+  stages: LifecycleStage[];
+  use_cases: string[];
+  estimated_savings_vs_standard: number;
+  stage_count: number;
+}
 
 // 功能维度
 export interface FunctionalDimensions {
@@ -25,6 +54,7 @@ export interface FunctionalDimensions {
 // 技术维度
 export interface TechnicalDimensions {
   storage_class: StorageClass;
+  lifecycle_policy?: LifecyclePolicy;
 }
 
 // 价格维度

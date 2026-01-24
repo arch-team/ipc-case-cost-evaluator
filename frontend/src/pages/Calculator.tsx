@@ -139,6 +139,7 @@ const Calculator: React.FC = () => {
           <TechnicalForm
             value={input.technical}
             onChange={(technical) => setInput({ ...input, technical })}
+            retentionDays={input.functional.retention_days}
           />
         );
       case 3:

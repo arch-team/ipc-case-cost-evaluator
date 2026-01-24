@@ -2,14 +2,16 @@
  * 技术维度配置表单
  */
 import React from 'react';
-import { Form, Radio, Typography, Card, Row, Col, Tag } from 'antd';
-import type { TechnicalDimensions, StorageClass } from '../../types';
+import { Form, Radio, Typography, Card, Row, Col, Tag, Divider } from 'antd';
+import type { TechnicalDimensions, StorageClass, LifecyclePolicy } from '../../types';
+import StorageStrategySelector from './StorageStrategySelector';
 
 const { Title, Text, Paragraph } = Typography;
 
 interface TechnicalFormProps {
   value: TechnicalDimensions;
   onChange: (value: TechnicalDimensions) => void;
+  retentionDays: number;
 }
 
 const storageClassOptions = [
@@ -29,62 +31,99 @@ const storageClassOptions = [
   },
 ];
 
-const TechnicalForm: React.FC<TechnicalFormProps> = ({ value, onChange }) => {
-  const handleChange = (storageClass: StorageClass) => {
-    onChange({ ...value, storage_class: storageClass });
+const TechnicalForm: React.FC<TechnicalFormProps> = ({ value, onChange, retentionDays }) => {
+  const hasLifecyclePolicy = value.lifecycle_policy?.enabled;
+
+  const handleStorageClassChange = (storageClass: StorageClass) => {
+    onChange({
+      ...value,
+      storage_class: storageClass,
+      lifecycle_policy: undefined,
+    });
+  };
+
+  const handleLifecyclePolicyChange = (policy: LifecyclePolicy | undefined) => {
+    if (policy?.enabled) {
+      // 使用生命周期策略，默认存储类型设为 STANDARD
+      onChange({
+        ...value,
+        storage_class: 'STANDARD',
+        lifecycle_policy: policy,
+      });
+    } else {
+      onChange({
+        ...value,
+        lifecycle_policy: undefined,
+      });
+    }
   };
 
   return (
     <div>
       <Title level={4}>技术维度配置</Title>
       <Text type="secondary" style={{ marginBottom: 24, display: 'block' }}>
-        选择适合您使用场景的存储类型
+        选择适合您使用场景的存储类型或生命周期策略
       </Text>
 
-      <Form layout="vertical">
-        <Form.Item label="存储类型">
-          <Radio.Group
-            value={value.storage_class}
-            onChange={(e) => handleChange(e.target.value)}
-            style={{ width: '100%' }}
-          >
-            <Row gutter={16}>
-              {storageClassOptions.map((option) => (
-                <Col span={12} key={option.value}>
-                  <Radio.Button
-                    value={option.value}
-                    style={{
-                      height: 'auto',
-                      width: '100%',
-                      padding: 0,
-                      border: value.storage_class === option.value ? `2px solid #1890ff` : undefined,
-                    }}
-                  >
-                    <Card
-                      bordered={false}
-                      style={{
-                        background: value.storage_class === option.value ? '#e6f7ff' : undefined,
-                      }}
-                    >
-                      <Title level={5}>
-                        <Tag color={option.color}>{option.label}</Tag>
-                      </Title>
-                      <Paragraph type="secondary">{option.description}</Paragraph>
-                      <div>
-                        {option.features.map((feature, index) => (
-                          <Tag key={index} style={{ marginBottom: 4 }}>
-                            {feature}
-                          </Tag>
-                        ))}
-                      </div>
-                    </Card>
-                  </Radio.Button>
-                </Col>
-              ))}
-            </Row>
-          </Radio.Group>
-        </Form.Item>
-      </Form>
+      {/* 存储策略选择器 */}
+      <Card style={{ marginBottom: 24 }}>
+        <StorageStrategySelector
+          value={value.lifecycle_policy}
+          onChange={handleLifecyclePolicyChange}
+          retentionDays={retentionDays}
+        />
+      </Card>
+
+      {/* 单一存储类型选择（仅在未启用生命周期策略时显示） */}
+      {!hasLifecyclePolicy && (
+        <>
+          <Divider>或选择单一存储类型</Divider>
+          <Form layout="vertical">
+            <Form.Item label="存储类型">
+              <Radio.Group
+                value={value.storage_class}
+                onChange={(e) => handleStorageClassChange(e.target.value)}
+                style={{ width: '100%' }}
+              >
+                <Row gutter={16}>
+                  {storageClassOptions.map((option) => (
+                    <Col span={12} key={option.value}>
+                      <Radio.Button
+                        value={option.value}
+                        style={{
+                          height: 'auto',
+                          width: '100%',
+                          padding: 0,
+                          border: value.storage_class === option.value ? `2px solid #1890ff` : undefined,
+                        }}
+                      >
+                        <Card
+                          bordered={false}
+                          style={{
+                            background: value.storage_class === option.value ? '#e6f7ff' : undefined,
+                          }}
+                        >
+                          <Title level={5}>
+                            <Tag color={option.color}>{option.label}</Tag>
+                          </Title>
+                          <Paragraph type="secondary">{option.description}</Paragraph>
+                          <div>
+                            {option.features.map((feature, index) => (
+                              <Tag key={index} style={{ marginBottom: 4 }}>
+                                {feature}
+                              </Tag>
+                            ))}
+                          </div>
+                        </Card>
+                      </Radio.Button>
+                    </Col>
+                  ))}
+                </Row>
+              </Radio.Group>
+            </Form.Item>
+          </Form>
+        </>
+      )}
 
       <Card style={{ marginTop: 16, background: '#fafafa' }}>
         <Title level={5}>存储类型选择建议</Title>
@@ -97,7 +136,7 @@ const TechnicalForm: React.FC<TechnicalFormProps> = ({ value, onChange }) => {
               <Text strong>回看比例 &lt; 10%</Text>：推荐 S3 Glacier IR，存储成本更低
             </li>
             <li>
-              <Text strong>混合策略</Text>：可使用生命周期策略，先存 Standard，过期后转 Glacier IR
+              <Text strong>混合策略</Text>：使用预设模板或自定义配置，先存 Standard，过期后转 Glacier IR，优化成本
             </li>
           </ul>
         </Paragraph>
