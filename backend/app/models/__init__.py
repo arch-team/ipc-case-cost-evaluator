@@ -24,6 +24,14 @@ from app.models.pricing import (
     S3Pricing,
     PricingLoader,
 )
+from app.models.results import (
+    CostBreakdown,
+    IntermediateMetrics,
+    CostSummary,
+    ComparisonItem,
+    Recommendation,
+    ComparisonResult,
+)
 
 __all__ = [
     # Enums
@@ -45,4 +53,11 @@ __all__ = [
     "DataTransferPricing",
     "S3Pricing",
     "PricingLoader",
+    # Results
+    "CostBreakdown",
+    "IntermediateMetrics",
+    "CostSummary",
+    "ComparisonItem",
+    "Recommendation",
+    "ComparisonResult",
 ]
