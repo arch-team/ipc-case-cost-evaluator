@@ -7,7 +7,7 @@ from app.models.dimensions import (
     PricingDimensions,
     CostCalculationInput,
 )
-from app.models.enums import RecordingMode, VideoQuality, StorageClass
+from app.models.enums import RecordingMode, VideoQuality
 from app.models.results import Recommendation
 
 

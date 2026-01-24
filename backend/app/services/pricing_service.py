@@ -233,7 +233,7 @@ class PricingService:
             self._cache.set(region, pricing, metadata)
             logger.info(f"从本地文件加载定价: {region}")
             return pricing, metadata
-        except ValueError as e:
+        except ValueError:
             logger.error(f"本地定价文件不存在: {region}")
             raise
 

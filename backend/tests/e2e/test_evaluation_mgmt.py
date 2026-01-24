@@ -4,7 +4,6 @@
 
 测试流程：登录 → 列出评估 → 查看详情 → 更新评估 → 删除评估
 """
-import pytest
 from fastapi.testclient import TestClient
 
 from tests.e2e.conftest import build_evaluation_request

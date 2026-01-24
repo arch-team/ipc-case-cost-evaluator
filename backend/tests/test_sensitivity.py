@@ -8,7 +8,7 @@ from app.models.dimensions import (
     CostCalculationInput,
 )
 from app.models.enums import RecordingMode, VideoQuality, StorageClass
-from app.models.results import SensitivityAnalysis, SensitivityItem
+from app.models.results import SensitivityAnalysis
 
 
 class TestSensitivityAnalyzer:

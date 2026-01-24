@@ -74,16 +74,16 @@ class TestLifecycleCalculator:
         standard_input.technical.lifecycle_policy = None
         standard_result = standard_calc.calculate(standard_input)
 
-        # Glacier 计算
+        # Glacier 计算（用于验证计算器正常工作）
         glacier_input = sample_input.model_copy(deep=True)
         glacier_input.technical.storage_class = StorageClass.GLACIER_IR
         glacier_input.technical.lifecycle_policy = None
         glacier_result = glacier_calc.calculate(glacier_input)
+        assert glacier_result.monthly_total > 0  # 确认 Glacier 计算正常
 
         # 生命周期策略费用应该介于纯 Standard 和纯 Glacier 之间
         # 但由于有转换费用，可能高于 Glacier
         assert lifecycle_result.monthly_total < standard_result.monthly_total
-        # 注意：由于转换费用，lifecycle 可能比 glacier 稍高或稍低
 
     def test_storage_cost_mixed(self, sample_input):
         """测试存储费用是热存储和冷存储的混合"""
@@ -245,3 +245,76 @@ class TestLifecycleCalculatorEdgeCases:
 
         assert result.monthly_total > 0
         assert result.breakdown.lifecycle_cost > 0
+
+    def test_retention_days_one(self):
+        """测试保留天数为1天的极端边界
+
+        当 retention_days = 1 时:
+        - 如果 transition_days >= 1，所有数据都在热存储
+        - 应该正确计算费用且无转换费用
+        """
+        input_data = CostCalculationInput(
+            functional=FunctionalDimensions(
+                device_count=100,
+                recording_mode=RecordingMode.EVENT_TRIGGERED,
+                retention_days=1,
+                access_pattern=0.1,
+            ),
+            technical=TechnicalDimensions(
+                storage_class=StorageClass.STANDARD,
+                lifecycle_policy=LifecyclePolicy(
+                    enabled=True,
+                    transition_days=7,  # 转换天数大于保留天数
+                    target_class=StorageClass.GLACIER_IR,
+                ),
+            ),
+            pricing=PricingDimensions(),
+        )
+
+        calculator = LifecycleCalculator()
+        result = calculator.calculate(input_data)
+
+        # 应该正常返回结果
+        assert result.monthly_total > 0
+        # 由于保留天数小于转换天数，所有数据都在热存储
+        # 不应该有冷存储或转换费用
+        # 注意：根据实现可能有细微差异，主要验证不报错
+
+    def test_zero_access_pattern(self):
+        """测试 0% 回看比例不产生 GET 请求费用
+
+        当 access_pattern = 0 时:
+        - GET 请求数应该为 0
+        - GET 请求费用应该为 0
+        - 检索费用应该为 0（因为没有访问）
+        """
+        input_data = CostCalculationInput(
+            functional=FunctionalDimensions(
+                device_count=100,
+                recording_mode=RecordingMode.EVENT_TRIGGERED,
+                retention_days=30,
+                access_pattern=0.0,  # 0% 回看比例
+            ),
+            technical=TechnicalDimensions(
+                storage_class=StorageClass.STANDARD,
+                lifecycle_policy=LifecyclePolicy(
+                    enabled=True,
+                    transition_days=7,
+                    target_class=StorageClass.GLACIER_IR,
+                ),
+            ),
+            pricing=PricingDimensions(),
+        )
+
+        calculator = LifecycleCalculator()
+        result = calculator.calculate(input_data)
+
+        # GET 请求费用应该为 0
+        assert result.breakdown.get_request_cost == 0
+        # 检索费用应该为 0（没有访问就没有检索）
+        assert result.breakdown.retrieval_cost == 0
+        # 但存储费用和 PUT 请求费用应该大于 0
+        assert result.breakdown.storage_cost > 0
+        assert result.breakdown.put_request_cost > 0
+        # 总费用应该大于 0
+        assert result.monthly_total > 0

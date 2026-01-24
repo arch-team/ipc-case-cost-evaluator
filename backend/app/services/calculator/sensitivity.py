@@ -2,8 +2,6 @@
 from typing import List, Optional
 from app.models.dimensions import (
     CostCalculationInput,
-    FunctionalDimensions,
-    TechnicalDimensions,
 )
 from app.models.results import SensitivityAnalysis, SensitivityItem
 from app.models.enums import StorageClass

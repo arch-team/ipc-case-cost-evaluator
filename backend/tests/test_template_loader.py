@@ -1,6 +1,6 @@
 """生命周期模板加载器测试"""
 import pytest
-from app.services.template_loader import TemplateLoader, LifecycleTemplate
+from app.services.template_loader import TemplateLoader
 from app.models.dimensions import LifecyclePolicy
 
 

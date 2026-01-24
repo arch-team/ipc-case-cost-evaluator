@@ -4,7 +4,6 @@
 
 测试流程：注册 → 获取 Token → 成本计算 → 保存评估 → 查看评估 → 导出报告
 """
-import pytest
 from fastapi.testclient import TestClient
 
 from tests.e2e.conftest import build_export_request, build_evaluation_request

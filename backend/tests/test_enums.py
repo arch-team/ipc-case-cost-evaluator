@@ -1,5 +1,4 @@
 """枚举类型测试"""
-import pytest
 from app.models.enums import (
     RecordingMode,
     VideoQuality,

@@ -287,3 +287,159 @@ class TestCalculateWithDetails:
 
         assert details.stage_breakdowns is not None
         assert len(details.stage_breakdowns) == 2  # 两个阶段
+
+
+class TestDataTransferTiers:
+    """数据传输阶梯计费测试"""
+
+    def test_transfer_tiers_under_10tb(self):
+        """测试 10TB 以下使用第一阶梯价格 ($0.114/GB)
+
+        AWS 数据传输出站定价:
+        - 前 10TB: $0.114/GB
+        - 10-50TB: $0.089/GB
+        - 50-150TB: $0.086/GB
+        - 150TB 以上: $0.084/GB
+        """
+        # 使用一个较小规模场景，确保传输量在 10TB 以下
+        input_data = CostCalculationInput(
+            functional=FunctionalDimensions(
+                device_count=100,
+                recording_mode=RecordingMode.EVENT_TRIGGERED,
+                events_per_day=400,
+                event_duration_sec=15,
+                retention_days=30,
+                access_pattern=0.1,  # 10% 回看
+            ),
+            technical=TechnicalDimensions(
+                storage_class=StorageClass.STANDARD,
+                lifecycle_policy=LifecyclePolicy(
+                    enabled=True,
+                    stages=[
+                        LifecycleStage(start_day=1, end_day=7, storage_class=StorageClass.STANDARD),
+                        LifecycleStage(start_day=8, end_day=30, storage_class=StorageClass.GLACIER_IR),
+                    ],
+                ),
+            ),
+            pricing=PricingDimensions(region="ap-northeast-1"),
+        )
+
+        calculator = LifecycleCalculator()
+        _, details = calculator.calculate_with_details(input_data)
+
+        # 验证有数据传输费用项
+        assert details.data_transfer_cost is not None
+        transfer_cost = details.data_transfer_cost
+
+        # 验证有阶梯明细
+        assert transfer_cost.tiers is not None
+        assert len(transfer_cost.tiers) >= 1
+
+        # 第一阶梯应该是 "前 10TB"
+        first_tier = transfer_cost.tiers[0]
+        assert first_tier.tier_name == "前 10TB"
+        assert first_tier.unit_price == 0.114  # $0.114/GB
+        assert first_tier.range_start_gb == 0
+        assert first_tier.range_end_gb == 10 * 1024  # 10TB = 10240GB
+
+    def test_transfer_tiers_calculation_accuracy(self):
+        """测试数据传输阶梯计算准确性"""
+        input_data = CostCalculationInput(
+            functional=FunctionalDimensions(
+                device_count=100,
+                recording_mode=RecordingMode.EVENT_TRIGGERED,
+                events_per_day=400,
+                event_duration_sec=15,
+                retention_days=30,
+                access_pattern=0.05,  # 5% 回看
+            ),
+            technical=TechnicalDimensions(
+                storage_class=StorageClass.STANDARD,
+                lifecycle_policy=LifecyclePolicy(
+                    enabled=True,
+                    stages=[
+                        LifecycleStage(start_day=1, end_day=7, storage_class=StorageClass.STANDARD),
+                        LifecycleStage(start_day=8, end_day=30, storage_class=StorageClass.GLACIER_IR),
+                    ],
+                ),
+            ),
+            pricing=PricingDimensions(region="ap-northeast-1"),
+        )
+
+        calculator = LifecycleCalculator()
+        _, details = calculator.calculate_with_details(input_data)
+
+        transfer_cost = details.data_transfer_cost
+
+        # 验证阶梯费用总和等于总费用
+        if transfer_cost.tiers:
+            tiers_total = sum(t.amount for t in transfer_cost.tiers)
+            assert abs(tiers_total - transfer_cost.amount) < 0.01  # 允许舍入误差
+
+    def test_transfer_cost_with_zero_access(self):
+        """测试 0% 访问时数据传输费用为 0"""
+        input_data = CostCalculationInput(
+            functional=FunctionalDimensions(
+                device_count=100,
+                recording_mode=RecordingMode.EVENT_TRIGGERED,
+                retention_days=30,
+                access_pattern=0.0,  # 0% 回看
+            ),
+            technical=TechnicalDimensions(
+                storage_class=StorageClass.STANDARD,
+                lifecycle_policy=LifecyclePolicy(
+                    enabled=True,
+                    stages=[
+                        LifecycleStage(start_day=1, end_day=7, storage_class=StorageClass.STANDARD),
+                        LifecycleStage(start_day=8, end_day=30, storage_class=StorageClass.GLACIER_IR),
+                    ],
+                ),
+            ),
+            pricing=PricingDimensions(region="ap-northeast-1"),
+        )
+
+        calculator = LifecycleCalculator()
+        _, details = calculator.calculate_with_details(input_data)
+
+        # 0% 访问时，传输量应为 0，费用应为 0
+        assert details.data_transfer_cost.quantity == 0
+        assert details.data_transfer_cost.amount == 0
+
+    def test_transfer_tiers_structure(self):
+        """测试阶梯结构的正确性"""
+        input_data = CostCalculationInput(
+            functional=FunctionalDimensions(
+                device_count=500,
+                recording_mode=RecordingMode.EVENT_TRIGGERED,
+                events_per_day=800,
+                event_duration_sec=30,
+                retention_days=60,
+                access_pattern=0.2,  # 20% 回看产生更多传输
+            ),
+            technical=TechnicalDimensions(
+                storage_class=StorageClass.STANDARD,
+                lifecycle_policy=LifecyclePolicy(
+                    enabled=True,
+                    stages=[
+                        LifecycleStage(start_day=1, end_day=7, storage_class=StorageClass.STANDARD),
+                        LifecycleStage(start_day=8, end_day=60, storage_class=StorageClass.GLACIER_IR),
+                    ],
+                ),
+            ),
+            pricing=PricingDimensions(region="ap-northeast-1"),
+        )
+
+        calculator = LifecycleCalculator()
+        _, details = calculator.calculate_with_details(input_data)
+
+        # 验证阶梯明细中每个阶梯都有必要字段
+        for tier in details.data_transfer_cost.tiers:
+            assert hasattr(tier, 'tier_name')
+            assert hasattr(tier, 'range_start_gb')
+            assert hasattr(tier, 'unit_price')
+            assert hasattr(tier, 'quantity_gb')
+            assert hasattr(tier, 'amount')
+            # 单价应大于 0
+            assert tier.unit_price > 0
+            # 使用量应大于等于 0
+            assert tier.quantity_gb >= 0

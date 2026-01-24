@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 from typing import Optional, List
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/scenarios", tags=["场景"])
 

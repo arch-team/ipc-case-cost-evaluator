@@ -1,5 +1,4 @@
 """预设场景 API 测试"""
-import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 

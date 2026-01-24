@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from app.models.dimensions import CostCalculationInput
-from app.models.results import ComparisonResult, Recommendation
+from app.models.results import Recommendation
 from app.models.pricing import PricingLoader
 from app.services.calculator.comparator import StorageComparator
 from app.services.calculator.recommender import StorageRecommender

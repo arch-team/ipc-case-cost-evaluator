@@ -4,7 +4,6 @@
 
 测试流程：输入大规模参数 → 计算成本 → 敏感度分析 → 方案对比 → 导出完整报告
 """
-import pytest
 import time
 from fastapi.testclient import TestClient
 

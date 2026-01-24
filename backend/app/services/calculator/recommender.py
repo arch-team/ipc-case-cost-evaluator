@@ -1,5 +1,5 @@
 """存储优化推荐器"""
-from typing import Dict, List, Optional
+from typing import Dict, List
 from app.models.dimensions import CostCalculationInput
 from app.models.results import Recommendation
 from app.services.calculator.comparator import StorageComparator

@@ -4,7 +4,6 @@
 
 测试流程：查询区域列表 → 查询多区域定价 → 计算多区域成本 → 对比分析
 """
-import pytest
 from fastapi.testclient import TestClient
 
 from tests.e2e.conftest import build_evaluation_request

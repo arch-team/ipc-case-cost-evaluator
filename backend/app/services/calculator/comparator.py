@@ -1,5 +1,4 @@
 """存储方案对比器"""
-from typing import Optional
 from app.models.dimensions import (
     CostCalculationInput,
     TechnicalDimensions,

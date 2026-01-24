@@ -4,7 +4,6 @@
 
 测试流程：浏览预设 → 选择预设 → 修改参数 → 计算成本 → 保存评估
 """
-import pytest
 from fastapi.testclient import TestClient
 
 from tests.e2e.conftest import build_evaluation_request

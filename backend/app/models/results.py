@@ -3,7 +3,6 @@
 定义成本计算的输出结果，包括费用明细、成本汇总、方案对比等模型。
 """
 from datetime import datetime
-from decimal import Decimal
 from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field, computed_field

@@ -4,7 +4,7 @@
 包括区域定价加载、价格查询和缓存机制测试。
 """
 import pytest
-from app.models.pricing import S3Pricing, PricingLoader, StorageClassPricing
+from app.models.pricing import PricingLoader, StorageClassPricing
 from app.models.enums import StorageClass
 
 

@@ -4,7 +4,6 @@
 
 测试流程：计算 Standard → 计算 Glacier → 方案对比 → 获取推荐 → 导出对比报告
 """
-import pytest
 from fastapi.testclient import TestClient
 
 from tests.e2e.conftest import build_export_request
