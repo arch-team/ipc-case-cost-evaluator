@@ -14,6 +14,7 @@ import TechnicalForm from '../components/calculator/TechnicalForm';
 import PricingForm from '../components/calculator/PricingForm';
 import ResultDisplay from '../components/calculator/ResultDisplay';
 import ComparisonDisplay from '../components/comparison/ComparisonDisplay';
+import ScenarioSelector from '../components/calculator/ScenarioSelector';
 
 const Calculator: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -40,6 +41,7 @@ const Calculator: React.FC = () => {
   const [comparison, setComparison] = useState<ComparisonResult | null>(null);
 
   const steps = [
+    { title: '选择场景', description: '快速开始或自定义' },
     { title: '功能配置', description: '设备和录像参数' },
     { title: '技术选项', description: '存储类型' },
     { title: '价格设置', description: '区域和折扣' },
@@ -55,7 +57,7 @@ const Calculator: React.FC = () => {
       ]);
       setResult(calcResult);
       setComparison(compResult);
-      setCurrentStep(3);
+      setCurrentStep(4);
     } catch (error) {
       message.error('计算失败，请检查输入参数');
       console.error(error);
@@ -96,7 +98,7 @@ const Calculator: React.FC = () => {
   };
 
   const handleNext = () => {
-    if (currentStep === 2) {
+    if (currentStep === 3) {
       handleCalculate();
     } else {
       setCurrentStep(currentStep + 1);
@@ -117,26 +119,36 @@ const Calculator: React.FC = () => {
     switch (currentStep) {
       case 0:
         return (
+          <ScenarioSelector
+            onSelect={(selectedInput) => {
+              setInput(selectedInput);
+              setCurrentStep(1);
+            }}
+            onCustom={() => setCurrentStep(1)}
+          />
+        );
+      case 1:
+        return (
           <FunctionalForm
             value={input.functional}
             onChange={(functional) => setInput({ ...input, functional })}
           />
         );
-      case 1:
+      case 2:
         return (
           <TechnicalForm
             value={input.technical}
             onChange={(technical) => setInput({ ...input, technical })}
           />
         );
-      case 2:
+      case 3:
         return (
           <PricingForm
             value={input.pricing}
             onChange={(pricing) => setInput({ ...input, pricing })}
           />
         );
-      case 3:
+      case 4:
         return (
           <Row gutter={[16, 16]}>
             <Col span={24}>
@@ -162,17 +174,17 @@ const Calculator: React.FC = () => {
         {renderStepContent()}
 
         <div style={{ marginTop: 24, textAlign: 'right' }}>
-          {currentStep > 0 && currentStep < 3 && (
+          {currentStep > 0 && currentStep < 4 && (
             <Button style={{ marginRight: 8 }} onClick={handlePrev}>
               上一步
             </Button>
           )}
-          {currentStep < 3 && (
+          {currentStep > 0 && currentStep < 4 && (
             <Button type="primary" onClick={handleNext} loading={loading}>
-              {currentStep === 2 ? '开始计算' : '下一步'}
+              {currentStep === 3 ? '开始计算' : '下一步'}
             </Button>
           )}
-          {currentStep === 3 && (
+          {currentStep === 4 && (
             <Button type="primary" onClick={handleReset}>
               重新计算
             </Button>

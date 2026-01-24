@@ -57,6 +57,8 @@ class ExcelExporter:
         self._create_summary_sheet(wb, title, result)
         self._create_breakdown_sheet(wb, result)
         self._create_input_sheet(wb, input_data)
+        self._create_trend_sheet(wb, result)
+        self._create_optimization_sheet(wb, result, comparison)
 
         if comparison:
             self._create_comparison_sheet(wb, comparison)
@@ -286,3 +288,148 @@ class ExcelExporter:
             StorageClass.GLACIER_IR: "S3 Glacier Instant Retrieval",
         }
         return labels.get(storage_class, str(storage_class))
+
+    def _create_trend_sheet(self, wb: Workbook, result: CostSummary) -> None:
+        """创建成本趋势表 (12个月预测)"""
+        ws = wb.create_sheet("成本趋势")
+
+        # 表头
+        headers = [
+            "月份", "存储量 (GB)", "存储费用 ($)", "请求费用 ($)",
+            "其他费用 ($)", "月度总费用 ($)", "累计总费用 ($)"
+        ]
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.font = self.header_font_white
+            cell.fill = self.header_fill
+            cell.border = self.border
+            cell.alignment = Alignment(horizontal="center")
+
+        # 12个月数据
+        cumulative = 0.0
+        storage_gb = result.metrics.avg_storage_gb if result.metrics else 0
+        storage_cost = result.breakdown.storage_cost
+        request_cost = result.breakdown.put_request_cost + result.breakdown.get_request_cost
+        other_cost = (
+            (result.breakdown.retrieval_cost or 0) +
+            (result.breakdown.data_transfer_cost or 0) +
+            (result.breakdown.lifecycle_cost or 0)
+        )
+        monthly_total = result.monthly_total
+
+        for month in range(1, 13):
+            row = month + 1
+            cumulative += monthly_total
+
+            ws.cell(row=row, column=1, value=f"第 {month} 个月").border = self.border
+            ws.cell(row=row, column=2, value=f"{storage_gb:.2f}").border = self.border
+            ws.cell(row=row, column=3, value=f"{storage_cost:.2f}").border = self.border
+            ws.cell(row=row, column=4, value=f"{request_cost:.2f}").border = self.border
+            ws.cell(row=row, column=5, value=f"{other_cost:.2f}").border = self.border
+            ws.cell(row=row, column=6, value=f"{monthly_total:.2f}").border = self.border
+            ws.cell(row=row, column=7, value=f"{cumulative:.2f}").border = self.border
+
+        # 合计行
+        row = 14
+        ws.cell(row=row, column=1, value="年度合计").font = Font(bold=True)
+        ws.cell(row=row, column=1).border = self.border
+        ws.cell(row=row, column=2, value="-").border = self.border
+        ws.cell(row=row, column=3, value=f"{storage_cost * 12:.2f}").border = self.border
+        ws.cell(row=row, column=3).font = Font(bold=True)
+        ws.cell(row=row, column=4, value=f"{request_cost * 12:.2f}").border = self.border
+        ws.cell(row=row, column=4).font = Font(bold=True)
+        ws.cell(row=row, column=5, value=f"{other_cost * 12:.2f}").border = self.border
+        ws.cell(row=row, column=5).font = Font(bold=True)
+        ws.cell(row=row, column=6, value=f"{result.yearly_total:.2f}").border = self.border
+        ws.cell(row=row, column=6).font = Font(bold=True)
+        ws.cell(row=row, column=7, value=f"{cumulative:.2f}").border = self.border
+        ws.cell(row=row, column=7).font = Font(bold=True)
+
+        # 设置列宽
+        for col in range(1, 8):
+            ws.column_dimensions[get_column_letter(col)].width = 16
+
+    def _create_optimization_sheet(
+        self,
+        wb: Workbook,
+        result: CostSummary,
+        comparison: Optional[ComparisonResult] = None
+    ) -> None:
+        """创建优化建议表"""
+        ws = wb.create_sheet("优化建议")
+
+        # 当前方案分析标题
+        ws["A1"] = "当前方案分析"
+        ws["A1"].font = self.title_font
+        ws.merge_cells("A1:C1")
+
+        row = 3
+
+        # 如果有对比结果和推荐，显示推荐信息
+        if comparison and comparison.recommendation:
+            rec = comparison.recommendation
+            ws[f"A{row}"] = "推荐方案"
+            ws[f"A{row}"].font = Font(bold=True)
+            ws[f"B{row}"] = rec.recommended_option
+            row += 1
+
+            ws[f"A{row}"] = "推荐理由"
+            ws[f"A{row}"].font = Font(bold=True)
+            ws[f"B{row}"] = rec.reason
+            row += 1
+
+            if rec.potential_savings:
+                ws[f"A{row}"] = "潜在节省"
+                ws[f"A{row}"].font = Font(bold=True)
+                ws[f"B{row}"] = f"${rec.potential_savings:.2f}/月 (${rec.potential_savings * 12:.2f}/年)"
+                row += 1
+
+            row += 1
+
+        # 费用构成分析
+        ws[f"A{row}"] = "费用构成分析"
+        ws[f"A{row}"].font = self.header_font
+        ws.merge_cells(f"A{row}:C{row}")
+        row += 1
+
+        # 计算各项占比
+        total = result.monthly_total
+        if total > 0:
+            storage_pct = result.breakdown.storage_cost / total * 100
+            request_pct = (result.breakdown.put_request_cost + result.breakdown.get_request_cost) / total * 100
+
+            ws[f"A{row}"] = "存储费用占比"
+            ws[f"B{row}"] = f"{storage_pct:.1f}%"
+            row += 1
+
+            ws[f"A{row}"] = "请求费用占比"
+            ws[f"B{row}"] = f"{request_pct:.1f}%"
+            row += 1
+
+        row += 1
+
+        # 优化建议列表
+        ws[f"A{row}"] = "优化建议"
+        ws[f"A{row}"].font = self.header_font
+        ws.merge_cells(f"A{row}:C{row}")
+        row += 1
+
+        suggestions = [
+            "1. 生命周期策略：如存储周期超过 90 天，建议启用生命周期策略自动转换到 Glacier IR，可节省 60-80% 存储成本",
+            "2. 存储类型选择：如访问比例低于 5%，可考虑直接使用 Glacier IR 存储，大幅降低存储成本",
+            "3. 企业折扣：大规模部署 (>5000 设备) 建议联系 AWS 申请企业折扣，通常可获得 10-20% 优惠",
+            "4. 预留容量：长期稳定存储需求可考虑购买预留存储容量，降低单位成本",
+            "5. 分片策略优化：适当增加分片时长可减少 PUT 请求数量，降低请求费用",
+            "6. 区域选择：评估业务需求后选择成本较低的区域 (如 us-east-1)，可节省 5-15% 成本",
+            "7. 数据传输优化：减少不必要的数据传输，使用 CloudFront 缓存热点数据",
+        ]
+
+        for suggestion in suggestions:
+            ws[f"A{row}"] = suggestion
+            ws.merge_cells(f"A{row}:C{row}")
+            row += 1
+
+        # 设置列宽
+        ws.column_dimensions["A"].width = 80
+        ws.column_dimensions["B"].width = 30
+        ws.column_dimensions["C"].width = 20

@@ -9,6 +9,10 @@ import type {
   Scenario,
   RegionPricing,
   Evaluation,
+  ShareCreate,
+  ShareResponse,
+  SharedEvaluation,
+  ScenarioCategory,
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
@@ -67,6 +71,18 @@ export const scenarioApi = {
   getScenarios: async (): Promise<Scenario[]> => {
     const response = await apiClient.get<{ scenarios: Scenario[] }>('/scenarios');
     return response.data.scenarios;
+  },
+
+  // 获取场景列表和分类
+  list: async (): Promise<{ scenarios: Scenario[]; categories: ScenarioCategory[] }> => {
+    const response = await apiClient.get<{ scenarios: Scenario[]; categories: ScenarioCategory[] }>('/scenarios');
+    return response.data;
+  },
+
+  // 获取单个场景
+  get: async (id: string): Promise<Scenario> => {
+    const response = await apiClient.get<Scenario>(`/scenarios/${id}`);
+    return response.data;
   },
 };
 
@@ -177,6 +193,39 @@ export const authApi = {
   // 获取当前用户
   getCurrentUser: async (): Promise<{ id: string; email: string; name: string }> => {
     const response = await apiClient.get('/auth/me');
+    return response.data;
+  },
+};
+
+/**
+ * 分享 API
+ */
+export const shareApi = {
+  // 创建分享链接
+  create: async (evaluationId: string, data: ShareCreate = {}): Promise<ShareResponse> => {
+    const response = await apiClient.post<ShareResponse>(
+      `/evaluations/${evaluationId}/share`,
+      data
+    );
+    return response.data;
+  },
+
+  // 获取分享的评估内容 (公开接口)
+  get: async (token: string): Promise<SharedEvaluation> => {
+    const response = await apiClient.get<SharedEvaluation>(`/shared/${token}`);
+    return response.data;
+  },
+
+  // 删除分享链接
+  delete: async (evaluationId: string, token: string): Promise<void> => {
+    await apiClient.delete(`/evaluations/${evaluationId}/share/${token}`);
+  },
+
+  // 列出评估的所有分享链接
+  list: async (evaluationId: string): Promise<{ shares: ShareResponse[] }> => {
+    const response = await apiClient.get<{ shares: ShareResponse[] }>(
+      `/evaluations/${evaluationId}/shares`
+    );
     return response.data;
   },
 };

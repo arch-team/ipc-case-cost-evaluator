@@ -3,8 +3,9 @@
  */
 import React from 'react';
 import { Card, Row, Col, Statistic, Table, Button, Typography, Divider } from 'antd';
-import { DownloadOutlined, DollarOutlined } from '@ant-design/icons';
+import { DownloadOutlined, DollarOutlined, PieChartOutlined } from '@ant-design/icons';
 import type { CostSummary } from '../../types';
+import CostPieChart from './CostPieChart';
 
 const { Title, Text } = Typography;
 
@@ -163,27 +164,43 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, onExport }) => {
 
       <Divider orientationMargin="0"><Text strong>费用明细</Text></Divider>
 
-      <Table
-        dataSource={breakdownData}
-        columns={columns}
-        pagination={false}
-        summary={() => (
-          <Table.Summary.Row style={{ background: '#fafafa' }}>
-            <Table.Summary.Cell index={0}>
-              <Text strong>合计</Text>
-            </Table.Summary.Cell>
-            <Table.Summary.Cell index={1} align="right">
-              <Text strong>${result.monthly_total.toFixed(2)}</Text>
-            </Table.Summary.Cell>
-            <Table.Summary.Cell index={2} align="right">
-              <Text strong>${result.yearly_total.toFixed(2)}</Text>
-            </Table.Summary.Cell>
-            <Table.Summary.Cell index={3} align="right">
-              <Text strong>100%</Text>
-            </Table.Summary.Cell>
-          </Table.Summary.Row>
-        )}
-      />
+      <Row gutter={24}>
+        <Col xs={24} lg={14}>
+          <Table
+            dataSource={breakdownData}
+            columns={columns}
+            pagination={false}
+            summary={() => (
+              <Table.Summary.Row style={{ background: '#fafafa' }}>
+                <Table.Summary.Cell index={0}>
+                  <Text strong>合计</Text>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={1} align="right">
+                  <Text strong>${result.monthly_total.toFixed(2)}</Text>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={2} align="right">
+                  <Text strong>${result.yearly_total.toFixed(2)}</Text>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={3} align="right">
+                  <Text strong>100%</Text>
+                </Table.Summary.Cell>
+              </Table.Summary.Row>
+            )}
+          />
+        </Col>
+        <Col xs={24} lg={10}>
+          <Card
+            size="small"
+            title={
+              <>
+                <PieChartOutlined /> 费用构成
+              </>
+            }
+          >
+            <CostPieChart breakdown={result.breakdown} />
+          </Card>
+        </Col>
+      </Row>
 
       {result.metrics && (
         <>

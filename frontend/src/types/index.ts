@@ -110,12 +110,39 @@ export interface Evaluation {
   updated_at: string;
 }
 
+// 预设场景功能维度
+export interface ScenarioFunctional {
+  device_count: number;
+  recording_mode: string;
+  video_quality: string;
+  events_per_day?: number;
+  event_duration_sec?: number;
+  retention_days: number;
+  access_pattern: number;
+  segment_strategy?: string;
+  segment_value?: number;
+}
+
+// 预设场景技术维度
+export interface ScenarioTechnical {
+  storage_class: string;
+}
+
+// 预设场景价格维度
+export interface ScenarioPricing {
+  region: string;
+  discount_percent: number;
+}
+
 // 预设场景
 export interface Scenario {
   id: string;
   name: string;
   description: string;
-  input: CostCalculationInput;
+  category: string;
+  functional: ScenarioFunctional;
+  technical: ScenarioTechnical;
+  pricing: ScenarioPricing;
 }
 
 // API 响应
@@ -140,4 +167,40 @@ export interface RegionPricing {
   data_transfer: {
     first_10tb_per_gb: number;
   };
+}
+
+// 分享权限
+export type SharePermission = 'VIEW' | 'DUPLICATE';
+
+// 分享创建请求
+export interface ShareCreate {
+  permission?: SharePermission;
+  expires_days?: number;
+}
+
+// 分享响应
+export interface ShareResponse {
+  share_token: string;
+  share_url: string;
+  permission: SharePermission;
+  expires_at: string;
+  created_at: string;
+}
+
+// 分享的评估内容
+export interface SharedEvaluation {
+  evaluation_id: string;
+  name: string;
+  description: string;
+  input_data: CostCalculationInput;
+  result: CostSummary;
+  permission: SharePermission;
+  created_at: string;
+}
+
+// 场景分类
+export interface ScenarioCategory {
+  id: string;
+  name: string;
+  description: string;
 }

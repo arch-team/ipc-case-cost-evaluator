@@ -3,8 +3,9 @@
  */
 import React from 'react';
 import { Card, Table, Tag, Typography, Alert, Row, Col } from 'antd';
-import { CheckCircleOutlined, SwapOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, SwapOutlined, BarChartOutlined } from '@ant-design/icons';
 import type { ComparisonResult, ComparisonItem } from '../../types';
+import ComparisonChart from './ComparisonChart';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -70,13 +71,29 @@ const ComparisonDisplay: React.FC<ComparisonDisplayProps> = ({ comparison }) => 
         比较不同存储类型的成本，基准方案: {comparison.baseline}
       </Text>
 
-      <Table
-        dataSource={comparison.items}
-        columns={columns}
-        pagination={false}
-        rowKey="name"
-        rowClassName={(record) => (record.is_recommended ? 'ant-table-row-selected' : '')}
-      />
+      <Row gutter={24}>
+        <Col xs={24} lg={12}>
+          <Table
+            dataSource={comparison.items}
+            columns={columns}
+            pagination={false}
+            rowKey="name"
+            rowClassName={(record) => (record.is_recommended ? 'ant-table-row-selected' : '')}
+          />
+        </Col>
+        <Col xs={24} lg={12}>
+          <Card
+            size="small"
+            title={
+              <>
+                <BarChartOutlined /> 费用对比图
+              </>
+            }
+          >
+            <ComparisonChart comparison={comparison} />
+          </Card>
+        </Col>
+      </Row>
 
       {comparison.recommendation && (
         <Card style={{ marginTop: 16 }}>
