@@ -38,8 +38,14 @@ export class ScenarioSelector {
    * 等待场景加载完成
    */
   async waitForScenariosLoaded(): Promise<void> {
-    // 等待加载状态消失
-    await this.loadingSpinner.waitFor({ state: 'hidden', timeout: 10000 });
+    // 等待加载状态消失或者场景卡片/空状态出现
+    await Promise.race([
+      this.loadingSpinner.waitFor({ state: 'hidden', timeout: 15000 }),
+      this.scenarioCards.first().waitFor({ state: 'visible', timeout: 15000 }),
+      this.emptyState.waitFor({ state: 'visible', timeout: 15000 }),
+    ]);
+    // 额外等待确保 React 渲染完成
+    await this.page.waitForTimeout(500);
   }
 
   /**
