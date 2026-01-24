@@ -1,5 +1,5 @@
 """应用配置"""
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 
 
@@ -20,9 +20,10 @@ class Settings(BaseSettings):
     DYNAMODB_SHARES_TABLE: str = "ipc-cost-shares"
     USE_LOCAL_STORAGE: bool = True
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+    )
 
 
 settings = Settings()

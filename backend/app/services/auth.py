@@ -1,10 +1,19 @@
 """用户认证服务"""
 import uuid
+import warnings
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 from jose import jwt, JWTError
-from passlib.context import CryptContext
+
+# 抑制 argon2-cffi 版本访问弃用警告（passlib 内部兼容性问题）
+with warnings.catch_warnings():
+    warnings.filterwarnings(
+        "ignore",
+        message="Accessing argon2.__version__",
+        category=DeprecationWarning,
+    )
+    from passlib.context import CryptContext
 
 from app.core.config import settings
 from app.db.client import get_storage
