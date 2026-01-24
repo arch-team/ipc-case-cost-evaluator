@@ -29,16 +29,12 @@ async def calculate_cost(input_data: CostCalculationInput) -> CostSummary:
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    storage_class = input_data.technical.storage_class
-
     # 根据存储类型选择计算器
-    if storage_class == StorageClass.GLACIER_IR:
-        calculator = S3GlacierCalculator()
-    elif storage_class == StorageClass.STANDARD:
-        calculator = S3StandardCalculator()
-    else:
-        # 默认使用 Standard
-        calculator = S3StandardCalculator()
+    storage_class = input_data.technical.storage_class
+    calculator = (
+        S3GlacierCalculator() if storage_class == StorageClass.GLACIER_IR
+        else S3StandardCalculator()
+    )
 
     try:
         result = calculator.calculate(input_data)

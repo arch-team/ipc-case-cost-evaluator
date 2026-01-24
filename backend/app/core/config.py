@@ -5,19 +5,30 @@ from typing import Optional
 
 class Settings(BaseSettings):
     """应用配置类"""
+    # 应用基本信息
     APP_NAME: str = "IPC Cost Evaluator"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
+
+    # API 配置
     API_V1_PREFIX: str = "/api/v1"
+
+    # 安全配置
     SECRET_KEY: str = "your-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 小时
+
+    # AWS 配置
     AWS_REGION: str = "ap-northeast-1"
     AWS_ACCESS_KEY_ID: Optional[str] = None
     AWS_SECRET_ACCESS_KEY: Optional[str] = None
+
+    # 数据库表配置
     DYNAMODB_USERS_TABLE: str = "ipc-cost-users"
     DYNAMODB_EVALUATIONS_TABLE: str = "ipc-cost-evaluations"
     DYNAMODB_SHARES_TABLE: str = "ipc-cost-shares"
+
+    # 存储配置
     USE_LOCAL_STORAGE: bool = True
 
     model_config = SettingsConfigDict(

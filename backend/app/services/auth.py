@@ -5,6 +5,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 from jose import jwt, JWTError
+from app.core.config import settings
+from app.db.client import get_storage
 
 # 抑制 argon2-cffi 版本访问弃用警告（passlib 内部兼容性问题）
 with warnings.catch_warnings():
@@ -14,9 +16,6 @@ with warnings.catch_warnings():
         category=DeprecationWarning,
     )
     from passlib.context import CryptContext
-
-from app.core.config import settings
-from app.db.client import get_storage
 
 
 # 密码加密上下文
@@ -139,13 +138,12 @@ class AuthService:
             JWT 令牌
         """
         to_encode = data.copy()
-        if expires_delta:
-            expire = datetime.now(timezone.utc) + expires_delta
-        else:
-            expire = datetime.now(timezone.utc) + timedelta(
-                minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
-            )
+        now = datetime.now(timezone.utc)
+
+        # 使用提供的过期时间或默认配置
+        expire = now + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
         to_encode.update({"exp": expire})
+
         return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
     def verify_token(self, token: str) -> Optional[Dict[str, Any]]:
