@@ -1,0 +1,105 @@
+{
+  "templates": [
+    {
+      "id": "short_term_hot",
+      "name": "短期高频",
+      "description": "7天全热存储，适合频繁回看场景",
+      "retention_days": 7,
+      "stages": [
+        {
+          "start_day": 1,
+          "end_day": 7,
+          "storage_class": "STANDARD"
+        }
+      ],
+      "use_cases": [
+        "实时监控场景",
+        "频繁回看需求",
+        "低延迟访问要求"
+      ],
+      "estimated_savings_vs_standard": 0
+    },
+    {
+      "id": "standard_surveillance",
+      "name": "标准监控",
+      "description": "30天混合存储，平衡成本与访问速度",
+      "retention_days": 30,
+      "stages": [
+        {
+          "start_day": 1,
+          "end_day": 7,
+          "storage_class": "STANDARD"
+        },
+        {
+          "start_day": 8,
+          "end_day": 30,
+          "storage_class": "GLACIER_IR"
+        }
+      ],
+      "use_cases": [
+        "一般监控场景",
+        "偶尔回看需求",
+        "成本敏感用户"
+      ],
+      "estimated_savings_vs_standard": 0.6
+    },
+    {
+      "id": "compliance_retention",
+      "name": "合规存储",
+      "description": "90天长期保留，满足合规要求",
+      "retention_days": 90,
+      "stages": [
+        {
+          "start_day": 1,
+          "end_day": 7,
+          "storage_class": "STANDARD"
+        },
+        {
+          "start_day": 8,
+          "end_day": 37,
+          "storage_class": "GLACIER_IR"
+        },
+        {
+          "start_day": 38,
+          "end_day": 90,
+          "storage_class": "DEEP_ARCHIVE"
+        }
+      ],
+      "use_cases": [
+        "法规合规要求",
+        "长期数据保留",
+        "审计追溯需求"
+      ],
+      "estimated_savings_vs_standard": 0.75
+    },
+    {
+      "id": "low_cost_archive",
+      "name": "低成本归档",
+      "description": "180天归档优先，最大化成本节省",
+      "retention_days": 180,
+      "stages": [
+        {
+          "start_day": 1,
+          "end_day": 3,
+          "storage_class": "STANDARD"
+        },
+        {
+          "start_day": 4,
+          "end_day": 180,
+          "storage_class": "DEEP_ARCHIVE"
+        }
+      ],
+      "use_cases": [
+        "极少访问场景",
+        "长期归档需求",
+        "预算受限用户"
+      ],
+      "estimated_savings_vs_standard": 0.9
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "last_updated": "2025-01-24",
+    "description": "IPC 成本评估系统预设生命周期模板"
+  }
+}
