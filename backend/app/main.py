@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.api.routes import calculate
+from app.api.routes import calculate, compare
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -23,6 +23,7 @@ app.add_middleware(
 
 # 注册 API 路由
 app.include_router(calculate.router, prefix=settings.API_V1_PREFIX)
+app.include_router(compare.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/health")
