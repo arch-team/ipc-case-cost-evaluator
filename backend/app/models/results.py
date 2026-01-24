@@ -219,3 +219,39 @@ class ComparisonResult(BaseModel):
             if item.name == name:
                 return item
         return None
+
+
+class SensitivityItem(BaseModel):
+    """敏感度分析项
+
+    单个参数变化对成本影响的分析结果。
+
+    Attributes:
+        parameter: 参数名称
+        change_description: 变化描述
+        original_cost: 原始成本 (USD)
+        new_cost: 新成本 (USD)
+        cost_change: 成本变化金额 (USD)
+        cost_change_percent: 成本变化百分比
+    """
+
+    parameter: str = Field(..., description="参数名称")
+    change_description: str = Field(..., description="变化描述")
+    original_cost: float = Field(..., description="原始成本")
+    new_cost: float = Field(..., description="新成本")
+    cost_change: float = Field(..., description="成本变化金额")
+    cost_change_percent: float = Field(..., description="成本变化百分比")
+
+
+class SensitivityAnalysis(BaseModel):
+    """敏感度分析结果
+
+    多个参数变化对成本影响的综合分析。
+
+    Attributes:
+        base_monthly_cost: 基准月度成本 (USD)
+        items: 敏感度分析项列表
+    """
+
+    base_monthly_cost: float = Field(..., description="基准月度成本")
+    items: List[SensitivityItem] = Field(..., description="分析项列表")
