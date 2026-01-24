@@ -3,11 +3,15 @@
 提供 DynamoDB 表的创建、删除和检查功能。
 用于初始化生产环境或本地测试（LocalStack/DynamoDB Local）。
 """
-import boto3
-from botocore.exceptions import ClientError
+import logging
 from typing import Optional
 
+import boto3
+from botocore.exceptions import ClientError
+
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 def get_dynamodb_resource(endpoint_url: Optional[str] = None):
@@ -111,7 +115,7 @@ def create_table(dynamodb, table_name: str) -> bool:
         是否创建成功
     """
     if table_name not in TABLE_DEFINITIONS:
-        print(f"未知的表名: {table_name}")
+        logger.warning("未知的表名: %s", table_name)
         return False
 
     table_def = TABLE_DEFINITIONS[table_name]
@@ -119,21 +123,21 @@ def create_table(dynamodb, table_name: str) -> bool:
     try:
         # 检查表是否已存在
         dynamodb.meta.client.describe_table(TableName=table_name)
-        print(f"表 {table_name} 已存在")
+        logger.info("表 %s 已存在", table_name)
         return True
     except ClientError as e:
         if e.response["Error"]["Code"] != "ResourceNotFoundException":
-            print(f"检查表时出错: {e}")
+            logger.error("检查表 %s 时出错: %s", table_name, e)
             return False
 
     try:
         table = dynamodb.create_table(**table_def)
         # 等待表创建完成
         table.wait_until_exists()
-        print(f"表 {table_name} 创建成功")
+        logger.info("表 %s 创建成功", table_name)
         return True
     except ClientError as e:
-        print(f"创建表 {table_name} 时出错: {e}")
+        logger.error("创建表 %s 时出错: %s", table_name, e)
         return False
 
 
@@ -152,13 +156,13 @@ def delete_table(dynamodb, table_name: str) -> bool:
         table = dynamodb.Table(table_name)
         table.delete()
         table.wait_until_not_exists()
-        print(f"表 {table_name} 已删除")
+        logger.info("表 %s 已删除", table_name)
         return True
     except ClientError as e:
         if e.response["Error"]["Code"] == "ResourceNotFoundException":
-            print(f"表 {table_name} 不存在")
+            logger.info("表 %s 不存在", table_name)
             return True
-        print(f"删除表 {table_name} 时出错: {e}")
+        logger.error("删除表 %s 时出错: %s", table_name, e)
         return False
 
 

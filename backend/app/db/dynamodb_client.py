@@ -2,11 +2,18 @@
 
 用于生产环境的 AWS DynamoDB 存储实现。
 """
-from typing import Any, Dict, List, Optional
+import logging
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
 import boto3
 from botocore.exceptions import ClientError
 
 from app.core.config import settings
+
+if TYPE_CHECKING:
+    from mypy_boto3_dynamodb.service_resource import Table
+
+logger = logging.getLogger(__name__)
 
 
 class DynamoDBClient:
@@ -42,7 +49,7 @@ class DynamoDBClient:
                 kwargs["aws_secret_access_key"] = settings.AWS_SECRET_ACCESS_KEY
             self._dynamodb = boto3.resource("dynamodb", **kwargs)
 
-    def _get_table(self, table: str):
+    def _get_table(self, table: str) -> "Table":
         """
         获取 DynamoDB 表对象
 
@@ -83,7 +90,12 @@ class DynamoDBClient:
         try:
             response = tbl.get_item(Key={"pk": key})
             return response.get("Item")
-        except ClientError:
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
+            if error_code == "ResourceNotFoundException":
+                logger.warning("表 %s 不存在", table)
+            else:
+                logger.error("获取项目失败 (表=%s, 键=%s): %s", table, key, e)
             return None
 
     def delete(self, table: str, key: str) -> bool:
@@ -106,7 +118,12 @@ class DynamoDBClient:
 
             tbl.delete_item(Key={"pk": key})
             return True
-        except ClientError:
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
+            if error_code == "ResourceNotFoundException":
+                logger.warning("表 %s 不存在", table)
+            else:
+                logger.error("删除项目失败 (表=%s, 键=%s): %s", table, key, e)
             return False
 
     def query(
@@ -149,9 +166,13 @@ class DynamoDBClient:
                     KeyConditionExpression=Key(attribute).eq(value),
                 )
                 return response.get("Items", [])
-            except ClientError:
-                # GSI 不存在时回退到 scan
-                pass
+            except ClientError as e:
+                error_code = e.response.get("Error", {}).get("Code", "Unknown")
+                if error_code == "ValidationException":
+                    # GSI 不存在时回退到 scan
+                    logger.debug("GSI %s 不存在，回退到 scan", gsi_name)
+                else:
+                    logger.warning("GSI 查询失败 (表=%s, GSI=%s): %s", table, gsi_name, e)
 
         # 回退到 scan（效率较低，但保证功能正确）
         from boto3.dynamodb.conditions import Attr
@@ -238,6 +259,10 @@ class DynamoDBClient:
         for table in tables:
             try:
                 self.clear_table(table)
-            except ClientError:
-                # 表可能不存在，忽略错误
-                pass
+            except ClientError as e:
+                error_code = e.response.get("Error", {}).get("Code", "Unknown")
+                if error_code == "ResourceNotFoundException":
+                    # 表不存在，跳过
+                    logger.debug("表 %s 不存在，跳过清理", table)
+                else:
+                    logger.warning("清理表 %s 失败: %s", table, e)

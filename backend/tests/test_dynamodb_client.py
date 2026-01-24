@@ -2,14 +2,15 @@
 
 使用 moto 库模拟 AWS DynamoDB 进行测试。
 """
-import pytest
-import boto3
 from decimal import Decimal
+
+import boto3
+import pytest
 from moto import mock_aws
 
+from app.core.config import settings
 from app.db.dynamodb_client import DynamoDBClient
 from app.db.dynamodb_tables import TABLE_DEFINITIONS
-from app.core.config import settings
 
 
 @pytest.fixture
