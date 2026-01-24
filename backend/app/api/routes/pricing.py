@@ -1,36 +1,50 @@
 """定价查询 API 路由"""
-from typing import Dict, List
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from app.models.pricing import PricingLoader, S3Pricing
 from app.models.enums import StorageClass
+from app.models.pricing import PricingLoader, S3Pricing
+from app.services.pricing_service import get_pricing_service
 
 router = APIRouter(prefix="/pricing", tags=["定价"])
 
 
+# ============================================
+# 响应模型定义
+# ============================================
+
+
 class RegionInfo(BaseModel):
     """区域信息"""
+
     region: str = Field(..., description="区域代码")
     name: str = Field(..., description="区域名称")
 
 
 class RegionsResponse(BaseModel):
     """区域列表响应"""
+
     regions: List[RegionInfo]
 
 
 class StorageClassPricing(BaseModel):
     """存储类型定价"""
+
     storage_per_gb_month: float = Field(..., description="每 GB-月存储费用")
     put_per_1000: float = Field(..., description="每千次 PUT 请求费用")
     get_per_1000: float = Field(..., description="每千次 GET 请求费用")
     retrieval_per_gb: float = Field(default=0, description="每 GB 检索费用")
-    lifecycle_transition_per_1000: float = Field(default=0, description="每千次生命周期转换费用")
+    lifecycle_transition_per_1000: float = Field(
+        default=0, description="每千次生命周期转换费用"
+    )
 
 
 class DataTransferPricing(BaseModel):
     """数据传输定价"""
+
     out_first_10tb_per_gb: float = Field(..., description="前 10TB 每 GB")
     out_next_40tb_per_gb: float = Field(..., description="10-50TB 每 GB")
     out_next_100tb_per_gb: float = Field(..., description="50-150TB 每 GB")
@@ -39,12 +53,52 @@ class DataTransferPricing(BaseModel):
 
 class PricingResponse(BaseModel):
     """定价响应"""
+
     region: str = Field(..., description="区域代码")
     region_name: str = Field(..., description="区域名称")
     currency: str = Field(..., description="货币")
     last_updated: str = Field(..., description="最后更新时间")
-    storage_classes: Dict[str, StorageClassPricing] = Field(..., description="存储类型定价")
+    storage_classes: Dict[str, StorageClassPricing] = Field(
+        ..., description="存储类型定价"
+    )
     data_transfer: DataTransferPricing = Field(..., description="数据传输定价")
+
+
+class CacheStatusItem(BaseModel):
+    """缓存状态项"""
+
+    cached: bool = Field(..., description="是否已缓存")
+    source: str = Field(..., description="数据来源")
+    updated_at: str = Field(..., description="更新时间")
+    is_fallback: bool = Field(..., description="是否为回退数据")
+    age_seconds: float = Field(..., description="缓存年龄（秒）")
+    expires_in_seconds: float = Field(..., description="过期剩余时间（秒）")
+
+
+class PricingStatusResponse(BaseModel):
+    """定价服务状态响应"""
+
+    api_enabled: bool = Field(..., description="API 是否启用")
+    api_available: Optional[bool] = Field(None, description="API 是否可用")
+    fallback_enabled: bool = Field(..., description="本地回退是否启用")
+    cache: Dict[str, CacheStatusItem] = Field(..., description="各区域缓存状态")
+    available_regions: List[str] = Field(..., description="可用区域列表")
+
+
+class PricingRefreshRequest(BaseModel):
+    """定价刷新请求"""
+
+    region: str = Field(..., description="要刷新的区域")
+
+
+class PricingRefreshResponse(BaseModel):
+    """定价刷新响应"""
+
+    success: bool = Field(..., description="是否成功")
+    region: str = Field(..., description="区域")
+    source: str = Field(..., description="数据来源")
+    updated_at: str = Field(..., description="更新时间")
+    is_fallback: bool = Field(..., description="是否为回退数据")
 
 
 # 区域名称映射
@@ -64,10 +118,14 @@ REGION_NAMES = {
 }
 
 
+# ============================================
+# 路由定义（注意：具体路由必须在参数化路由之前）
+# ============================================
+
+
 @router.get("/regions", response_model=RegionsResponse)
 async def list_regions() -> RegionsResponse:
-    """
-    获取支持的区域列表
+    """获取支持的区域列表
 
     Returns:
         可用区域列表
@@ -81,10 +139,63 @@ async def list_regions() -> RegionsResponse:
     return RegionsResponse(regions=regions)
 
 
+@router.get("/status", response_model=PricingStatusResponse)
+async def get_pricing_status() -> PricingStatusResponse:
+    """获取定价服务状态
+
+    返回 API 可用性、缓存状态等信息。
+
+    Returns:
+        定价服务状态
+    """
+    service = get_pricing_service()
+    status = service.get_pricing_status()
+
+    # 转换缓存状态
+    cache_items = {}
+    for region, item in status.get("cache", {}).items():
+        cache_items[region] = CacheStatusItem(**item)
+
+    return PricingStatusResponse(
+        api_enabled=status.get("api_enabled", False),
+        api_available=status.get("api_available"),
+        fallback_enabled=status.get("fallback_enabled", True),
+        cache=cache_items,
+        available_regions=status.get("available_regions", []),
+    )
+
+
+@router.post("/refresh", response_model=PricingRefreshResponse)
+async def refresh_pricing(request: PricingRefreshRequest) -> PricingRefreshResponse:
+    """强制刷新指定区域的定价数据
+
+    清除缓存并重新获取定价数据。
+
+    Args:
+        request: 刷新请求
+
+    Returns:
+        刷新结果
+    """
+    service = get_pricing_service()
+
+    try:
+        pricing, metadata = service.refresh_pricing(request.region)
+        return PricingRefreshResponse(
+            success=True,
+            region=request.region,
+            source=metadata.source,
+            updated_at=metadata.updated_at.isoformat(),
+            is_fallback=metadata.is_fallback,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+# 参数化路由放在最后
 @router.get("/{region}", response_model=PricingResponse)
 async def get_region_pricing(region: str) -> PricingResponse:
-    """
-    获取指定区域的定价信息
+    """获取指定区域的定价信息
 
     Args:
         region: 区域代码

@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.api.routes import calculate, compare, scenarios, pricing, auth, evaluations, export, shares
+from app.api.routes import calculate, compare, scenarios, pricing, auth, evaluations, export, shares, templates
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -30,6 +30,7 @@ app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(evaluations.router, prefix=settings.API_V1_PREFIX)
 app.include_router(export.router, prefix=settings.API_V1_PREFIX)
 app.include_router(shares.router, prefix=settings.API_V1_PREFIX)
+app.include_router(templates.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/health")
