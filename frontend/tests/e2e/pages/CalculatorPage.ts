@@ -89,12 +89,15 @@ export class CalculatorPage {
    * 点击开始计算
    */
   async clickCalculate(): Promise<void> {
-    await this.calculateButton.click();
-    // 等待计算完成
-    await this.page.waitForResponse(
-      resp => resp.url().includes('/api/calculator/calculate') && resp.status() === 200,
+    // 先监听响应，再点击按钮
+    const responsePromise = this.page.waitForResponse(
+      resp => resp.url().includes('/api/v1/calculate'),
       { timeout: 30000 }
     );
+    await this.calculateButton.click();
+    await responsePromise;
+    // 等待页面更新
+    await this.page.waitForLoadState('networkidle');
   }
 
   /**

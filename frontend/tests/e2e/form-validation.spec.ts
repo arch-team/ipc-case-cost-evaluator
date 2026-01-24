@@ -91,13 +91,19 @@ test.describe('表单验证', () => {
 
   test.describe('视频质量选择', () => {
     test('可以选择不同视频质量', async ({ page }) => {
-      const qualities = ['720p', '1080p', '2K', '4K'];
+      // 测试数据：value -> 显示文本的关键部分
+      const qualities: Array<{ value: string; expectedText: RegExp }> = [
+        { value: '720p', expectedText: /720P/i },
+        { value: '1080p', expectedText: /1080P/i },
+        { value: '2K', expectedText: /2K/i },
+        { value: '4K', expectedText: /4K/i },
+      ];
 
-      for (const quality of qualities) {
-        await calculatorPage.functionalForm.selectVideoQuality(quality);
+      for (const { value, expectedText } of qualities) {
+        await calculatorPage.functionalForm.selectVideoQuality(value);
         // 验证选择成功（选择器显示选中值）
         const selector = calculatorPage.functionalForm.videoQualitySelect;
-        await expect(selector).toContainText(quality);
+        await expect(selector).toHaveText(expectedText);
       }
     });
   });

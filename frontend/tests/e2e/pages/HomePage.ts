@@ -17,11 +17,11 @@ export class HomePage {
   constructor(page: Page) {
     this.page = page;
 
-    // 侧边栏菜单项
+    // 侧边栏菜单项 - 使用文本匹配
     this.sider = page.locator('.ant-layout-sider');
-    this.calculatorLink = page.getByRole('menuitem', { name: /成本计算/i });
-    this.evaluationsLink = page.getByRole('menuitem', { name: /评估管理/i });
-    this.settingsLink = page.getByRole('menuitem', { name: /设置/i });
+    this.calculatorLink = page.locator('.ant-menu-item').filter({ hasText: '成本计算' });
+    this.evaluationsLink = page.locator('.ant-menu-item').filter({ hasText: '评估记录' });
+    this.settingsLink = page.locator('.ant-menu-item').filter({ hasText: '设置' });
   }
 
   /**

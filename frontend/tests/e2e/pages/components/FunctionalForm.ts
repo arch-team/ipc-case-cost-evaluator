@@ -28,33 +28,33 @@ export class FunctionalForm {
   constructor(page: Page) {
     this.page = page;
 
-    // 使用表单项标签定位输入框
+    // 使用文本内容定位表单项，然后找到对应的输入框
     this.deviceCountInput = page.locator('.ant-form-item').filter({
-      has: page.locator('label:text("设备数量")')
+      hasText: '设备数量'
     }).locator('.ant-input-number-input');
 
     this.recordingModeSelect = page.locator('.ant-form-item').filter({
-      has: page.locator('label:text("录像模式")')
+      hasText: '录像模式'
     }).locator('.ant-select');
 
     this.videoQualitySelect = page.locator('.ant-form-item').filter({
-      has: page.locator('label:text("视频质量")')
+      hasText: '视频质量'
     }).locator('.ant-select');
 
     this.eventsPerDayInput = page.locator('.ant-form-item').filter({
-      has: page.locator('label:text("每日事件数")')
+      hasText: '每日事件数'
     }).locator('.ant-input-number-input');
 
     this.eventDurationInput = page.locator('.ant-form-item').filter({
-      has: page.locator('label:text("事件时长")')
+      hasText: '事件时长'
     }).locator('.ant-input-number-input');
 
     this.retentionDaysInput = page.locator('.ant-form-item').filter({
-      has: page.locator('label:text("保留天数")')
+      hasText: '保留天数'
     }).locator('.ant-input-number-input');
 
     this.accessPatternSlider = page.locator('.ant-form-item').filter({
-      has: page.locator('label:text("回看比例")')
+      hasText: '回看比例'
     }).locator('.ant-slider');
   }
 

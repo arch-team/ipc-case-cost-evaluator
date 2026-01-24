@@ -57,6 +57,7 @@ class Category(BaseModel):
 class ScenariosResponse(BaseModel):
     """场景列表响应"""
     scenarios: List[Scenario]
+    categories: List[Category] = []
 
 
 class CategoriesResponse(BaseModel):
@@ -93,7 +94,9 @@ async def list_scenarios(
     if category:
         scenarios = [s for s in scenarios if s.get("category") == category]
 
-    return ScenariosResponse(scenarios=scenarios)
+    # 同时返回分类信息
+    categories = data.get("categories", [])
+    return ScenariosResponse(scenarios=scenarios, categories=categories)
 
 
 @router.get("/categories", response_model=CategoriesResponse)

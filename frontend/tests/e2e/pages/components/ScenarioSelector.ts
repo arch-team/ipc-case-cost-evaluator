@@ -21,10 +21,11 @@ export class ScenarioSelector {
 
     // 场景卡片（排除自定义配置卡片）
     this.scenarioCards = page.locator('.ant-card.ant-card-hoverable').filter({
-      hasNot: page.locator('text=自定义配置'),
+      hasNot: page.locator('h5:has-text("自定义配置")'),
     });
-    this.customConfigCard = page.locator('.ant-card').filter({
-      has: page.locator('text=自定义配置'),
+    // 自定义配置卡片 - 精确匹配包含 h5 标题的 hoverable 卡片
+    this.customConfigCard = page.locator('.ant-card.ant-card-hoverable').filter({
+      has: page.locator('h5:has-text("自定义配置")'),
     });
 
     // 加载状态
@@ -38,14 +39,10 @@ export class ScenarioSelector {
    * 等待场景加载完成
    */
   async waitForScenariosLoaded(): Promise<void> {
-    // 等待加载状态消失或者场景卡片/空状态出现
-    await Promise.race([
-      this.loadingSpinner.waitFor({ state: 'hidden', timeout: 15000 }),
-      this.scenarioCards.first().waitFor({ state: 'visible', timeout: 15000 }),
-      this.emptyState.waitFor({ state: 'visible', timeout: 15000 }),
-    ]);
-    // 额外等待确保 React 渲染完成
-    await this.page.waitForTimeout(500);
+    // 等待页面网络空闲
+    await this.page.waitForLoadState('networkidle');
+    // 等待自定义配置卡片出现（必定存在）
+    await this.customConfigCard.waitFor({ state: 'visible', timeout: 10000 });
   }
 
   /**
@@ -62,7 +59,7 @@ export class ScenarioSelector {
   async selectScenario(scenarioName: string): Promise<void> {
     await this.waitForScenariosLoaded();
     const card = this.page.locator('.ant-card.ant-card-hoverable').filter({
-      has: this.page.locator(`text=${scenarioName}`),
+      has: this.page.locator(`h5:has-text("${scenarioName}")`),
     });
     await card.click();
   }
@@ -105,7 +102,7 @@ export class ScenarioSelector {
    */
   async getScenarioTags(scenarioName: string): Promise<string[]> {
     const card = this.page.locator('.ant-card.ant-card-hoverable').filter({
-      has: this.page.locator(`text=${scenarioName}`),
+      has: this.page.locator(`h5:has-text("${scenarioName}")`),
     });
     const tags = card.locator('.ant-tag');
     const tagTexts: string[] = [];

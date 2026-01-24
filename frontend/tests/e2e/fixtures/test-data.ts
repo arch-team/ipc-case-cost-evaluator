@@ -36,7 +36,7 @@ export const smallScaleInput = {
  */
 export const largeScaleInput = {
   deviceCount: 10000,
-  recordingMode: '全天候',
+  recordingMode: '全天候录像',
   videoQuality: '4K',
   retentionDays: 90,
   accessPattern: 0.3,
@@ -58,7 +58,7 @@ export const eventTriggeredConfig = {
  */
 export const continuousConfig = {
   deviceCount: 50,
-  recordingMode: '全天候',
+  recordingMode: '全天候录像',
   retentionDays: 30,
 };
 
@@ -67,7 +67,7 @@ export const continuousConfig = {
  */
 export const scheduledConfig = {
   deviceCount: 100,
-  recordingMode: '定时段',
+  recordingMode: '定时录像',
   retentionDays: 30,
 };
 
@@ -76,8 +76,8 @@ export const scheduledConfig = {
  */
 export const recordingModes = {
   eventTriggered: '事件触发',
-  continuous: '全天候',
-  scheduled: '定时段',
+  continuous: '全天候录像',
+  scheduled: '定时录像',
 };
 
 /**
@@ -136,10 +136,10 @@ export const expectedTexts = {
  * API 端点
  */
 export const apiEndpoints = {
-  calculate: '/api/calculator/calculate',
-  compare: '/api/calculator/compare',
-  scenarios: '/api/scenarios',
-  export: '/api/export/excel',
+  calculate: '/api/v1/calculate',
+  compare: '/api/v1/compare',
+  scenarios: '/api/v1/scenarios',
+  export: '/api/v1/export',
 };
 
 /**

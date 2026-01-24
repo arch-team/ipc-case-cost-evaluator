@@ -124,17 +124,22 @@ test.describe('计算器完整流程', () => {
     await calculatorPage.clickNext();
     await calculatorPage.clickNext();
 
-    // 点击计算按钮
-    const calculatePromise = calculatorPage.calculateButton.click();
+    // 设置响应拦截来延迟 API 响应，以便观察加载状态
+    await page.route('**/api/v1/calculate', async (route) => {
+      // 等待一小段时间，让测试有机会检查加载状态
+      await new Promise(r => setTimeout(r, 500));
+      await route.continue();
+    });
 
-    // 验证按钮进入加载状态
-    await expect(calculatorPage.calculateButton).toHaveClass(/ant-btn-loading/);
+    // 点击计算按钮（不等待完成）
+    const clickPromise = calculatorPage.calculateButton.click();
 
-    // 等待计算完成
-    await page.waitForResponse(
-      resp => resp.url().includes('/api/calculator/calculate'),
-      { timeout: timeouts.apiCall }
-    );
+    // 验证按钮进入加载状态（使用 .ant-btn-loading 或检查 loading 属性）
+    await expect(calculatorPage.calculateButton.locator('.ant-btn-loading-icon')).toBeVisible({ timeout: 2000 });
+
+    // 等待点击完成和结果显示
+    await clickPromise;
+    await page.waitForLoadState('networkidle');
 
     // 验证结果显示
     await calculatorPage.resultDisplay.expectResultsVisible();
