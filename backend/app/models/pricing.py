@@ -66,14 +66,20 @@ class DataTransferPricing(BaseModel):
         """
         if total_gb <= 0:
             return 0
-        if total_gb <= 10 * 1024:  # 10 TB
-            return self.out_first_10tb_per_gb
-        elif total_gb <= 50 * 1024:  # 50 TB
-            return self.out_next_40tb_per_gb
-        elif total_gb <= 150 * 1024:  # 150 TB
-            return self.out_next_100tb_per_gb
-        else:
-            return self.out_over_150tb_per_gb
+
+        # 定义阶梯边界和对应价格
+        tiers = [
+            (10 * 1024, self.out_first_10tb_per_gb),     # 10 TB
+            (50 * 1024, self.out_next_40tb_per_gb),      # 50 TB
+            (150 * 1024, self.out_next_100tb_per_gb),    # 150 TB
+            (float('inf'), self.out_over_150tb_per_gb),  # 超过 150 TB
+        ]
+
+        for threshold, price in tiers:
+            if total_gb <= threshold:
+                return price
+
+        return self.out_over_150tb_per_gb  # 理论上不会到达这里
 
 
 class S3Pricing(BaseModel):
@@ -200,9 +206,28 @@ class PricingLoader:
         Raises:
             ValueError: 当指定的区域不存在定价数据时
         """
+        # 返回缓存的数据
         if region in cls._cache:
             return cls._cache[region]
 
+        # 加载并缓存新数据
+        pricing = cls._load_from_file(region)
+        cls._cache[region] = pricing
+        return pricing
+
+    @classmethod
+    def _load_from_file(cls, region: str) -> S3Pricing:
+        """从文件加载定价数据
+
+        Args:
+            region: AWS 区域代码
+
+        Returns:
+            S3Pricing: 定价信息
+
+        Raises:
+            ValueError: 当区域不存在时
+        """
         pricing_file = cls._pricing_dir / f"{region}.json"
         if not pricing_file.exists():
             available = cls.available_regions()
@@ -213,18 +238,26 @@ class PricingLoader:
         with open(pricing_file, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        # 将存储类型键转换为枚举
-        storage_classes = {}
-        for key, value in data["storage_classes"].items():
-            storage_class = StorageClass(key)
-            storage_classes[storage_class] = StorageClassPricing(**value)
-
-        data["storage_classes"] = storage_classes
+        # 转换数据格式
+        data["storage_classes"] = cls._parse_storage_classes(data["storage_classes"])
         data["data_transfer"] = DataTransferPricing(**data["data_transfer"])
 
-        pricing = S3Pricing(**data)
-        cls._cache[region] = pricing
-        return pricing
+        return S3Pricing(**data)
+
+    @classmethod
+    def _parse_storage_classes(cls, storage_data: Dict) -> Dict[StorageClass, StorageClassPricing]:
+        """解析存储类型定价数据
+
+        Args:
+            storage_data: 原始存储类型数据
+
+        Returns:
+            转换后的存储类型定价字典
+        """
+        return {
+            StorageClass(key): StorageClassPricing(**value)
+            for key, value in storage_data.items()
+        }
 
     @classmethod
     def available_regions(cls) -> List[str]:

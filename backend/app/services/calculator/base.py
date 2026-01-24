@@ -39,23 +39,11 @@ class BaseCalculator:
         Returns:
             每日数据量，单位 GB
         """
-        data_rate_kb = functional.data_rate_kb
-        device_count = functional.device_count
+        # 计算单设备每日录像秒数
+        daily_seconds = BaseCalculator.calculate_daily_recording_seconds(functional)
 
-        if functional.recording_mode == RecordingMode.CONTINUOUS:
-            # 全天候: 24小时不间断录像
-            daily_data_kb = device_count * data_rate_kb * 86400
-        elif functional.recording_mode == RecordingMode.EVENT_TRIGGERED:
-            # 事件触发: 仅在检测到事件时录像
-            events = functional.events_per_day or 0
-            duration = functional.event_duration_sec or 0
-            daily_data_kb = device_count * data_rate_kb * events * duration
-        elif functional.recording_mode == RecordingMode.SCHEDULED:
-            # 定时段: 按预设时间段录像
-            hours = functional.scheduled_hours or 0
-            daily_data_kb = device_count * data_rate_kb * hours * 3600
-        else:
-            daily_data_kb = 0
+        # 计算每日数据量 (KB)
+        daily_data_kb = functional.device_count * functional.data_rate_kb * daily_seconds
 
         # 转换为 GB: KB / 1024 / 1024
         return daily_data_kb / 1024 / 1024
@@ -91,19 +79,15 @@ class BaseCalculator:
         Returns:
             每日录像秒数
         """
-        if functional.recording_mode == RecordingMode.CONTINUOUS:
-            # 全天候: 24小时 = 86400秒
-            return 86400
-        elif functional.recording_mode == RecordingMode.EVENT_TRIGGERED:
-            # 事件触发: 事件数 x 事件时长
-            events = functional.events_per_day or 0
-            duration = functional.event_duration_sec or 0
-            return events * duration
-        elif functional.recording_mode == RecordingMode.SCHEDULED:
-            # 定时段: 小时数 x 3600秒
-            hours = functional.scheduled_hours or 0
-            return hours * 3600
-        return 0
+        # 使用字典映射不同录像模式的计算方式
+        mode_calculators = {
+            RecordingMode.CONTINUOUS: lambda: 86400,  # 全天候: 24小时
+            RecordingMode.EVENT_TRIGGERED: lambda: (functional.events_per_day or 0) * (functional.event_duration_sec or 0),
+            RecordingMode.SCHEDULED: lambda: (functional.scheduled_hours or 0) * 3600,
+        }
+
+        calculator = mode_calculators.get(functional.recording_mode)
+        return calculator() if calculator else 0
 
     @staticmethod
     def calculate_segments_per_day(
@@ -128,25 +112,30 @@ class BaseCalculator:
             每日分片数 (单设备)
         """
         daily_seconds = BaseCalculator.calculate_daily_recording_seconds(functional)
+        segment_value = functional.segment_value
 
-        if functional.segment_strategy == SegmentStrategy.FIXED_DURATION:
-            # 固定时长分片: 按时间分割
-            segment_seconds = functional.segment_value
-            if segment_seconds > 0:
-                return daily_seconds / segment_seconds
-            return 0
-        elif functional.segment_strategy == SegmentStrategy.FIXED_SIZE:
-            # 固定大小分片: 按文件大小分割
-            segment_size_kb = functional.segment_value
-            if segment_size_kb > 0 and functional.device_count > 0:
+        # 使用字典映射不同分片策略的计算方式
+        def fixed_duration():
+            return daily_seconds / segment_value if segment_value > 0 else 0
+
+        def fixed_size():
+            if segment_value > 0 and functional.device_count > 0:
                 # 每设备每日数据量 (KB)
                 daily_data_kb_per_device = (daily_data_gb / functional.device_count) * 1024 * 1024
-                return daily_data_kb_per_device / segment_size_kb
+                return daily_data_kb_per_device / segment_value
             return 0
-        elif functional.segment_strategy == SegmentStrategy.REALTIME_STREAM:
-            # 实时流: 每秒一个请求
+
+        def realtime_stream():
             return daily_seconds
-        return 0
+
+        strategy_calculators = {
+            SegmentStrategy.FIXED_DURATION: fixed_duration,
+            SegmentStrategy.FIXED_SIZE: fixed_size,
+            SegmentStrategy.REALTIME_STREAM: realtime_stream,
+        }
+
+        calculator = strategy_calculators.get(functional.segment_strategy)
+        return calculator() if calculator else 0
 
     @staticmethod
     def calculate_monthly_puts(

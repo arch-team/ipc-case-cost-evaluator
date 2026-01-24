@@ -7,7 +7,20 @@ from enum import Enum
 from typing import NamedTuple
 
 
-class RecordingMode(str, Enum):
+class LabeledEnum(str, Enum):
+    """带标签的枚举基类"""
+
+    @property
+    def label(self) -> str:
+        """获取枚举标签"""
+        return self._get_labels().get(self.value, self.value)
+
+    def _get_labels(self) -> dict:
+        """子类需要实现此方法返回标签字典"""
+        return {}
+
+
+class RecordingMode(LabeledEnum):
     """录像模式
 
     定义 IPC 设备支持的录像模式类型。
@@ -22,15 +35,13 @@ class RecordingMode(str, Enum):
     EVENT_TRIGGERED = "event_triggered"
     SCHEDULED = "scheduled"
 
-    @property
-    def label(self) -> str:
-        """获取中文标签"""
-        labels = {
+    def _get_labels(self) -> dict:
+        """获取中文标签映射"""
+        return {
             "continuous": "全天候",
             "event_triggered": "事件触发",
             "scheduled": "定时段",
         }
-        return labels[self.value]
 
 
 class VideoQualitySpec(NamedTuple):
@@ -66,6 +77,7 @@ class VideoQuality(str, Enum):
     @property
     def spec(self) -> VideoQualitySpec:
         """获取视频质量规格详情"""
+        # 视频质量规格映射表
         specs = {
             "720p": VideoQualitySpec("1280x720", 1000, 125),
             "1080p": VideoQualitySpec("1920x1080", 2500, 312.5),
@@ -85,7 +97,7 @@ class VideoQuality(str, Enum):
         return f"{self.value} ({self.spec.resolution})"
 
 
-class SegmentStrategy(str, Enum):
+class SegmentStrategy(LabeledEnum):
     """分片传输策略
 
     定义视频数据上传到 S3 时的分片策略。
@@ -100,18 +112,16 @@ class SegmentStrategy(str, Enum):
     FIXED_SIZE = "fixed_size"
     REALTIME_STREAM = "realtime_stream"
 
-    @property
-    def label(self) -> str:
-        """获取中文标签"""
-        labels = {
+    def _get_labels(self) -> dict:
+        """获取中文标签映射"""
+        return {
             "fixed_duration": "固定时长",
             "fixed_size": "固定大小",
             "realtime_stream": "实时流",
         }
-        return labels[self.value]
 
 
-class StorageClass(str, Enum):
+class StorageClass(LabeledEnum):
     """S3 存储类型
 
     定义 AWS S3 支持的存储类型。
@@ -126,18 +136,16 @@ class StorageClass(str, Enum):
     GLACIER_IR = "GLACIER_IR"
     DEEP_ARCHIVE = "DEEP_ARCHIVE"
 
-    @property
-    def label(self) -> str:
-        """获取存储类型全称"""
-        labels = {
+    def _get_labels(self) -> dict:
+        """获取存储类型全称映射"""
+        return {
             "STANDARD": "S3 Standard",
             "GLACIER_IR": "S3 Glacier Instant Retrieval",
             "DEEP_ARCHIVE": "S3 Glacier Deep Archive",
         }
-        return labels[self.value]
 
 
-class PricingModel(str, Enum):
+class PricingModel(LabeledEnum):
     """计费模式
 
     定义 AWS S3 的计费模式。
@@ -149,14 +157,12 @@ class PricingModel(str, Enum):
     ON_DEMAND = "on_demand"
     RESERVED = "reserved"
 
-    @property
-    def label(self) -> str:
-        """获取中文标签"""
-        labels = {
+    def _get_labels(self) -> dict:
+        """获取中文标签映射"""
+        return {
             "on_demand": "按需付费",
             "reserved": "预留容量",
         }
-        return labels[self.value]
 
 
 class SharePermission(str, Enum):

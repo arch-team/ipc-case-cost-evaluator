@@ -49,22 +49,23 @@ class CostBreakdown(BaseModel):
             各费用项占总费用的比例，总费用为零时所有比例返回 0
         """
         if self.total == 0:
-            return {
-                "storage_cost": 0,
-                "put_request_cost": 0,
-                "get_request_cost": 0,
-                "retrieval_cost": 0,
-                "data_transfer_cost": 0,
-                "lifecycle_cost": 0,
-            }
+            return {field: 0 for field in self._get_cost_fields()}
+
         return {
-            "storage_cost": self.storage_cost / self.total,
-            "put_request_cost": self.put_request_cost / self.total,
-            "get_request_cost": self.get_request_cost / self.total,
-            "retrieval_cost": self.retrieval_cost / self.total,
-            "data_transfer_cost": self.data_transfer_cost / self.total,
-            "lifecycle_cost": self.lifecycle_cost / self.total,
+            field: getattr(self, field) / self.total
+            for field in self._get_cost_fields()
         }
+
+    def _get_cost_fields(self) -> List[str]:
+        """获取所有成本字段名称"""
+        return [
+            "storage_cost",
+            "put_request_cost",
+            "get_request_cost",
+            "retrieval_cost",
+            "data_transfer_cost",
+            "lifecycle_cost",
+        ]
 
 
 class IntermediateMetrics(BaseModel):
