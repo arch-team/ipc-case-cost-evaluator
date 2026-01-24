@@ -36,7 +36,7 @@ export default defineConfig({
   // 全局测试配置
   use: {
     // 基础 URL
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:5174',
 
     // 收集测试轨迹（失败时）
     trace: 'on-first-retry',
@@ -70,8 +70,8 @@ export default defineConfig({
 
   // Web 服务器配置（可选：自动启动前端服务）
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
+    command: 'npm run dev -- --port 5174',
+    url: 'http://localhost:5174',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },
