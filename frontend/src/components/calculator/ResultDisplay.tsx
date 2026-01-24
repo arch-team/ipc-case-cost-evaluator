@@ -2,10 +2,11 @@
  * 结果展示组件
  */
 import React from 'react';
-import { Card, Row, Col, Statistic, Table, Button, Typography, Divider } from 'antd';
+import { Card, Row, Col, Statistic, Button, Typography, Divider } from 'antd';
 import { DownloadOutlined, DollarOutlined, PieChartOutlined } from '@ant-design/icons';
 import type { CostSummary } from '../../types';
 import CostPieChart from './CostPieChart';
+import CostBreakdownTable from './CostBreakdownTable';
 
 const { Title, Text } = Typography;
 
@@ -15,92 +16,6 @@ interface ResultDisplayProps {
 }
 
 const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, onExport }) => {
-  const breakdownData = [
-    {
-      key: 'storage',
-      name: '存储费用',
-      monthly: result.breakdown.storage_cost,
-      yearly: result.breakdown.storage_cost * 12,
-      percent: (result.breakdown.storage_cost / result.monthly_total) * 100,
-    },
-    {
-      key: 'put',
-      name: 'PUT 请求费用',
-      monthly: result.breakdown.put_request_cost,
-      yearly: result.breakdown.put_request_cost * 12,
-      percent: (result.breakdown.put_request_cost / result.monthly_total) * 100,
-    },
-    {
-      key: 'get',
-      name: 'GET 请求费用',
-      monthly: result.breakdown.get_request_cost,
-      yearly: result.breakdown.get_request_cost * 12,
-      percent: (result.breakdown.get_request_cost / result.monthly_total) * 100,
-    },
-    ...(result.breakdown.retrieval_cost > 0
-      ? [
-          {
-            key: 'retrieval',
-            name: '检索费用',
-            monthly: result.breakdown.retrieval_cost,
-            yearly: result.breakdown.retrieval_cost * 12,
-            percent: (result.breakdown.retrieval_cost / result.monthly_total) * 100,
-          },
-        ]
-      : []),
-    ...(result.breakdown.data_transfer_cost > 0
-      ? [
-          {
-            key: 'transfer',
-            name: '数据传输费用',
-            monthly: result.breakdown.data_transfer_cost,
-            yearly: result.breakdown.data_transfer_cost * 12,
-            percent: (result.breakdown.data_transfer_cost / result.monthly_total) * 100,
-          },
-        ]
-      : []),
-    ...(result.breakdown.lifecycle_cost > 0
-      ? [
-          {
-            key: 'lifecycle',
-            name: '生命周期转换费用',
-            monthly: result.breakdown.lifecycle_cost,
-            yearly: result.breakdown.lifecycle_cost * 12,
-            percent: (result.breakdown.lifecycle_cost / result.monthly_total) * 100,
-          },
-        ]
-      : []),
-  ];
-
-  const columns = [
-    {
-      title: '费用类型',
-      dataIndex: 'name',
-      key: 'name',
-    },
-    {
-      title: '月度费用',
-      dataIndex: 'monthly',
-      key: 'monthly',
-      render: (val: number) => `$${val.toFixed(2)}`,
-      align: 'right' as const,
-    },
-    {
-      title: '年度费用',
-      dataIndex: 'yearly',
-      key: 'yearly',
-      render: (val: number) => `$${val.toFixed(2)}`,
-      align: 'right' as const,
-    },
-    {
-      title: '占比',
-      dataIndex: 'percent',
-      key: 'percent',
-      render: (val: number) => `${val.toFixed(1)}%`,
-      align: 'right' as const,
-    },
-  ];
-
   return (
     <div>
       <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
@@ -166,26 +81,29 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, onExport }) => {
 
       <Row gutter={24}>
         <Col xs={24} lg={14}>
-          <Table
-            dataSource={breakdownData}
-            columns={columns}
-            pagination={false}
-            summary={() => (
-              <Table.Summary.Row style={{ background: '#fafafa' }}>
-                <Table.Summary.Cell index={0}>
-                  <Text strong>合计</Text>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={1} align="right">
-                  <Text strong>${result.monthly_total.toFixed(2)}</Text>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={2} align="right">
-                  <Text strong>${result.yearly_total.toFixed(2)}</Text>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={3} align="right">
-                  <Text strong>100%</Text>
-                </Table.Summary.Cell>
-              </Table.Summary.Row>
-            )}
+          <CostBreakdownTable
+            breakdown={result.breakdown}
+            metrics={result.metrics}
+            monthlyTotal={result.monthly_total}
+            pricingMetadata={result.pricing_metadata}
+            detailedBreakdown={result.detailed_breakdown ? {
+              storageCosts: result.detailed_breakdown.storage_costs?.map(c => ({
+                name: c.name,
+                unitPrice: c.unit_price,
+                unitPriceUnit: c.unit_price_unit,
+                quantity: c.quantity,
+                quantityUnit: c.quantity_unit,
+                amount: c.amount,
+              })),
+              dataTransferTiers: result.detailed_breakdown.data_transfer_tiers?.map(t => ({
+                tierName: t.tier_name,
+                rangeStartGb: t.range_start_gb,
+                rangeEndGb: t.range_end_gb,
+                unitPrice: t.unit_price,
+                quantityGb: t.quantity_gb,
+                amount: t.amount,
+              })),
+            } : undefined}
           />
         </Col>
         <Col xs={24} lg={10}>

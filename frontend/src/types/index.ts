@@ -91,6 +91,58 @@ export interface UsageMetrics {
   monthly_transfer_gb: number;
 }
 
+// 阶梯定价明细
+export interface TierDetail {
+  tier_name: string;
+  range_start_gb: number;
+  range_end_gb?: number;
+  unit_price: number;
+  quantity_gb: number;
+  amount: number;
+}
+
+// 详细费用项
+export interface CostItem {
+  name: string;
+  unit_price: number;
+  unit_price_unit: string;
+  quantity: number;
+  quantity_unit: string;
+  amount: number;
+  tiers?: TierDetail[];
+}
+
+// 阶段费用明细
+export interface StageCostBreakdown {
+  stage_name: string;
+  storage_class: StorageClass;
+  start_day: number;
+  end_day: number;
+  storage_cost: number;
+  put_cost: number;
+  get_cost: number;
+  retrieval_cost: number;
+  transfer_cost: number;
+  lifecycle_cost: number;
+  total: number;
+}
+
+// 定价元数据
+export interface PricingMetadata {
+  source: string;
+  updated_at: string;
+  region: string;
+  is_fallback: boolean;
+}
+
+// 详细费用分解
+export interface DetailedCostBreakdown {
+  storage_costs?: CostItem[];
+  request_costs?: CostItem[];
+  data_transfer_tiers?: TierDetail[];
+  stage_breakdowns?: StageCostBreakdown[];
+}
+
 // 成本计算结果
 export interface CostSummary {
   monthly_total: number;
@@ -100,6 +152,9 @@ export interface CostSummary {
   metrics?: UsageMetrics;
   yearly_total: number;
   per_device_yearly: number;
+  // 增强版字段（可选）
+  pricing_metadata?: PricingMetadata;
+  detailed_breakdown?: DetailedCostBreakdown;
 }
 
 // 对比项
