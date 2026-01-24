@@ -65,3 +65,9 @@ build/
 
 # Local settings
 .claude/settings.local.json
+
+# MCP servers temp files
+.playwright-mcp/
+
+# Personal notes
+prompt.md

@@ -26,8 +26,25 @@ const videoQualityOptions = [
   { value: '4k', label: '4K (超高清)', dataRate: '1500 KB/s' },
 ];
 
+// 字段验证配置
+const fieldConstraints: Record<string, { min: number; max: number; default: number }> = {
+  device_count: { min: 1, max: 100000, default: 100 },
+  retention_days: { min: 1, max: 365, default: 30 },
+  events_per_day: { min: 1, max: 10000, default: 400 },
+  event_duration_sec: { min: 1, max: 300, default: 15 },
+};
+
 const FunctionalForm: React.FC<FunctionalFormProps> = ({ value, onChange }) => {
   const handleChange = (field: keyof FunctionalDimensions, val: any) => {
+    // 对数值字段进行范围验证
+    const constraints = fieldConstraints[field];
+    if (constraints && typeof val === 'number') {
+      // 确保值在有效范围内
+      val = Math.max(constraints.min, Math.min(constraints.max, val));
+    } else if (constraints && (val === null || val === undefined || val === '')) {
+      // 空值使用默认值
+      val = constraints.default;
+    }
     onChange({ ...value, [field]: val });
   };
 
@@ -55,7 +72,7 @@ const FunctionalForm: React.FC<FunctionalFormProps> = ({ value, onChange }) => {
                 min={1}
                 max={100000}
                 value={value.device_count}
-                onChange={(val) => handleChange('device_count', val || 1)}
+                onChange={(val) => handleChange('device_count', val)}
                 style={{ width: '100%' }}
                 addonAfter="台"
               />
@@ -120,7 +137,7 @@ const FunctionalForm: React.FC<FunctionalFormProps> = ({ value, onChange }) => {
                 min={1}
                 max={365}
                 value={value.retention_days}
-                onChange={(val) => handleChange('retention_days', val || 30)}
+                onChange={(val) => handleChange('retention_days', val)}
                 style={{ width: '100%' }}
                 addonAfter="天"
               />
@@ -144,7 +161,7 @@ const FunctionalForm: React.FC<FunctionalFormProps> = ({ value, onChange }) => {
                     min={1}
                     max={10000}
                     value={value.events_per_day}
-                    onChange={(val) => handleChange('events_per_day', val || 400)}
+                    onChange={(val) => handleChange('events_per_day', val)}
                     style={{ width: '100%' }}
                     addonAfter="次"
                   />
@@ -166,7 +183,7 @@ const FunctionalForm: React.FC<FunctionalFormProps> = ({ value, onChange }) => {
                     min={1}
                     max={300}
                     value={value.event_duration_sec}
-                    onChange={(val) => handleChange('event_duration_sec', val || 15)}
+                    onChange={(val) => handleChange('event_duration_sec', val)}
                     style={{ width: '100%' }}
                     addonAfter="秒"
                   />
