@@ -151,3 +151,106 @@ export const timeouts = {
   animation: 500,
   scenarioLoad: 15000,
 };
+
+/**
+ * 精度验证测试配置 - 家庭场景（小规模，便于验证精度）
+ * 用于测试数值精度和格式显示
+ */
+export const precisionTestConfig = {
+  deviceCount: 10,
+  recordingMode: '事件触发',
+  videoQuality: '1080p',
+  eventsPerDay: 50,
+  eventDuration: 15,
+  retentionDays: 7,
+  accessPattern: 0.1,
+  storageClass: 'STANDARD',
+  region: 'ap-northeast-1',
+  discount: 0,
+};
+
+/**
+ * 大规模测试配置 - 企业场景
+ * 用于验证大数值处理和千分位显示
+ */
+export const largeValueTestConfig = {
+  deviceCount: 5000,
+  recordingMode: '全天候录像',
+  videoQuality: '4K',
+  retentionDays: 90,
+  accessPattern: 0.3,
+  storageClass: 'STANDARD',
+  region: 'ap-northeast-1',
+  discount: 0,
+};
+
+/**
+ * 最小值测试配置 - 边界场景
+ * 用于测试零值和最小值处理
+ */
+export const minValueTestConfig = {
+  deviceCount: 1,
+  recordingMode: '事件触发',
+  videoQuality: '720p',
+  eventsPerDay: 1,
+  eventDuration: 5,
+  retentionDays: 1,
+  accessPattern: 0.01,
+  storageClass: 'STANDARD',
+  region: 'ap-northeast-1',
+  discount: 0,
+};
+
+/**
+ * Glacier IR 测试配置
+ * 用于测试包含检索费用和生命周期费用的场景
+ */
+export const glacierTestConfig = {
+  deviceCount: 100,
+  recordingMode: '事件触发',
+  videoQuality: '1080p',
+  eventsPerDay: 200,
+  eventDuration: 20,
+  retentionDays: 30,
+  accessPattern: 0.15,
+  storageClass: 'GLACIER_IR',
+  region: 'ap-northeast-1',
+  discount: 0,
+};
+
+/**
+ * 期望的表格列数（包含展开按钮列）
+ */
+export const expectedTableColumns = 7;
+
+/**
+ * 期望的费用类型名称
+ */
+export const expectedCostTypes = {
+  storage: '存储费用',
+  put: 'PUT 请求费用',
+  get: 'GET 请求费用',
+  retrieval: '检索费用',
+  transfer: '数据传输费用',
+  lifecycle: '生命周期转换费用',
+};
+
+/**
+ * 精度验证容差配置
+ */
+export const tolerances = {
+  yearlyMonthlyRatio: 0.01, // 年度/月度比例容差
+  percentSum: 0.5, // 占比总和容差（允许 ±0.5%）
+  costCalculation: 0.01, // 费用计算容差
+};
+
+/**
+ * 数值格式正则表达式
+ */
+export const formatPatterns = {
+  monetary2: /^\$[\d,]+\.\d{2}$/, // 2位小数货币 $X.XX
+  monetary4: /^\$[\d,]+\.\d{4}$/, // 4位小数货币 $X.XXXX
+  unitPrice: /^\$[\d.]+\/[\w\-\/月]+$/, // 单价格式 $X.XXXX/单位
+  integer: /^[\d,]+$/, // 整数（可带千分位）
+  percentage: /^\d+(\.\d+)?%$/, // 百分比 X.X%
+};

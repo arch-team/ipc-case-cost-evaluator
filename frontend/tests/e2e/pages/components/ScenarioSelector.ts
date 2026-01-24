@@ -1,5 +1,6 @@
 /**
  * 场景选择器组件 Page Object
+ * 适配优化后的 UI 结构
  */
 import { Page, Locator, expect } from '@playwright/test';
 
@@ -16,23 +17,26 @@ export class ScenarioSelector {
   // 空状态
   readonly emptyState: Locator;
 
+  // 分类区块
+  readonly categoryGroups: Locator;
+
   constructor(page: Page) {
     this.page = page;
 
-    // 场景卡片（排除自定义配置卡片）
-    this.scenarioCards = page.locator('.ant-card.ant-card-hoverable').filter({
-      hasNot: page.locator('h5:has-text("自定义配置")'),
-    });
-    // 自定义配置卡片 - 精确匹配包含 h5 标题的 hoverable 卡片
-    this.customConfigCard = page.locator('.ant-card.ant-card-hoverable').filter({
-      has: page.locator('h5:has-text("自定义配置")'),
-    });
+    // 场景卡片（使用 data-testid 选择器，排除自定义配置卡片）
+    this.scenarioCards = page.locator('[data-testid^="scenario-card-"]');
+
+    // 自定义配置卡片 - 使用 data-testid
+    this.customConfigCard = page.locator('[data-testid="scenario-custom-card"]');
 
     // 加载状态
     this.loadingSpinner = page.locator('.ant-spin');
 
     // 空状态
     this.emptyState = page.locator('.ant-empty');
+
+    // 分类区块
+    this.categoryGroups = page.locator('.scenario-category-group');
   }
 
   /**
@@ -58,8 +62,9 @@ export class ScenarioSelector {
    */
   async selectScenario(scenarioName: string): Promise<void> {
     await this.waitForScenariosLoaded();
-    const card = this.page.locator('.ant-card.ant-card-hoverable').filter({
-      has: this.page.locator(`h5:has-text("${scenarioName}")`),
+    // 通过卡片标题文本定位
+    const card = this.page.locator('.scenario-card').filter({
+      has: this.page.locator(`.scenario-card-title:has-text("${scenarioName}")`),
     });
     await card.click();
   }
@@ -98,21 +103,37 @@ export class ScenarioSelector {
   }
 
   /**
-   * 获取场景卡片上的标签信息
+   * 获取场景卡片上的信息
+   * 新版本使用简洁文字展示，返回两行信息
    */
-  async getScenarioTags(scenarioName: string): Promise<string[]> {
-    const card = this.page.locator('.ant-card.ant-card-hoverable').filter({
-      has: this.page.locator(`h5:has-text("${scenarioName}")`),
+  async getScenarioInfo(scenarioName: string): Promise<{ line1: string; line2: string }> {
+    const card = this.page.locator('.scenario-card').filter({
+      has: this.page.locator(`.scenario-card-title:has-text("${scenarioName}")`),
     });
-    const tags = card.locator('.ant-tag');
-    const tagTexts: string[] = [];
-    const count = await tags.count();
-    for (let i = 0; i < count; i++) {
-      const text = await tags.nth(i).textContent();
-      if (text) {
-        tagTexts.push(text);
-      }
-    }
-    return tagTexts;
+    const infoRows = card.locator('.scenario-card-info-row');
+
+    return {
+      line1: (await infoRows.nth(0).textContent()) || '',
+      line2: (await infoRows.nth(1).textContent()) || '',
+    };
+  }
+
+  /**
+   * 获取分类区块数量
+   */
+  async getCategoryCount(): Promise<number> {
+    await this.waitForScenariosLoaded();
+    return await this.categoryGroups.count();
+  }
+
+  /**
+   * 获取指定分类下的场景数量
+   */
+  async getScenariosInCategory(categoryName: string): Promise<number> {
+    const categoryGroup = this.categoryGroups.filter({
+      has: this.page.locator(`.scenario-category-title:has-text("${categoryName}")`),
+    });
+    const cards = categoryGroup.locator('.scenario-card');
+    return await cards.count();
   }
 }

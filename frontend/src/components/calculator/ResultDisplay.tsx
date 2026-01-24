@@ -1,9 +1,16 @@
 /**
  * 结果展示组件
+ * 优化版本：三层信息架构，Hero 区域突出单设备成本
  */
-import React from 'react';
-import { Card, Row, Col, Statistic, Button, Typography, Divider } from 'antd';
-import { DownloadOutlined, DollarOutlined, PieChartOutlined } from '@ant-design/icons';
+import React, { useState } from 'react';
+import { Statistic, Button, Typography, Segmented, Collapse } from 'antd';
+import {
+  DownloadOutlined,
+  DollarOutlined,
+  PieChartOutlined,
+  TableOutlined,
+  DownOutlined,
+} from '@ant-design/icons';
 import type { CostSummary } from '../../types';
 import CostPieChart from './CostPieChart';
 import CostBreakdownTable from './CostBreakdownTable';
@@ -15,72 +22,105 @@ interface ResultDisplayProps {
   onExport?: () => void;
 }
 
+type BreakdownViewType = 'chart' | 'table';
+
 const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, onExport }) => {
+  const [breakdownView, setBreakdownView] = useState<BreakdownViewType>('table');
+
+  // 格式化数字显示
+  const formatNumber = (value: number, precision: number = 2) => {
+    return value.toLocaleString('en-US', {
+      minimumFractionDigits: precision,
+      maximumFractionDigits: precision,
+    });
+  };
+
   return (
     <div>
-      <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-        <Col>
-          <Title level={4} style={{ margin: 0 }}>
-            <DollarOutlined /> 成本计算结果
-          </Title>
-        </Col>
-        <Col>
-          {onExport && (
-            <Button type="primary" icon={<DownloadOutlined />} onClick={onExport}>
-              导出 Excel
-            </Button>
-          )}
-        </Col>
-      </Row>
+      {/* 页面标题栏 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <Title level={4} style={{ margin: 0 }}>
+          <DollarOutlined style={{ marginRight: 8 }} />
+          成本计算结果
+        </Title>
+        {onExport && (
+          <Button type="primary" icon={<DownloadOutlined />} onClick={onExport}>
+            导出 Excel
+          </Button>
+        )}
+      </div>
 
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="月度总费用"
-              value={result.monthly_total}
-              precision={2}
-              prefix="$"
-              valueStyle={{ color: '#1890ff' }}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="年度总费用"
-              value={result.yearly_total}
-              precision={2}
-              prefix="$"
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="单设备月均费用"
-              value={result.per_device_monthly}
-              precision={4}
-              prefix="$"
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="设备数量"
-              value={result.device_count}
-              suffix="台"
-            />
-          </Card>
-        </Col>
-      </Row>
+      {/* Hero 区域 - 单设备月均费用 */}
+      <div className="result-hero" data-testid="result-hero">
+        <div className="result-hero-label">单设备月均费用</div>
+        <div className="result-hero-value">
+          <span>$</span>
+          {formatNumber(result.per_device_monthly, 4)}
+        </div>
+      </div>
 
-      <Divider orientationMargin="0"><Text strong>费用明细</Text></Divider>
+      {/* 副指标栏 - 月度/年度/设备数 */}
+      <div className="result-secondary-stats" data-testid="result-secondary-stats">
+        <div className="result-secondary-card">
+          <Statistic
+            title="月度总费用"
+            value={result.monthly_total}
+            precision={2}
+            prefix="$"
+            valueStyle={{ color: '#2563eb', fontSize: 24 }}
+          />
+        </div>
+        <div className="result-secondary-card">
+          <Statistic
+            title="年度总费用"
+            value={result.yearly_total}
+            precision={2}
+            prefix="$"
+            valueStyle={{ color: '#16a34a', fontSize: 24 }}
+          />
+        </div>
+        <div className="result-secondary-card">
+          <Statistic
+            title="设备数量"
+            value={result.device_count}
+            suffix="台"
+            valueStyle={{ fontSize: 24 }}
+          />
+        </div>
+      </div>
 
-      <Row gutter={24}>
-        <Col xs={24} lg={14}>
+      {/* 费用明细区域 - Tab 切换 */}
+      <div className="result-breakdown-section" data-testid="result-breakdown-section">
+        <div className="result-breakdown-header">
+          <span className="result-breakdown-title">费用构成</span>
+          <Segmented
+            value={breakdownView}
+            onChange={(value) => setBreakdownView(value as BreakdownViewType)}
+            options={[
+              {
+                label: (
+                  <span>
+                    <TableOutlined style={{ marginRight: 4 }} />
+                    表格
+                  </span>
+                ),
+                value: 'table',
+              },
+              {
+                label: (
+                  <span>
+                    <PieChartOutlined style={{ marginRight: 4 }} />
+                    图表
+                  </span>
+                ),
+                value: 'chart',
+              },
+            ]}
+          />
+        </div>
+
+        {/* 根据选择显示表格或图表 */}
+        {breakdownView === 'table' ? (
           <CostBreakdownTable
             breakdown={result.breakdown}
             metrics={result.metrics}
@@ -105,57 +145,70 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, onExport }) => {
               })),
             } : undefined}
           />
-        </Col>
-        <Col xs={24} lg={10}>
-          <Card
-            size="small"
-            title={
-              <>
-                <PieChartOutlined /> 费用构成
-              </>
-            }
-          >
+        ) : (
+          <div style={{ padding: '16px 0' }}>
             <CostPieChart breakdown={result.breakdown} />
-          </Card>
-        </Col>
-      </Row>
+          </div>
+        )}
+      </div>
 
+      {/* 使用量指标 - 可折叠面板 */}
       {result.metrics && (
-        <>
-          <Divider orientationMargin="0"><Text strong>使用量指标</Text></Divider>
-          <Row gutter={16}>
-            <Col span={8}>
-              <Card size="small">
-                <Statistic
-                  title="月度存储量"
-                  value={result.metrics.avg_storage_gb}
-                  precision={2}
-                  suffix="GB"
-                />
-              </Card>
-            </Col>
-            <Col span={8}>
-              <Card size="small">
-                <Statistic
-                  title="月度 PUT 请求"
-                  value={result.metrics.monthly_puts}
-                  precision={0}
-                  suffix="次"
-                />
-              </Card>
-            </Col>
-            <Col span={8}>
-              <Card size="small">
-                <Statistic
-                  title="月度数据传输"
-                  value={result.metrics.monthly_transfer_gb}
-                  precision={2}
-                  suffix="GB"
-                />
-              </Card>
-            </Col>
-          </Row>
-        </>
+        <Collapse
+          className="result-metrics-collapse"
+          expandIcon={({ isActive }) => (
+            <DownOutlined rotate={isActive ? 180 : 0} style={{ fontSize: 12 }} />
+          )}
+          items={[
+            {
+              key: 'metrics',
+              label: (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <Text strong>使用量指标</Text>
+                  <span className="result-metrics-summary">
+                    <span className="result-metrics-summary-item">
+                      存储 {formatNumber(result.metrics.avg_storage_gb)} GB
+                    </span>
+                    <span className="result-metrics-summary-item">
+                      PUT 请求 {result.metrics.monthly_puts.toLocaleString()} 次
+                    </span>
+                    <span className="result-metrics-summary-item">
+                      传输 {formatNumber(result.metrics.monthly_transfer_gb)} GB
+                    </span>
+                  </span>
+                </div>
+              ),
+              children: (
+                <div className="result-secondary-stats" style={{ marginBottom: 0 }}>
+                  <div className="result-secondary-card">
+                    <Statistic
+                      title="月度存储量"
+                      value={result.metrics.avg_storage_gb}
+                      precision={2}
+                      suffix="GB"
+                    />
+                  </div>
+                  <div className="result-secondary-card">
+                    <Statistic
+                      title="月度 PUT 请求"
+                      value={result.metrics.monthly_puts}
+                      precision={0}
+                      suffix="次"
+                    />
+                  </div>
+                  <div className="result-secondary-card">
+                    <Statistic
+                      title="月度数据传输"
+                      value={result.metrics.monthly_transfer_gb}
+                      precision={2}
+                      suffix="GB"
+                    />
+                  </div>
+                </div>
+              ),
+            },
+          ]}
+        />
       )}
     </div>
   );

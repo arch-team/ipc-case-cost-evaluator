@@ -1,8 +1,9 @@
 /**
  * 预设场景选择器
+ * 优化版本：每行 2 个卡片，分类区块边框，简洁信息展示
  */
 import React, { useEffect, useState } from 'react';
-import { Card, Row, Col, Typography, Tag, Spin, message, Empty } from 'antd';
+import { Card, Row, Col, Typography, Spin, message, Empty } from 'antd';
 import {
   ShopOutlined,
   BankOutlined,
@@ -32,10 +33,10 @@ const categoryIcons: Record<string, React.ReactNode> = {
   logistics: <InboxOutlined />,
 };
 
-// 存储类型标签颜色
-const storageColors: Record<string, string> = {
-  STANDARD: 'blue',
-  GLACIER_IR: 'orange',
+// 存储类型显示名称
+const storageClassLabels: Record<string, string> = {
+  STANDARD: 'Standard',
+  GLACIER_IR: 'Glacier IR',
 };
 
 // 录像模式标签
@@ -109,10 +110,11 @@ const ScenarioSelector: React.FC<Props> = ({ onSelect, onCustom }) => {
 
   return (
     <div>
+      {/* 页面标题 */}
       <div style={{ marginBottom: 24 }}>
-        <Title level={4}>选择预设场景快速开始</Title>
+        <Title level={4} style={{ marginBottom: 8 }}>选择预设场景</Title>
         <Text type="secondary">
-          选择一个预设场景自动填充参数，或点击"自定义配置"从头开始
+          选择一个预设场景快速开始，或自定义配置
         </Text>
       </div>
 
@@ -121,48 +123,49 @@ const ScenarioSelector: React.FC<Props> = ({ onSelect, onCustom }) => {
       ) : (
         groupedScenarios.map((group) =>
           group.scenarios.length > 0 ? (
-            <div key={group.id} style={{ marginBottom: 32 }}>
-              <Title level={5} style={{ marginBottom: 16 }}>
-                <span style={{ marginRight: 8 }}>
-                  {categoryIcons[group.id] || <SettingOutlined />}
-                </span>
-                {group.name}
-              </Title>
-              <Row gutter={[16, 16]}>
+            <div key={group.id} className="scenario-category-group">
+              {/* 分类标题 */}
+              <div className="scenario-category-title">
+                {categoryIcons[group.id] || <SettingOutlined />}
+                <span>{group.name}</span>
+              </div>
+
+              {/* 场景卡片网格 - 每行 2 个 */}
+              <Row gutter={[24, 24]}>
                 {group.scenarios.map((scenario) => (
-                  <Col xs={24} sm={12} md={8} lg={6} key={scenario.id}>
+                  <Col xs={24} sm={24} md={12} lg={12} key={scenario.id}>
                     <Card
                       hoverable
                       onClick={() => handleSelect(scenario)}
-                      style={{ height: '100%' }}
-                      bodyStyle={{ padding: 16 }}
+                      className="scenario-card"
+                      data-testid={`scenario-card-${scenario.id}`}
                     >
-                      <Title level={5} style={{ marginBottom: 8, fontSize: 14 }}>
+                      {/* 场景名称 */}
+                      <div className="scenario-card-title">
                         {scenario.name}
-                      </Title>
-                      <Text
-                        type="secondary"
-                        style={{
-                          display: 'block',
-                          marginBottom: 12,
-                          fontSize: 12,
-                          minHeight: 36,
-                        }}
-                      >
-                        {scenario.description}
-                      </Text>
-                      <div>
-                        <Tag>{scenario.functional.device_count} 台</Tag>
-                        <Tag color={storageColors[scenario.technical.storage_class] || 'default'}>
-                          {scenario.technical.storage_class}
-                        </Tag>
                       </div>
-                      <div style={{ marginTop: 8 }}>
-                        <Tag color="green">
-                          {recordingModeLabels[scenario.functional.recording_mode] ||
-                            scenario.functional.recording_mode}
-                        </Tag>
-                        <Tag>{scenario.functional.retention_days} 天</Tag>
+
+                      {/* 简洁信息展示 - 两行 */}
+                      <div className="scenario-card-info">
+                        {/* 第一行：设备数 · 保留天数 */}
+                        <div className="scenario-card-info-row">
+                          <span>{scenario.functional.device_count} 台</span>
+                          <span className="scenario-card-info-separator">·</span>
+                          <span>{scenario.functional.retention_days} 天</span>
+                        </div>
+
+                        {/* 第二行：录像模式 · 存储类型 */}
+                        <div className="scenario-card-info-row">
+                          <span>
+                            {recordingModeLabels[scenario.functional.recording_mode] ||
+                              scenario.functional.recording_mode}
+                          </span>
+                          <span className="scenario-card-info-separator">·</span>
+                          <span>
+                            {storageClassLabels[scenario.technical.storage_class] ||
+                              scenario.technical.storage_class}
+                          </span>
+                        </div>
                       </div>
                     </Card>
                   </Col>
@@ -173,20 +176,18 @@ const ScenarioSelector: React.FC<Props> = ({ onSelect, onCustom }) => {
         )
       )}
 
-      {/* 自定义选项 */}
+      {/* 自定义配置选项 */}
       <Card
         hoverable
         onClick={onCustom}
-        style={{ marginTop: 16, borderStyle: 'dashed' }}
-        bodyStyle={{ padding: 24 }}
+        className="scenario-custom-card"
+        data-testid="scenario-custom-card"
       >
-        <div style={{ textAlign: 'center' }}>
-          <SettingOutlined style={{ fontSize: 32, color: '#1890ff', marginBottom: 12 }} />
-          <Title level={5} style={{ marginBottom: 8 }}>
-            自定义配置
-          </Title>
-          <Text type="secondary">从头开始配置所有参数</Text>
-        </div>
+        <SettingOutlined />
+        <Title level={5} style={{ marginBottom: 8 }}>
+          自定义配置
+        </Title>
+        <Text type="secondary">从头开始配置所有参数</Text>
       </Card>
     </div>
   );

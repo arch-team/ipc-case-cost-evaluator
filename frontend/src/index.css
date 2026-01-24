@@ -1,3 +1,51 @@
+/* ============================================
+   IPC Case Cost Evaluator - 全局样式
+   企业级稳重风格设计系统
+   ============================================ */
+
+/* CSS 变量定义 */
+:root {
+  /* 主题色 - 更沉稳的蓝 */
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-light: #eff6ff;
+  --color-primary-bg: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+
+  /* 语义色 */
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-error: #dc2626;
+  --color-info: #0284c7;
+
+  /* 中性色 */
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #64748b;
+  --color-text-tertiary: #94a3b8;
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f5f9;
+  --color-bg-page: #f8fafc;
+  --color-bg-card: #ffffff;
+
+  /* 间距 */
+  --spacing-page: 32px;
+  --spacing-section: 40px;
+  --spacing-card-gap: 24px;
+  --spacing-card-padding: 20px;
+
+  /* 圆角 */
+  --radius-small: 6px;
+  --radius-medium: 12px;
+  --radius-large: 16px;
+
+  /* 阴影 */
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-card-hover: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+
+  /* 过渡 */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -14,22 +62,233 @@ body,
 }
 
 body {
-  background-color: #f0f2f5;
+  background-color: var(--color-bg-page);
+  color: var(--color-text-primary);
 }
 
-/* Ant Design 覆盖样式 */
+/* ============================================
+   Ant Design 覆盖样式
+   ============================================ */
+
 .ant-layout-sider {
   box-shadow: 2px 0 8px 0 rgba(29, 35, 41, 0.05);
 }
 
 .ant-card {
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
+  border: 1px solid var(--color-border);
+  box-shadow: none;
+  transition: all var(--transition-normal);
+}
+
+.ant-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-card-hover);
 }
 
 .ant-btn {
-  border-radius: 6px;
+  border-radius: var(--radius-small);
 }
 
 .ant-table-row-selected {
-  background-color: #e6f7ff !important;
+  background-color: var(--color-primary-light) !important;
+}
+
+/* ============================================
+   场景选择器样式
+   ============================================ */
+
+.scenario-category-group {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  padding: var(--spacing-card-padding);
+  margin-bottom: var(--spacing-card-gap);
+}
+
+.scenario-category-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border-light);
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.scenario-category-title .anticon {
+  color: var(--color-primary);
+  font-size: 18px;
+}
+
+.scenario-card {
+  height: 100%;
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  transition: all var(--transition-normal);
+}
+
+.scenario-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.scenario-card .ant-card-body {
+  padding: var(--spacing-card-padding);
+}
+
+.scenario-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 8px;
+}
+
+.scenario-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.scenario-card-info-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.scenario-card-info-separator {
+  color: var(--color-text-tertiary);
+}
+
+.scenario-custom-card {
+  border-style: dashed;
+  border-color: var(--color-border);
+  text-align: center;
+}
+
+.scenario-custom-card:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.scenario-custom-card .anticon {
+  font-size: 32px;
+  color: var(--color-primary);
+  margin-bottom: 12px;
+}
+
+/* ============================================
+   结果展示样式
+   ============================================ */
+
+.result-hero {
+  background: var(--color-primary-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  padding: 32px;
+  text-align: center;
+  margin-bottom: var(--spacing-card-gap);
+}
+
+.result-hero-label {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+
+.result-hero-value {
+  font-size: 48px;
+  font-weight: 600;
+  color: var(--color-primary);
+  line-height: 1.2;
+}
+
+.result-hero-unit {
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  margin-left: 4px;
+}
+
+.result-secondary-stats {
+  display: flex;
+  gap: var(--spacing-card-gap);
+  margin-bottom: var(--spacing-card-gap);
+}
+
+.result-secondary-card {
+  flex: 1;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  padding: 16px 20px;
+  background: var(--color-bg-card);
+}
+
+.result-secondary-card:hover {
+  border-color: var(--color-border);
+  box-shadow: none;
+}
+
+.result-breakdown-section {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  padding: var(--spacing-card-padding);
+  margin-bottom: var(--spacing-card-gap);
+}
+
+.result-breakdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.result-breakdown-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.result-metrics-collapse {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+}
+
+.result-metrics-collapse .ant-collapse-header {
+  padding: 12px 16px !important;
+}
+
+.result-metrics-summary {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.result-metrics-summary-item {
+  margin-right: 16px;
+}
+
+/* ============================================
+   响应式调整
+   ============================================ */
+
+@media (max-width: 768px) {
+  :root {
+    --spacing-page: 16px;
+    --spacing-section: 24px;
+    --spacing-card-gap: 16px;
+    --spacing-card-padding: 16px;
+  }
+
+  .result-hero-value {
+    font-size: 36px;
+  }
+
+  .result-secondary-stats {
+    flex-direction: column;
+  }
 }
