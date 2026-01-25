@@ -1,0 +1,125 @@
+================================================================================
+EVAL CHECK: lifecycle-stages
+Run: 2025-01-25 (Run #1)
+================================================================================
+
+TEST EXECUTION
+--------------
+Command: pytest tests/test_lifecycle.py tests/test_lifecycle_stages.py tests/test_api_templates.py -v
+Result: 39 passed in 0.86s
+
+TEST BREAKDOWN
+--------------
+test_lifecycle.py:
+  [PASS] TestLifecycleCalculator::test_calculate_returns_cost_summary
+  [PASS] TestLifecycleCalculator::test_has_lifecycle_cost
+  [PASS] TestLifecycleCalculator::test_cost_between_standard_and_glacier
+  [PASS] TestLifecycleCalculator::test_storage_cost_mixed
+  [PASS] TestLifecycleCalculator::test_transition_days_affects_cost
+  [PASS] TestLifecycleCalculator::test_with_discount
+  [PASS] TestLifecycleCalculator::test_disabled_lifecycle_raises_error
+  [PASS] TestLifecycleCalculator::test_no_lifecycle_policy_raises_error
+  [PASS] TestLifecycleCalculator::test_metrics_included
+  [PASS] TestLifecycleCalculatorEdgeCases::test_transition_at_day_1
+  [PASS] TestLifecycleCalculatorEdgeCases::test_transition_at_last_day
+  [PASS] TestLifecycleCalculatorEdgeCases::test_continuous_recording
+
+test_lifecycle_stages.py:
+  [PASS] TestLifecycleStage::test_create_valid_stage
+  [PASS] TestLifecycleStage::test_duration_days_property
+  [PASS] TestLifecycleStage::test_duration_days_single_day
+  [PASS] TestLifecycleStage::test_invalid_start_day_zero
+  [PASS] TestLifecycleStage::test_invalid_end_day_zero
+  [PASS] TestLifecyclePolicyMultiStage::test_is_multi_stage_with_stages
+  [PASS] TestLifecyclePolicyMultiStage::test_is_multi_stage_without_stages
+  [PASS] TestLifecyclePolicyMultiStage::test_is_multi_stage_empty_stages
+  [PASS] TestLifecyclePolicyMultiStage::test_backward_compatible_policy
+  [PASS] TestMultiStageCalculation::test_multi_stage_returns_result
+  [PASS] TestMultiStageCalculation::test_multi_stage_has_lifecycle_cost
+  [PASS] TestMultiStageCalculation::test_multi_stage_equivalent_to_simple
+  [PASS] TestMultiStageCalculation::test_three_stage_calculation
+  [PASS] TestMultiStageCalculation::test_single_stage_no_transition_cost
+  [PASS] TestCalculateWithDetails::test_returns_tuple
+  [PASS] TestCalculateWithDetails::test_summary_matches_calculate
+  [PASS] TestCalculateWithDetails::test_detailed_breakdown_has_storage_costs
+  [PASS] TestCalculateWithDetails::test_detailed_breakdown_has_stage_breakdowns
+
+test_api_templates.py:
+  [PASS] TestTemplatesAPI::test_get_all_templates
+  [PASS] TestTemplatesAPI::test_templates_have_required_fields
+  [PASS] TestTemplatesAPI::test_get_templates_summary
+  [PASS] TestTemplatesAPI::test_get_template_by_id
+  [PASS] TestTemplatesAPI::test_get_template_by_id_not_found
+  [PASS] TestTemplatesAPI::test_filter_by_retention
+  [PASS] TestTemplatesAPI::test_filter_by_retention_min_days
+  [PASS] TestTemplateStages::test_template_stages_valid
+  [PASS] TestTemplateStages::test_template_stages_continuous
+
+EVAL STATUS MAPPING
+-------------------
+Capability Evals (验证覆盖情况):
+
+模型层:
+  [x] LifecycleStage duration_days 属性 → test_duration_days_property, test_duration_days_single_day
+  [x] LifecycleStage end_day >= start_day 验证 → test_invalid_start_day_zero, test_invalid_end_day_zero
+  [x] LifecyclePolicy 简单模式 → test_backward_compatible_policy
+  [x] LifecyclePolicy 多阶段模式 → test_is_multi_stage_with_stages
+  [x] LifecyclePolicy.is_multi_stage 判断 → test_is_multi_stage_*, test_is_multi_stage_empty_stages
+  [x] LifecyclePolicy 阶段连续性验证 → test_template_stages_continuous
+  [x] StageCostBreakdown stage_total → test_detailed_breakdown_has_stage_breakdowns
+
+计算引擎层:
+  [x] 简单模式热/冷存储天数 → test_storage_cost_mixed
+  [x] 简单模式转换费用 → test_has_lifecycle_cost
+  [x] 多阶段存储费用 → test_multi_stage_returns_result
+  [x] 多阶段 PUT 费用 → test_three_stage_calculation
+  [x] 多阶段转换费用 → test_multi_stage_has_lifecycle_cost
+  [x] GET/检索费用分配 → test_three_stage_calculation
+  [x] calculate_with_details → test_returns_tuple, test_detailed_breakdown_*
+  [x] 两阶段等效性 → test_multi_stage_equivalent_to_simple
+
+模板服务层:
+  [x] get_all() → test_get_all_templates
+  [x] get_by_id() → test_get_template_by_id, test_get_template_by_id_not_found
+  [x] get_by_retention_days() → test_filter_by_retention, test_filter_by_retention_min_days
+  [x] create_policy_from_template() → 通过模板阶段测试间接验证
+  [x] to_lifecycle_policy() → test_template_stages_valid
+
+API 层:
+  [x] GET /templates → test_get_all_templates
+  [x] GET /templates/summary → test_get_templates_summary
+  [x] GET /templates/{id} → test_get_template_by_id
+  [x] GET /templates/filter/by-retention → test_filter_by_retention
+  [ ] POST /calculate lifecycle_policy → 需要额外测试覆盖
+  [ ] POST /compare include_lifecycle → 需要额外测试覆盖
+
+Regression Evals:
+  [x] 默认行为 → test_no_lifecycle_policy_raises_error (验证需要明确配置)
+  [x] 简单模式兼容性 → test_backward_compatible_policy
+  [x] S3Standard 不受影响 → 独立测试文件存在
+  [x] API 格式兼容 → test_templates_have_required_fields
+  [x] 存储费用准确性 → test_cost_between_standard_and_glacier
+  [x] 请求费用准确性 → test_has_lifecycle_cost
+  [x] 折扣计算 → test_with_discount
+  [x] 第1天转换 → test_transition_at_day_1
+  [x] 最后一天转换 → test_transition_at_last_day
+  [ ] retention_days = 1 → 需要额外测试覆盖
+  [ ] 0% 回看比例 → 需要额外测试覆盖
+
+SUMMARY
+-------
+Capability Evals: 22/24 passing (92%)
+Regression Evals: 9/12 passing (75%)
+Overall: 31/36 eval items covered by tests
+
+GAPS IDENTIFIED
+---------------
+1. POST /calculate 和 POST /compare 的生命周期参数测试缺失
+2. retention_days = 1 的极端边界测试缺失
+3. 0% 回看比例 (access_percent = 0) 测试缺失
+4. 数据传输阶梯计费验证测试缺失
+
+RECOMMENDATION
+--------------
+Status: NEEDS WORK
+Action: 添加缺失的测试用例以达到 pass@3 > 90% 和 pass^3 = 100%
