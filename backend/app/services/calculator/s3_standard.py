@@ -10,11 +10,16 @@ S3 Standard 特点：
 - 没有生命周期转换费用
 - 适合频繁访问的数据
 """
+from typing import TYPE_CHECKING, Optional
+
 from app.models.dimensions import CostCalculationInput, FunctionalDimensions
 from app.models.results import CostBreakdown, CostSummary, IntermediateMetrics
-from app.models.pricing import PricingLoader, S3Pricing
+from app.models.pricing import S3Pricing
 from app.models.enums import StorageClass
 from app.services.calculator.base import BaseCalculator
+
+if TYPE_CHECKING:
+    from app.services.pricing_service import PricingService
 
 
 class S3StandardCalculator:
@@ -27,13 +32,43 @@ class S3StandardCalculator:
         calculator = S3StandardCalculator()
         result = calculator.calculate(input_data)
 
+        # 使用自定义 PricingService
+        from app.services.pricing_service import get_pricing_service
+        calculator = S3StandardCalculator(get_pricing_service())
+
     计算流程:
-        1. 加载区域定价数据
+        1. 从 PricingService 获取区域定价数据
         2. 计算中间指标（数据量、请求数等）
         3. 计算各项费用
         4. 应用折扣
         5. 汇总返回结果
     """
+
+    def __init__(self, pricing_service: Optional["PricingService"] = None):
+        """初始化计算器
+
+        Args:
+            pricing_service: 定价服务实例，None 时使用全局单例
+        """
+        self._pricing_service = pricing_service
+
+    def _get_pricing(self, region: str) -> S3Pricing:
+        """获取定价数据
+
+        优先使用 PricingService，否则回退到 PricingLoader。
+
+        Args:
+            region: AWS 区域代码
+
+        Returns:
+            S3Pricing: 定价信息
+        """
+        if self._pricing_service is None:
+            from app.services.pricing_service import get_pricing_service
+            self._pricing_service = get_pricing_service()
+
+        pricing, _ = self._pricing_service.get_pricing(region)
+        return pricing
 
     def _calculate_metrics(self, functional: FunctionalDimensions) -> IntermediateMetrics:
         """计算中间指标
@@ -127,8 +162,8 @@ class S3StandardCalculator:
             GET 费用 = (月度 GET 数 / 1000) x GET 单价 x (1 - 折扣)
             传输费用 = 月度传输量 x 传输单价 x (1 - 折扣)
         """
-        # 加载定价数据
-        pricing = PricingLoader.load(input_data.pricing.region)
+        # 获取定价数据（通过 PricingService）
+        pricing = self._get_pricing(input_data.pricing.region)
         storage_class = StorageClass.STANDARD
 
         # 计算中间指标

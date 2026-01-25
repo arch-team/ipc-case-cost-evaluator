@@ -3,11 +3,11 @@
 支持多阶段生命周期配置的成本计算。
 """
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from app.models.dimensions import CostCalculationInput, LifecycleStage
 from app.models.enums import StorageClass
-from app.models.pricing import PricingLoader, S3Pricing
+from app.models.pricing import S3Pricing
 from app.models.results import (
     CostBreakdown,
     CostItem,
@@ -20,6 +20,9 @@ from app.models.results import (
 )
 from app.services.calculator.base import BaseCalculator
 
+if TYPE_CHECKING:
+    from app.services.pricing_service import PricingService
+
 
 class LifecycleCalculator:
     """生命周期混合策略计算器
@@ -29,13 +32,36 @@ class LifecycleCalculator:
     2. 多阶段模式: 自定义多个存储阶段
 
     Attributes:
+        _pricing_service: 定价服务实例
         _pricing: 当前使用的定价数据
         _discount: 折扣比例
     """
 
-    def __init__(self):
+    def __init__(self, pricing_service: Optional["PricingService"] = None):
+        """初始化计算器
+
+        Args:
+            pricing_service: 定价服务实例，None 时使用全局单例
+        """
+        self._pricing_service = pricing_service
         self._pricing: Optional[S3Pricing] = None
         self._discount: float = 0.0
+
+    def _get_pricing(self, region: str) -> S3Pricing:
+        """获取定价数据
+
+        Args:
+            region: AWS 区域代码
+
+        Returns:
+            S3Pricing: 定价信息
+        """
+        if self._pricing_service is None:
+            from app.services.pricing_service import get_pricing_service
+            self._pricing_service = get_pricing_service()
+
+        pricing, _ = self._pricing_service.get_pricing(region)
+        return pricing
 
     def calculate(self, input_data: CostCalculationInput) -> CostSummary:
         """计算生命周期混合策略成本
@@ -58,8 +84,8 @@ class LifecycleCalculator:
         if not lifecycle or not lifecycle.enabled:
             raise ValueError("生命周期策略未启用")
 
-        # 加载定价数据
-        self._pricing = PricingLoader.load(input_data.pricing.region)
+        # 获取定价数据（通过 PricingService）
+        self._pricing = self._get_pricing(input_data.pricing.region)
         self._discount = input_data.pricing.discount_percent
 
         # 选择计算模式
@@ -85,7 +111,8 @@ class LifecycleCalculator:
         if not lifecycle or not lifecycle.enabled:
             raise ValueError("生命周期策略未启用")
 
-        self._pricing = PricingLoader.load(input_data.pricing.region)
+        # 获取定价数据（通过 PricingService）
+        self._pricing = self._get_pricing(input_data.pricing.region)
         self._discount = input_data.pricing.discount_percent
 
         if lifecycle.is_multi_stage:

@@ -182,6 +182,11 @@ class AWSPricingClient:
                 lifecycle_price = self._query_lifecycle_price(
                     target_region, api_storage_class
                 )
+                # 如果 API 未返回检索和转换费用，使用默认值
+                if retrieval_price == 0.0:
+                    retrieval_price = self._get_default_retrieval_price(storage_class)
+                if lifecycle_price == 0.0:
+                    lifecycle_price = self._get_default_lifecycle_price(storage_class)
 
             return StorageClassPricing(
                 storage_per_gb_month=storage_price or self._get_default_storage_price(storage_class),
@@ -477,6 +482,24 @@ class AWSPricingClient:
             StorageClass.DEEP_ARCHIVE: 0.0004,
         }
         return defaults.get(storage_class, 0.00037)
+
+    def _get_default_retrieval_price(self, storage_class: StorageClass) -> float:
+        """获取默认检索价格 (每 GB)"""
+        defaults = {
+            StorageClass.STANDARD: 0.0,
+            StorageClass.GLACIER_IR: 0.03,
+            StorageClass.DEEP_ARCHIVE: 0.02,
+        }
+        return defaults.get(storage_class, 0.0)
+
+    def _get_default_lifecycle_price(self, storage_class: StorageClass) -> float:
+        """获取默认生命周期转换价格 (每千次)"""
+        defaults = {
+            StorageClass.STANDARD: 0.0,
+            StorageClass.GLACIER_IR: 0.02,
+            StorageClass.DEEP_ARCHIVE: 0.05,
+        }
+        return defaults.get(storage_class, 0.0)
 
     def test_connection(self) -> bool:
         """测试 API 连接

@@ -13,11 +13,16 @@ S3 Glacier IR 特点：
 - 有数据检索费用 ($0.03/GB)
 - 适合长期存储、低频访问的数据
 """
+from typing import TYPE_CHECKING, Optional
+
 from app.models.dimensions import CostCalculationInput
 from app.models.results import CostBreakdown, CostSummary, IntermediateMetrics
-from app.models.pricing import PricingLoader
+from app.models.pricing import S3Pricing
 from app.models.enums import StorageClass
 from app.services.calculator.base import BaseCalculator
+
+if TYPE_CHECKING:
+    from app.services.pricing_service import PricingService
 
 
 class S3GlacierCalculator:
@@ -31,8 +36,12 @@ class S3GlacierCalculator:
         calculator = S3GlacierCalculator()
         result = calculator.calculate(input_data)
 
+        # 使用自定义 PricingService
+        from app.services.pricing_service import get_pricing_service
+        calculator = S3GlacierCalculator(get_pricing_service())
+
     计算流程:
-        1. 加载区域定价数据
+        1. 从 PricingService 获取区域定价数据
         2. 计算中间指标（数据量、请求数等）
         3. 计算各项费用
         4. 计算检索费用（Glacier 特有）
@@ -45,6 +54,30 @@ class S3GlacierCalculator:
         - 有检索费用（按 GB 计费）
         - 没有生命周期转换费用（直接写入 Glacier）
     """
+
+    def __init__(self, pricing_service: Optional["PricingService"] = None):
+        """初始化计算器
+
+        Args:
+            pricing_service: 定价服务实例，None 时使用全局单例
+        """
+        self._pricing_service = pricing_service
+
+    def _get_pricing(self, region: str) -> S3Pricing:
+        """获取定价数据
+
+        Args:
+            region: AWS 区域代码
+
+        Returns:
+            S3Pricing: 定价信息
+        """
+        if self._pricing_service is None:
+            from app.services.pricing_service import get_pricing_service
+            self._pricing_service = get_pricing_service()
+
+        pricing, _ = self._pricing_service.get_pricing(region)
+        return pricing
 
     def calculate(self, input_data: CostCalculationInput) -> CostSummary:
         """计算 S3 Glacier IR 存储成本
@@ -65,8 +98,8 @@ class S3GlacierCalculator:
         functional = input_data.functional
         pricing_dims = input_data.pricing
 
-        # 加载定价数据
-        pricing = PricingLoader.load(pricing_dims.region)
+        # 获取定价数据（通过 PricingService）
+        pricing = self._get_pricing(pricing_dims.region)
         storage_class = StorageClass.GLACIER_IR
         discount = pricing_dims.discount_percent
 

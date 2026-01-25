@@ -1,4 +1,6 @@
 """存储方案对比器"""
+from typing import TYPE_CHECKING, Optional
+
 from app.models.dimensions import (
     CostCalculationInput,
     TechnicalDimensions,
@@ -13,6 +15,9 @@ from app.services.calculator.s3_standard import S3StandardCalculator
 from app.services.calculator.s3_glacier import S3GlacierCalculator
 from app.services.calculator.lifecycle import LifecycleCalculator
 
+if TYPE_CHECKING:
+    from app.services.pricing_service import PricingService
+
 
 class StorageComparator:
     """
@@ -21,10 +26,15 @@ class StorageComparator:
     对比 S3 Standard、Glacier IR 和生命周期混合策略的成本。
     """
 
-    def __init__(self):
-        self.standard_calc = S3StandardCalculator()
-        self.glacier_calc = S3GlacierCalculator()
-        self.lifecycle_calc = LifecycleCalculator()
+    def __init__(self, pricing_service: Optional["PricingService"] = None):
+        """初始化对比器
+
+        Args:
+            pricing_service: 定价服务实例，None 时使用全局单例
+        """
+        self.standard_calc = S3StandardCalculator(pricing_service)
+        self.glacier_calc = S3GlacierCalculator(pricing_service)
+        self.lifecycle_calc = LifecycleCalculator(pricing_service)
 
     def compare(
         self,
