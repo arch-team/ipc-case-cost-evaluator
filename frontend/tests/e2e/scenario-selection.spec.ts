@@ -34,11 +34,14 @@ test.describe('场景选择', () => {
   test('显示场景分类', async ({ page }) => {
     await calculatorPage.scenarioSelector.waitForScenariosLoaded();
 
-    // 验证分类标题存在（至少有一个分类）
-    const categoryTitles = page.locator('h5').filter({
-      has: page.locator('.anticon'),
-    });
-    await expect(categoryTitles.first()).toBeVisible();
+    // 验证分类区块存在（新 UI 使用 scenario-category-group 类）
+    const categoryGroups = page.locator('.scenario-category-group');
+    const groupCount = await categoryGroups.count();
+    expect(groupCount).toBeGreaterThan(0);
+
+    // 验证分类标题存在
+    const categoryTitle = categoryGroups.first().locator('.scenario-category-title');
+    await expect(categoryTitle).toBeVisible();
   });
 
   test('点击场景卡片自动填充参数', async ({ page }) => {
@@ -59,16 +62,21 @@ test.describe('场景选择', () => {
     expect(parseInt(deviceCount)).toBeGreaterThan(0);
   });
 
-  test('场景卡片显示标签信息', async ({ page }) => {
+  test('场景卡片显示信息行', async ({ page }) => {
     await calculatorPage.scenarioSelector.waitForScenariosLoaded();
 
-    // 检查场景卡片上的标签
-    const firstCard = page.locator('.ant-card.ant-card-hoverable').first();
-    const tags = firstCard.locator('.ant-tag');
+    // 检查场景卡片上的信息行（新 UI 使用简洁文字展示代替 Tag）
+    const firstCard = page.locator('.scenario-card').first();
+    const infoRows = firstCard.locator('.scenario-card-info-row');
 
-    // 每个场景应该有标签（设备数、存储类型、录像模式、保留天数）
-    const tagCount = await tags.count();
-    expect(tagCount).toBeGreaterThanOrEqual(2);
+    // 每个场景应该有两行信息（设备数·天数、录像模式·存储类型）
+    const rowCount = await infoRows.count();
+    expect(rowCount).toBe(2);
+
+    // 验证第一行包含设备数和天数
+    const line1 = await infoRows.nth(0).textContent();
+    expect(line1).toMatch(/\d+\s*台/);
+    expect(line1).toMatch(/\d+\s*天/);
   });
 
   test('点击自定义配置进入表单', async ({ page }) => {

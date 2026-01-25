@@ -1,5 +1,6 @@
 /**
  * 结果展示 E2E 测试
+ * 适配优化后的三层信息架构 UI
  */
 import { test, expect } from '@playwright/test';
 import { CalculatorPage } from './pages';
@@ -24,6 +25,17 @@ test.describe('结果展示', () => {
     await calculatorPage.resultDisplay.waitForResultsLoaded();
   });
 
+  test.describe('Hero 区域', () => {
+    test('显示单设备月均费用', async ({ page }) => {
+      // 新 UI 使用 Hero 区域展示单设备月费
+      await calculatorPage.resultDisplay.expectHeroVisible();
+      const value = await calculatorPage.resultDisplay.getPerDeviceMonthly();
+      // 值格式为 $X.XXXX
+      expect(value).toMatch(/\$[\d,.]+/);
+      expect(parseFloat(value.replace(/[,$]/g, ''))).toBeGreaterThan(0);
+    });
+  });
+
   test.describe('成本统计卡片', () => {
     test('显示月度总费用', async ({ page }) => {
       await expect(calculatorPage.resultDisplay.monthlyTotalCard).toBeVisible();
@@ -35,12 +47,6 @@ test.describe('结果展示', () => {
     test('显示年度总费用', async ({ page }) => {
       await expect(calculatorPage.resultDisplay.yearlyTotalCard).toBeVisible();
       const value = await calculatorPage.resultDisplay.getYearlyTotal();
-      expect(parseFloat(value.replace(/[,$]/g, ''))).toBeGreaterThan(0);
-    });
-
-    test('显示单设备月均费用', async ({ page }) => {
-      await expect(calculatorPage.resultDisplay.perDeviceCard).toBeVisible();
-      const value = await calculatorPage.resultDisplay.getPerDeviceMonthly();
       expect(parseFloat(value.replace(/[,$]/g, ''))).toBeGreaterThan(0);
     });
 
@@ -67,24 +73,20 @@ test.describe('结果展示', () => {
     });
   });
 
-  test.describe('费用饼图', () => {
-    test('显示费用构成图表', async ({ page }) => {
-      // 查找包含"费用构成"文字的区域
-      const pieSection = page.locator('text=费用构成');
-      await expect(pieSection).toBeVisible();
-    });
-
-    test('图表卡片标题正确', async ({ page }) => {
-      // 验证费用构成标题存在
+  test.describe('费用明细', () => {
+    test('显示费用构成区域', async ({ page }) => {
+      // 新 UI 使用 "费用构成" 标题
+      const breakdownSection = page.locator('[data-testid="result-breakdown-section"]');
+      await expect(breakdownSection).toBeVisible();
       await expect(page.getByText('费用构成')).toBeVisible();
     });
-  });
 
-  test.describe('费用明细表格', () => {
-    test('显示费用明细表格', async ({ page }) => {
-      // 查找费用明细区域
-      const tableSection = page.locator('text=费用明细');
-      await expect(tableSection).toBeVisible();
+    test('显示视图切换器', async ({ page }) => {
+      // 新 UI 有表格/图表切换
+      const viewToggle = page.locator('.ant-segmented');
+      await expect(viewToggle).toBeVisible();
+      await expect(page.getByText('表格')).toBeVisible();
+      await expect(page.getByText('图表')).toBeVisible();
     });
 
     test('表格有数据行', async ({ page }) => {
@@ -97,6 +99,16 @@ test.describe('结果展示', () => {
       // 验证表格包含常见费用项
       await expect(page.getByText('存储费用')).toBeVisible();
       await expect(page.getByText('PUT 请求费用')).toBeVisible();
+    });
+
+    test('可以切换到图表视图', async ({ page }) => {
+      // 点击图表切换
+      await calculatorPage.resultDisplay.switchToChartView();
+
+      // 验证图表可见（饼图使用 echarts）- 在费用明细区域内
+      const breakdownSection = page.locator('[data-testid="result-breakdown-section"]');
+      const chart = breakdownSection.locator('canvas').first();
+      await expect(chart).toBeVisible();
     });
   });
 
@@ -119,25 +131,29 @@ test.describe('结果展示', () => {
   });
 
   test.describe('使用量指标', () => {
-    test('显示月度存储量', async ({ page }) => {
-      const storageMetric = page.locator('.ant-statistic').filter({
-        has: page.locator('text=月度存储量'),
-      });
-      await expect(storageMetric).toBeVisible();
+    test('显示使用量指标折叠面板', async ({ page }) => {
+      // 新 UI 使用可折叠面板
+      const metricsCollapse = page.locator('.result-metrics-collapse');
+      await expect(metricsCollapse).toBeVisible();
     });
 
-    test('显示月度 PUT 请求', async ({ page }) => {
-      const putsMetric = page.locator('.ant-statistic').filter({
-        has: page.locator('text=月度 PUT 请求'),
-      });
-      await expect(putsMetric).toBeVisible();
+    test('折叠状态下显示摘要信息', async ({ page }) => {
+      // 验证摘要信息可见
+      const summary = await calculatorPage.resultDisplay.getMetricsSummary();
+      expect(summary).toMatch(/存储/);
+      expect(summary).toMatch(/PUT/);
+      expect(summary).toMatch(/传输/);
     });
 
-    test('显示月度数据传输', async ({ page }) => {
-      const transferMetric = page.locator('.ant-statistic').filter({
-        has: page.locator('text=月度数据传输'),
-      });
-      await expect(transferMetric).toBeVisible();
+    test('展开后显示详细指标', async ({ page }) => {
+      // 展开面板
+      await calculatorPage.resultDisplay.expandMetrics();
+
+      // 验证详细指标可见
+      const metrics = await calculatorPage.resultDisplay.getMetrics();
+      expect(parseFloat(metrics.storage)).toBeGreaterThanOrEqual(0);
+      expect(parseInt(metrics.puts.replace(/,/g, ''))).toBeGreaterThanOrEqual(0);
+      expect(parseFloat(metrics.transfer)).toBeGreaterThanOrEqual(0);
     });
   });
 
