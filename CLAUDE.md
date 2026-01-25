@@ -109,3 +109,10 @@ total = storage_cost + put_cost + get_cost + retrieval_cost + transfer_cost + li
 
 - [设计文档](docs/plans/2025-01-24-ipc-cost-evaluator-design.md)
 - [实现计划](docs/plans/2025-01-24-implementation-plan.md)
+
+## Active Technologies
+- Python 3.11+ (Backend), TypeScript 5.9+ (Frontend) (001-ipc-cost-evaluator)
+- Amazon DynamoDB (评估历史、分享链接)，本地 JSON (AWS 定价数据) (001-ipc-cost-evaluator)
+
+## Recent Changes
+- 001-ipc-cost-evaluator: Added Python 3.11+ (Backend), TypeScript 5.9+ (Frontend)

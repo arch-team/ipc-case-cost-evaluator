@@ -1,0 +1,1009 @@
+openapi: 3.1.0
+info:
+  title: IPC Case Cost Evaluator API
+  description: AWS S3 云存储成本评估系统 API
+  version: 1.0.0
+  contact:
+    name: IPC Cost Evaluator Team
+
+servers:
+  - url: /api/v1
+    description: API v1
+
+tags:
+  - name: 计算
+    description: 成本计算相关接口
+  - name: 对比
+    description: 方案对比相关接口
+  - name: 敏感度
+    description: 敏感度分析相关接口
+  - name: 生命周期
+    description: 生命周期配置相关接口
+  - name: 场景
+    description: 预设场景相关接口
+  - name: 导出
+    description: 结果导出相关接口
+  - name: 分享
+    description: 分享链接相关接口
+  - name: 历史
+    description: 评估历史相关接口
+  - name: 定价
+    description: 定价管理相关接口
+  - name: 认证
+    description: 用户认证相关接口
+
+paths:
+  # ============ 计算 ============
+  /calculate:
+    post:
+      tags: [计算]
+      summary: 计算单一方案成本
+      description: 根据三维度参数计算指定存储方案的成本明细
+      operationId: calculateCost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CostCalculationInput'
+      responses:
+        '200':
+          description: 计算成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostSummary'
+        '422':
+          description: 参数验证失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  # ============ 对比 ============
+  /compare:
+    post:
+      tags: [对比]
+      summary: 多方案对比分析
+      description: 同时计算多种存储方案的成本并返回对比结果
+      operationId: compareScenarios
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComparisonInput'
+      responses:
+        '200':
+          description: 对比成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComparisonResult'
+
+  # ============ 敏感度 ============
+  /sensitivity:
+    post:
+      tags: [敏感度]
+      summary: 敏感度分析
+      description: 分析单个参数变化对成本的影响
+      operationId: sensitivityAnalysis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SensitivityInput'
+      responses:
+        '200':
+          description: 分析成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SensitivityResult'
+
+  # ============ 生命周期 ============
+  /lifecycle/templates:
+    get:
+      tags: [生命周期]
+      summary: 获取生命周期模板列表
+      operationId: listLifecycleTemplates
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LifecycleTemplate'
+
+  /lifecycle/validate:
+    post:
+      tags: [生命周期]
+      summary: 验证生命周期配置
+      operationId: validateLifecycle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleValidationInput'
+      responses:
+        '200':
+          description: 验证通过
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleValidationResult'
+
+  # ============ 场景 ============
+  /scenarios:
+    get:
+      tags: [场景]
+      summary: 获取预设场景列表
+      operationId: listScenarios
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Scenario'
+
+  /scenarios/{scenario_id}:
+    get:
+      tags: [场景]
+      summary: 获取场景详情
+      operationId: getScenario
+      parameters:
+        - name: scenario_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Scenario'
+        '404':
+          description: 场景不存在
+
+  # ============ 导出 ============
+  /export/excel:
+    post:
+      tags: [导出]
+      summary: 导出 Excel 报告
+      operationId: exportExcel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportInput'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+
+  # ============ 分享 ============
+  /shares:
+    post:
+      tags: [分享]
+      summary: 创建分享链接
+      operationId: createShare
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShareInput'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareResponse'
+
+  /shares/{share_id}:
+    get:
+      tags: [分享]
+      summary: 获取分享内容
+      description: 公开接口，无需认证
+      operationId: getShare
+      parameters:
+        - name: share_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareContent'
+        '404':
+          description: 链接不存在或已过期
+
+  # ============ 历史 ============
+  /evaluations:
+    get:
+      tags: [历史]
+      summary: 获取评估历史列表
+      operationId: listEvaluations
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluationList'
+
+    post:
+      tags: [历史]
+      summary: 保存评估记录
+      operationId: createEvaluation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEvaluationInput'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Evaluation'
+
+  /evaluations/{evaluation_id}:
+    get:
+      tags: [历史]
+      summary: 获取评估详情
+      operationId: getEvaluation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: evaluation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Evaluation'
+        '404':
+          description: 评估不存在
+
+    put:
+      tags: [历史]
+      summary: 更新评估记录
+      operationId: updateEvaluation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: evaluation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEvaluationInput'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Evaluation'
+
+    delete:
+      tags: [历史]
+      summary: 删除评估记录
+      operationId: deleteEvaluation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: evaluation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: 删除成功
+
+  # ============ 定价 ============
+  /pricing/regions:
+    get:
+      tags: [定价]
+      summary: 获取支持的区域列表
+      operationId: listRegions
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RegionInfo'
+
+  /pricing/{region}:
+    get:
+      tags: [定价]
+      summary: 获取区域定价数据
+      operationId: getRegionPricing
+      parameters:
+        - name: region
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegionalPricing'
+
+  /pricing/{region}/refresh:
+    post:
+      tags: [定价]
+      summary: 刷新区域定价数据
+      description: 从 AWS Pricing API 获取最新价格
+      operationId: refreshPricing
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: region
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 刷新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegionalPricing'
+        '503':
+          description: AWS Pricing API 不可用
+
+  # ============ 认证 ============
+  /auth/register:
+    post:
+      tags: [认证]
+      summary: 用户注册
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterInput'
+      responses:
+        '201':
+          description: 注册成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '409':
+          description: 邮箱已存在
+
+  /auth/login:
+    post:
+      tags: [认证]
+      summary: 用户登录
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: 认证失败
+
+  /auth/refresh:
+    post:
+      tags: [认证]
+      summary: 刷新 Token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenInput'
+      responses:
+        '200':
+          description: 刷新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Refresh Token 无效或已过期
+
+  /auth/me:
+    get:
+      tags: [认证]
+      summary: 获取当前用户信息
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfo'
+
+  # ============ 健康检查 ============
+  /health:
+    get:
+      summary: 健康检查
+      operationId: healthCheck
+      responses:
+        '200':
+          description: 服务正常
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ========== 输入模型 ==========
+    CostCalculationInput:
+      type: object
+      required: [functional, technical, pricing]
+      properties:
+        functional:
+          $ref: '#/components/schemas/FunctionalDimensions'
+        technical:
+          $ref: '#/components/schemas/TechnicalDimensions'
+        pricing:
+          $ref: '#/components/schemas/PricingDimensions'
+
+    FunctionalDimensions:
+      type: object
+      required: [device_count, recording_mode, video_quality, retention_days]
+      properties:
+        device_count:
+          type: integer
+          minimum: 1
+          maximum: 100000
+        recording_mode:
+          type: string
+          enum: [continuous, event, scheduled]
+        video_quality:
+          type: string
+          enum: [720p, 1080p, 2k, 4k]
+        events_per_day:
+          type: integer
+          minimum: 0
+          maximum: 1000
+          default: 50
+        event_duration_seconds:
+          type: integer
+          minimum: 1
+          maximum: 3600
+          default: 30
+        access_pattern:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.1
+        retention_days:
+          type: integer
+          minimum: 1
+          maximum: 365
+        segment_strategy:
+          type: string
+          enum: [fixed_duration, fixed_size, realtime]
+          default: fixed_duration
+        segment_seconds:
+          type: integer
+          minimum: 10
+          maximum: 300
+          default: 60
+        segment_mb:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+
+    TechnicalDimensions:
+      type: object
+      required: [storage_class]
+      properties:
+        storage_class:
+          type: string
+          enum: [STANDARD, GLACIER_IR, DEEP_ARCHIVE]
+        lifecycle_enabled:
+          type: boolean
+          default: false
+        lifecycle_stages:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleStage'
+          maxItems: 5
+
+    LifecycleStage:
+      type: object
+      required: [name, storage_class, days]
+      properties:
+        name:
+          type: string
+          maxLength: 50
+        storage_class:
+          type: string
+          enum: [STANDARD, GLACIER_IR, DEEP_ARCHIVE]
+        days:
+          type: integer
+          minimum: 1
+          maximum: 365
+
+    PricingDimensions:
+      type: object
+      required: [region]
+      properties:
+        region:
+          type: string
+          default: ap-northeast-1
+        discount_rate:
+          type: number
+          minimum: 0
+          maximum: 0.5
+          default: 0
+
+    ComparisonInput:
+      type: object
+      required: [functional, pricing]
+      properties:
+        functional:
+          $ref: '#/components/schemas/FunctionalDimensions'
+        pricing:
+          $ref: '#/components/schemas/PricingDimensions'
+        include_lifecycle:
+          type: boolean
+          default: true
+
+    SensitivityInput:
+      type: object
+      required: [base_params, param_name]
+      properties:
+        base_params:
+          $ref: '#/components/schemas/CostCalculationInput'
+        param_name:
+          type: string
+          enum: [device_count, retention_days, access_pattern]
+        range_factor:
+          type: number
+          minimum: 1.1
+          maximum: 5
+          default: 2
+        points:
+          type: integer
+          minimum: 5
+          maximum: 51
+          default: 21
+
+    # ========== 输出模型 ==========
+    CostBreakdown:
+      type: object
+      properties:
+        storage_cost:
+          type: number
+        put_request_cost:
+          type: number
+        get_request_cost:
+          type: number
+        retrieval_cost:
+          type: number
+        transfer_cost:
+          type: number
+        lifecycle_transition_cost:
+          type: number
+        total:
+          type: number
+
+    CostSummary:
+      type: object
+      properties:
+        storage_class:
+          type: string
+        breakdown:
+          $ref: '#/components/schemas/CostBreakdown'
+        monthly_total:
+          type: number
+        yearly_total:
+          type: number
+        metrics:
+          $ref: '#/components/schemas/CalculationMetrics'
+
+    CalculationMetrics:
+      type: object
+      properties:
+        daily_data_gb:
+          type: number
+        monthly_storage_gb:
+          type: number
+        monthly_puts:
+          type: integer
+        monthly_gets:
+          type: integer
+        monthly_retrieval_gb:
+          type: number
+
+    ComparisonResult:
+      type: object
+      properties:
+        scenarios:
+          type: array
+          items:
+            $ref: '#/components/schemas/CostSummary'
+        recommended:
+          type: string
+        recommendation_reason:
+          type: string
+        savings_vs_standard:
+          type: object
+          additionalProperties:
+            type: number
+
+    SensitivityResult:
+      type: object
+      properties:
+        param_name:
+          type: string
+        base_value:
+          type: number
+        data_points:
+          type: array
+          items:
+            $ref: '#/components/schemas/SensitivityDataPoint'
+
+    SensitivityDataPoint:
+      type: object
+      properties:
+        factor:
+          type: number
+        param_value:
+          type: number
+        monthly_cost:
+          type: number
+        cost_change_percent:
+          type: number
+
+    LifecycleTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        total_days:
+          type: integer
+        stages:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleStage'
+
+    Scenario:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        params:
+          $ref: '#/components/schemas/FunctionalDimensions'
+
+    Evaluation:
+      type: object
+      properties:
+        evaluation_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        input_params:
+          $ref: '#/components/schemas/CostCalculationInput'
+        result:
+          $ref: '#/components/schemas/CostSummary'
+        comparison:
+          $ref: '#/components/schemas/ComparisonResult'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    RegionalPricing:
+      type: object
+      properties:
+        region:
+          type: string
+        storage_prices:
+          type: object
+          additionalProperties:
+            type: number
+        put_request_prices:
+          type: object
+          additionalProperties:
+            type: number
+        get_request_prices:
+          type: object
+          additionalProperties:
+            type: number
+        retrieval_prices:
+          type: object
+          additionalProperties:
+            type: number
+        lifecycle_transition_prices:
+          type: object
+          additionalProperties:
+            type: number
+        data_transfer_price:
+          type: number
+        last_updated:
+          type: string
+          format: date-time
+
+    # ========== 认证模型 ==========
+    RegisterInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    RefreshTokenInput:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        token_type:
+          type: string
+          default: bearer
+        expires_in:
+          type: integer
+
+    UserInfo:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        created_at:
+          type: string
+          format: date-time
+
+    # ========== 错误模型 ==========
+    ValidationError:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            type: object
+            properties:
+              loc:
+                type: array
+                items:
+                  type: string
+              msg:
+                type: string
+              type:
+                type: string
+
+    # ========== 其他模型 ==========
+    CreateShareInput:
+      type: object
+      required: [evaluation_snapshot]
+      properties:
+        evaluation_snapshot:
+          type: object
+        expires_in_days:
+          type: integer
+          default: 7
+          minimum: 1
+          maximum: 30
+
+    ShareResponse:
+      type: object
+      properties:
+        share_id:
+          type: string
+          format: uuid
+        share_url:
+          type: string
+          format: uri
+        expires_at:
+          type: string
+          format: date-time
+
+    ShareContent:
+      type: object
+      properties:
+        evaluation_snapshot:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+
+    CreateEvaluationInput:
+      type: object
+      required: [name, input_params, result]
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        input_params:
+          $ref: '#/components/schemas/CostCalculationInput'
+        result:
+          $ref: '#/components/schemas/CostSummary'
+        comparison:
+          $ref: '#/components/schemas/ComparisonResult'
+
+    UpdateEvaluationInput:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+
+    EvaluationList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Evaluation'
+        next_cursor:
+          type: string
+
+    RegionInfo:
+      type: object
+      properties:
+        region:
+          type: string
+        name:
+          type: string
+        available:
+          type: boolean
+
+    LifecycleValidationInput:
+      type: object
+      required: [stages, retention_days]
+      properties:
+        stages:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleStage'
+        retention_days:
+          type: integer
+
+    LifecycleValidationResult:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+
+    ExportInput:
+      type: object
+      required: [input_params, result]
+      properties:
+        input_params:
+          $ref: '#/components/schemas/CostCalculationInput'
+        result:
+          $ref: '#/components/schemas/CostSummary'
+        comparison:
+          $ref: '#/components/schemas/ComparisonResult'
+        include_charts:
+          type: boolean
+          default: true
