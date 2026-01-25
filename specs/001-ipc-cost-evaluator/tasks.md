@@ -20,99 +20,107 @@
 
 ---
 
-## Phase 1: Setup (项目初始化)
+## Phase 1: Setup (项目初始化) ✅
 
 **Purpose**: 确认项目结构和依赖完整
 
-- [ ] T001 确认 backend/ 目录结构符合 plan.md 规范
-- [ ] T002 确认 frontend/ 目录结构符合 plan.md 规范
-- [ ] T003 [P] 验证 backend/requirements.txt 包含所有必要依赖
-- [ ] T004 [P] 验证 frontend/package.json 包含所有必要依赖
-- [ ] T005 [P] 创建 backend/app/data/scenarios/ 目录并添加预设场景 JSON
-- [ ] T006 [P] 创建 backend/app/data/lifecycle_templates/ 目录并添加生命周期模板 JSON
+**Status**: ✅ 完成 (2026-01-25) | [Eval Report](.claude/evals/phase1-setup.md)
+
+- [x] T001 确认 backend/ 目录结构符合 plan.md 规范
+- [x] T002 确认 frontend/ 目录结构符合 plan.md 规范
+- [x] T003 [P] 验证 backend/requirements.txt 包含所有必要依赖
+- [x] T004 [P] 验证 frontend/package.json 包含所有必要依赖
+- [x] T005 [P] 创建 backend/app/data/scenarios/ 目录并添加预设场景 JSON (8个场景)
+- [x] T006 [P] 创建 backend/app/data/lifecycle_templates/ 目录并添加生命周期模板 JSON (4个模板)
 
 ---
 
-## Phase 2: Foundational (基础设施)
+## Phase 2: Foundational (基础设施) ✅
 
 **Purpose**: 核心基础设施，所有用户故事依赖此阶段
 
-**⚠️ CRITICAL**: 此阶段必须完成后才能开始用户故事实现
+**Status**: ✅ 完成 (2026-01-25) | [Eval Report](../../.claude/evals/phase2-foundational.md)
 
-- [ ] T007 实现 JWT 认证服务 in backend/app/services/auth.py
-- [ ] T008 [P] 创建认证模型 in backend/app/models/auth.py
-- [ ] T009 [P] 实现认证路由 in backend/app/api/routes/auth.py
-- [ ] T010 配置 DynamoDB 客户端连接 in backend/app/db/dynamodb_client.py
-- [ ] T011 [P] 创建用户仓库 in backend/app/db/repositories/users.py
-- [ ] T012 [P] 验证现有 AWS 定价数据完整性 in backend/app/data/aws_pricing/
-- [ ] T013 配置环境变量和 JWT 密钥 in backend/app/core/config.py
-- [ ] T014 [P] 创建前端 API 客户端基础 in frontend/src/services/api.ts
-- [ ] T015 [P] 配置前端路由结构 in frontend/src/App.tsx
+- [x] T007 实现 JWT 认证服务 in backend/app/services/auth.py
+- [x] T008 [P] 创建认证模型 in backend/app/api/routes/auth.py (内联定义)
+- [x] T009 [P] 实现认证路由 in backend/app/api/routes/auth.py
+- [x] T010 配置 DynamoDB 客户端连接 in backend/app/db/dynamodb_client.py
+- [x] T011 [P] 创建用户仓库 in backend/app/services/auth.py (内嵌实现)
+- [x] T012 [P] 验证现有 AWS 定价数据完整性 in backend/app/data/aws_pricing/ (5个区域)
+- [x] T013 配置环境变量和 JWT 密钥 in backend/app/core/config.py
+- [x] T014 [P] 创建前端 API 客户端基础 in frontend/src/api/client.ts
+- [x] T015 [P] 配置前端路由结构 in frontend/src/App.tsx (4个页面路由)
 
-**Checkpoint**: 基础设施就绪 - 用户故事实现可以开始
+**Checkpoint**: ✅ 基础设施就绪 - 用户故事实现可以开始
 
 ---
 
-## Phase 3: User Story 1 - 单一存储方案成本计算 (Priority: P1) 🎯 MVP
+## Phase 3: User Story 1 - 单一存储方案成本计算 (Priority: P1) 🎯 MVP ✅
 
 **Goal**: 用户输入三维度参数，获得单一存储方案的详细费用明细
 
-**Independent Test**: 调用 POST /api/v1/calculate 返回完整的 CostSummary
+**Status**: ✅ 完成 (2026-01-25) | [Eval Report](../../.claude/evals/phase3-us1-single-calculation.md)
+
+**Independent Test**: 调用 POST /api/v1/calculate 返回完整的 CostSummary ✅
 
 ### Backend Implementation
 
-- [ ] T016 [P] [US1] 验证 FunctionalDimensions 模型完整性 in backend/app/models/dimensions.py
-- [ ] T017 [P] [US1] 验证 TechnicalDimensions 模型完整性 in backend/app/models/dimensions.py
-- [ ] T018 [P] [US1] 验证 PricingDimensions 模型完整性 in backend/app/models/dimensions.py
-- [ ] T019 [US1] 验证 BaseCalculator 基础计算方法 in backend/app/services/calculator/base.py
-- [ ] T020 [US1] 验证 S3StandardCalculator 计算逻辑 in backend/app/services/calculator/s3_standard.py
-- [ ] T021 [US1] 实现 S3GlacierCalculator 计算逻辑 in backend/app/services/calculator/s3_glacier.py
-- [ ] T022 [US1] 实现成本计算路由 in backend/app/api/routes/calculate.py
-- [ ] T023 [US1] 添加参数验证和错误处理 in backend/app/api/routes/calculate.py
+- [x] T016 [P] [US1] 验证 FunctionalDimensions 模型完整性 in backend/app/models/dimensions.py
+- [x] T017 [P] [US1] 验证 TechnicalDimensions 模型完整性 in backend/app/models/dimensions.py
+- [x] T018 [P] [US1] 验证 PricingDimensions 模型完整性 in backend/app/models/dimensions.py
+- [x] T019 [US1] 验证 BaseCalculator 基础计算方法 in backend/app/services/calculator/base.py
+- [x] T020 [US1] 验证 S3StandardCalculator 计算逻辑 in backend/app/services/calculator/s3_standard.py
+- [x] T021 [US1] 实现 S3GlacierCalculator 计算逻辑 in backend/app/services/calculator/s3_glacier.py
+- [x] T022 [US1] 实现成本计算路由 in backend/app/api/routes/calculate.py
+- [x] T023 [US1] 添加参数验证和错误处理 in backend/app/api/routes/calculate.py
 
 ### Frontend Implementation
 
-- [ ] T024 [P] [US1] 创建三维度参数表单组件 in frontend/src/components/Calculator/DimensionsForm.tsx
-- [ ] T025 [P] [US1] 创建费用明细展示组件 in frontend/src/components/Calculator/CostBreakdown.tsx
-- [ ] T026 [P] [US1] 创建成本汇总卡片组件 in frontend/src/components/Calculator/CostSummary.tsx
-- [ ] T027 [US1] 实现计算器页面主体 in frontend/src/pages/CalculatorPage.tsx
-- [ ] T028 [US1] 实现实时计算 Hook in frontend/src/hooks/useCalculation.ts
-- [ ] T029 [US1] 添加表单验证和错误提示 in frontend/src/components/Calculator/DimensionsForm.tsx
+- [x] T024 [P] [US1] 创建三维度参数表单组件 (FunctionalForm + TechnicalForm + PricingForm)
+- [x] T025 [P] [US1] 创建费用明细展示组件 (CostBreakdownTable + CostPieChart)
+- [x] T026 [P] [US1] 创建成本汇总卡片组件 (ResultDisplay.tsx)
+- [x] T027 [US1] 实现计算器页面主体 in frontend/src/pages/Calculator.tsx
+- [x] T028 [US1] 实现实时计算 (内联 debounce 500ms)
+- [x] T029 [US1] 添加表单验证和错误提示 (fieldConstraints + status error)
 
 ### Integration
 
-- [ ] T030 [US1] 集成前后端成本计算流程
-- [ ] T031 [US1] 验证 US1 验收场景 1-3
+- [x] T030 [US1] 集成前后端成本计算流程
+- [x] T031 [US1] 验证 US1 验收场景 1-3 ✅
 
-**Checkpoint**: 用户故事 1 完成 - 单一方案成本计算可独立使用
+**Checkpoint**: ✅ 用户故事 1 完成 - 单一方案成本计算可独立使用
 
 ---
 
-## Phase 4: User Story 2 - 多存储方案对比分析 (Priority: P1) 🎯 MVP
+## Phase 4: User Story 2 - 多存储方案对比分析 (Priority: P1) 🎯 MVP ✅
 
 **Goal**: 用户一次输入参数，同时查看多方案对比结果和推荐建议
 
-**Independent Test**: 调用 POST /api/v1/compare 返回 ComparisonResult 含多方案
+**Status**: ✅ 完成 (2026-01-25) | [Eval Report](../../.claude/evals/phase4-us2-comparison.md)
+
+**Independent Test**: 调用 POST /api/v1/compare 返回 ComparisonResult 含多方案 ✅
 
 ### Backend Implementation
 
-- [ ] T032 [P] [US2] 创建 ComparisonResult 模型完善 in backend/app/models/results.py
-- [ ] T033 [US2] 实现多方案对比服务 in backend/app/services/comparison.py
-- [ ] T034 [US2] 实现推荐算法（基于回看率和成本）in backend/app/services/comparison.py
-- [ ] T035 [US2] 实现对比路由 in backend/app/api/routes/compare.py
+- [x] T032 [P] [US2] 创建 ComparisonResult 模型完善 in backend/app/models/results.py
+- [x] T033 [US2] 实现多方案对比服务 in backend/app/services/calculator/comparator.py
+- [x] T034 [US2] 实现推荐算法 in backend/app/services/calculator/recommender.py
+- [x] T035 [US2] 实现对比路由 in backend/app/api/routes/compare.py
 
 ### Frontend Implementation
 
-- [ ] T036 [P] [US2] 创建方案对比表格组件 in frontend/src/components/Comparison/ComparisonTable.tsx
-- [ ] T037 [P] [US2] 创建对比柱状图组件 in frontend/src/components/Charts/ComparisonChart.tsx
-- [ ] T038 [P] [US2] 创建推荐卡片组件 in frontend/src/components/Comparison/RecommendationCard.tsx
-- [ ] T039 [US2] 集成对比功能到计算器页面 in frontend/src/pages/CalculatorPage.tsx
+- [x] T036 [P] [US2] 创建方案对比表格组件 (DetailedComparisonTable.tsx)
+- [x] T037 [P] [US2] 创建对比柱状图组件 (ComparisonChart.tsx)
+- [x] T038 [P] [US2] 创建推荐信息展示 (集成在 DetailedComparisonTable)
+- [x] T039 [US2] 集成对比功能到计算器页面 in frontend/src/pages/Calculator.tsx
 
 ### Integration
 
-- [ ] T040 [US2] 验证 US2 验收场景 1-3
+- [x] T040 [US2] 验证 US2 验收场景 1-3 ✅
 
-**Checkpoint**: 用户故事 2 完成 - 多方案对比可独立使用
+**Checkpoint**: ✅ 用户故事 2 完成 - 多方案对比可独立使用
+
+**🎯 MVP Complete**: US1 (单一方案计算) + US2 (多方案对比) 核心功能已完成
 
 ---
 
