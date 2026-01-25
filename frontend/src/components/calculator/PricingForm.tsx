@@ -6,7 +6,7 @@ import { Form, Select, InputNumber, Typography, Row, Col, Tooltip, Card } from '
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import type { PricingDimensions } from '../../types';
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 
 interface PricingFormProps {
   value: PricingDimensions;
@@ -33,11 +33,13 @@ const PricingForm: React.FC<PricingFormProps> = ({ value, onChange }) => {
   };
 
   return (
-    <div>
-      <Title level={4}>价格维度配置</Title>
-      <Text type="secondary" style={{ marginBottom: 24, display: 'block' }}>
-        选择 AWS 区域和设置折扣
-      </Text>
+    <div className="dimension-form">
+      <div className="dimension-form-header">
+        <Text strong style={{ fontSize: 14 }}>价格维度配置</Text>
+        <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+          选择 AWS 区域和设置折扣
+        </Text>
+      </div>
 
       <Form layout="vertical">
         <Row gutter={24}>
@@ -88,9 +90,9 @@ const PricingForm: React.FC<PricingFormProps> = ({ value, onChange }) => {
         </Row>
       </Form>
 
-      <Card style={{ marginTop: 16, background: '#fafafa' }}>
-        <Title level={5}>定价说明</Title>
-        <Paragraph>
+      <Card size="small" style={{ marginTop: 16, background: '#fafafa' }}>
+        <Text strong style={{ fontSize: 13, marginBottom: 8, display: 'block' }}>定价说明</Text>
+        <Paragraph style={{ fontSize: 12, marginBottom: 0 }}>
           <ul>
             <li>
               <Text strong>区域选择</Text>：建议选择距离用户最近的区域，以降低延迟和传输成本

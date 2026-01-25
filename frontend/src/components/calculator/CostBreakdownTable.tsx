@@ -3,13 +3,8 @@
  * 支持单价、用量、阶梯明细展示
  */
 import React, { useState } from 'react';
-import { Table, Typography, Tag, Space, Tooltip } from 'antd';
-import {
-  InfoCircleOutlined,
-  DownOutlined,
-  RightOutlined,
-  CloudServerOutlined,
-} from '@ant-design/icons';
+import { Table, Typography, Tag } from 'antd';
+import { CloudServerOutlined } from '@ant-design/icons';
 import type {
   CostBreakdown,
   UsageMetrics,
@@ -39,7 +34,6 @@ interface EnhancedCostItem {
   monthly: number;
   yearly: number;
   percent: number;
-  tiers?: TierDetail[];
   children?: EnhancedCostItem[];
 }
 
@@ -173,7 +167,34 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
 
     // 数据传输费用（带阶梯）
     if (breakdown.data_transfer_cost > 0) {
-      const transferItem: EnhancedCostItem = {
+      // 构建阶梯明细子行
+      let tierChildren: EnhancedCostItem[] | undefined;
+      const tiers = detailedBreakdown?.dataTransferTiers || (metrics?.monthly_transfer_gb ? [
+        {
+          tierName: '前 10TB',
+          rangeStartGb: 0,
+          rangeEndGb: 10240,
+          unitPrice: 0.114,
+          quantityGb: Math.min(metrics.monthly_transfer_gb, 10240),
+          amount: Math.min(metrics.monthly_transfer_gb, 10240) * 0.114,
+        },
+      ] : undefined);
+
+      if (tiers && tiers.length > 0) {
+        tierChildren = tiers.map((tier, index) => ({
+          key: `transfer_tier_${index}`,
+          name: `└ ${tier.tierName}`,
+          unitPrice: tier.unitPrice,
+          unitPriceUnit: 'USD/GB',
+          quantity: tier.quantityGb,
+          quantityUnit: 'GB',
+          monthly: tier.amount,
+          yearly: tier.amount * 12,
+          percent: (tier.amount / monthlyTotal) * 100,
+        }));
+      }
+
+      items.push({
         key: 'transfer',
         name: '数据传输费用',
         unitPrice: 0.114,
@@ -183,26 +204,8 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
         monthly: breakdown.data_transfer_cost,
         yearly: breakdown.data_transfer_cost * 12,
         percent: (breakdown.data_transfer_cost / monthlyTotal) * 100,
-      };
-
-      // 添加阶梯明细
-      if (detailedBreakdown?.dataTransferTiers) {
-        transferItem.tiers = detailedBreakdown.dataTransferTiers;
-      } else if (metrics?.monthly_transfer_gb) {
-        // 生成默认阶梯明细
-        transferItem.tiers = [
-          {
-            tierName: '前 10TB',
-            rangeStartGb: 0,
-            rangeEndGb: 10240,
-            unitPrice: 0.114,
-            quantityGb: Math.min(metrics.monthly_transfer_gb, 10240),
-            amount: Math.min(metrics.monthly_transfer_gb, 10240) * 0.114,
-          },
-        ];
-      }
-
-      items.push(transferItem);
+        children: tierChildren,
+      });
     }
 
     // 生命周期转换费用
@@ -225,73 +228,12 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
 
   const data = buildBreakdownData();
 
-  // 渲染阶梯明细
-  const renderTierDetails = (tiers: TierDetail[]) => (
-    <div style={{ padding: '8px 16px', background: '#fafafa' }}>
-      <Text strong style={{ marginBottom: 8, display: 'block' }}>
-        阶梯定价明细
-      </Text>
-      <Table
-        size="small"
-        pagination={false}
-        dataSource={tiers.map((t, i) => ({ ...t, key: i }))}
-        columns={[
-          {
-            title: '阶梯',
-            dataIndex: 'tierName',
-            width: 120,
-          },
-          {
-            title: '范围',
-            key: 'range',
-            width: 150,
-            render: (_, record) =>
-              record.rangeEndGb
-                ? `${record.rangeStartGb} - ${record.rangeEndGb} GB`
-                : `${record.rangeStartGb}+ GB`,
-          },
-          {
-            title: '单价',
-            dataIndex: 'unitPrice',
-            width: 100,
-            render: (val: number) => `$${val.toFixed(4)}/GB`,
-          },
-          {
-            title: '用量',
-            dataIndex: 'quantityGb',
-            width: 100,
-            render: (val: number) => `${val.toFixed(2)} GB`,
-          },
-          {
-            title: '费用',
-            dataIndex: 'amount',
-            width: 100,
-            render: (val: number) => `$${val.toFixed(2)}`,
-          },
-        ]}
-      />
-    </div>
-  );
-
   const columns = [
     {
       title: '费用类型',
       dataIndex: 'name',
       key: 'name',
-      width: 180,
-      render: (name: string, record: EnhancedCostItem) => (
-        <Space>
-          {record.children && (
-            expandedRowKeys.includes(record.key) ? <DownOutlined /> : <RightOutlined />
-          )}
-          {record.tiers && record.tiers.length > 0 && (
-            <Tooltip title="点击查看阶梯明细">
-              <InfoCircleOutlined style={{ color: '#1890ff' }} />
-            </Tooltip>
-          )}
-          {name}
-        </Space>
-      ),
+      width: 200,
     },
     {
       title: '单价',
@@ -385,15 +327,7 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
         expandable={{
           expandedRowKeys,
           onExpandedRowsChange: (keys) => setExpandedRowKeys(keys as string[]),
-          expandedRowRender: (record) =>
-            record.tiers && record.tiers.length > 0
-              ? renderTierDetails(record.tiers)
-              : null,
-          rowExpandable: (record) =>
-            Boolean(
-              (record.tiers && record.tiers.length > 0) ||
-              (record.children && record.children.length > 0)
-            ),
+          childrenColumnName: 'children',
         }}
         summary={() => (
           <Table.Summary.Row style={{ background: '#fafafa' }}>

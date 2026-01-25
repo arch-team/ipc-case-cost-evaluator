@@ -6,7 +6,7 @@ import { Form, InputNumber, Select, Slider, Row, Col, Typography, Tooltip } from
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import type { FunctionalDimensions, RecordingMode, VideoQuality } from '../../types';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface FunctionalFormProps {
   value: FunctionalDimensions;
@@ -49,11 +49,13 @@ const FunctionalForm: React.FC<FunctionalFormProps> = ({ value, onChange }) => {
   };
 
   return (
-    <div>
-      <Title level={4}>功能维度配置</Title>
-      <Text type="secondary" style={{ marginBottom: 24, display: 'block' }}>
-        配置 IPC 设备的基本参数和录像策略
-      </Text>
+    <div className="dimension-form">
+      <div className="dimension-form-header">
+        <Text strong style={{ fontSize: 14 }}>功能维度配置</Text>
+        <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+          配置 IPC 设备的基本参数和录像策略
+        </Text>
+      </div>
 
       <Form layout="vertical">
         <Row gutter={24}>

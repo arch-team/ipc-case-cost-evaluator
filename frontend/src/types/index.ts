@@ -289,3 +289,25 @@ export interface ScenarioCategory {
   name: string;
   description: string;
 }
+
+// 命名的技术方案配置
+export interface TechnicalScheme {
+  id: string;                      // 唯一标识符
+  name: string;                    // 方案名称（用户可编辑）
+  technical: TechnicalDimensions;  // 技术配置
+  enabled: boolean;                // 是否启用此方案进行对比
+}
+
+// 多方案技术配置容器
+export interface MultiTechnicalConfig {
+  schemes: TechnicalScheme[];      // 方案列表（最多 4 个）
+  activeSchemeId: string;          // 当前编辑的方案 ID
+}
+
+// 批量计算结果
+export interface BatchCalculationResult {
+  schemeId: string;
+  schemeName: string;
+  result: CostSummary;
+  technical: TechnicalDimensions;
+}

@@ -1,24 +1,33 @@
 /**
- * 成本计算页面
+ * 成本计算页面 - 双栏固定式布局
+ * 左侧参数输入区 (400px) + 右侧结果展示区 (自适应)
  */
-import React, { useState } from 'react';
-import { Card, Steps, Button, message, Row, Col } from 'antd';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, Empty, Spin, Typography, Badge, message } from 'antd';
+import { DollarOutlined, SyncOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import type {
   CostCalculationInput,
   CostSummary,
   ComparisonResult,
+  MultiTechnicalConfig,
 } from '../types';
-import { calculatorApi, exportApi } from '../api/client';
-import FunctionalForm from '../components/calculator/FunctionalForm';
-import TechnicalForm from '../components/calculator/TechnicalForm';
-import PricingForm from '../components/calculator/PricingForm';
+import { calculatorApi } from '../api/client';
+import { createInitialMultiConfig } from '../components/calculator/MultiSchemePanel';
+import InputPanel from '../components/calculator/InputPanel';
 import ResultDisplay from '../components/calculator/ResultDisplay';
-import ComparisonDisplay from '../components/comparison/ComparisonDisplay';
-import ScenarioSelector from '../components/calculator/ScenarioSelector';
+import DetailedComparisonTable from '../components/comparison/DetailedComparisonTable';
+import SensitivityAnalysis from '../components/calculator/SensitivityAnalysis';
+import ExportDialog from '../components/calculator/ExportDialog';
+import ShareDialog from '../components/calculator/ShareDialog';
+import debounce from 'lodash/debounce';
+
+const { Title } = Typography;
+
+// 计算状态
+type CalculationStatus = 'idle' | 'calculating' | 'success' | 'error';
 
 const Calculator: React.FC = () => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [loading, setLoading] = useState(false);
+  // 输入参数状态
   const [input, setInput] = useState<CostCalculationInput>({
     functional: {
       device_count: 100,
@@ -37,161 +46,274 @@ const Calculator: React.FC = () => {
       discount_percent: 0,
     },
   });
+
+  // 多方案配置状态
+  const [multiConfig, setMultiConfig] = useState<MultiTechnicalConfig>(createInitialMultiConfig());
+  const [useMultiScheme] = useState<boolean>(true); // 默认启用多方案模式
+
+  // 计算结果状态
   const [result, setResult] = useState<CostSummary | null>(null);
   const [comparison, setComparison] = useState<ComparisonResult | null>(null);
+  const [status, setStatus] = useState<CalculationStatus>('idle');
 
-  const steps = [
-    { title: '选择场景', description: '快速开始或自定义' },
-    { title: '功能配置', description: '设备和录像参数' },
-    { title: '技术选项', description: '存储类型' },
-    { title: '价格设置', description: '区域和折扣' },
-    { title: '计算结果', description: '成本分析' },
-  ];
+  // 对话框状态
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
-  const handleCalculate = async () => {
-    setLoading(true);
-    try {
-      const [calcResult, compResult] = await Promise.all([
-        calculatorApi.calculate(input),
-        calculatorApi.compare(input),
-      ]);
-      setResult(calcResult);
-      setComparison(compResult);
-      setCurrentStep(4);
-    } catch (error) {
-      message.error('计算失败，请检查输入参数');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 用户登录状态（简化处理）
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [evaluationId] = useState<string | undefined>();
 
-  const handleExport = async () => {
-    if (!result) return;
-    try {
-      const blob = await exportApi.exportExcel({
-        input_data: input,
-        result: {
-          ...result,
-          breakdown: result.breakdown,
-          metrics: result.metrics ? {
-            monthly_storage_gb: result.metrics.avg_storage_gb,
-            monthly_puts: result.metrics.monthly_puts,
-            monthly_gets: result.metrics.monthly_gets,
-            monthly_retrieval_gb: result.metrics.monthly_retrieval_gb,
-            monthly_transfer_gb: result.metrics.monthly_transfer_gb,
-          } : undefined,
-        } as any,
-        comparison: comparison || undefined,
-      });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `cost_evaluation_${new Date().toISOString().slice(0, 10)}.xlsx`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-      message.success('导出成功');
-    } catch (error) {
-      message.error('导出失败');
-      console.error(error);
-    }
-  };
+  // 检查登录状态
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    setIsLoggedIn(!!token);
+  }, []);
 
-  const handleNext = () => {
-    if (currentStep === 3) {
-      handleCalculate();
+  // 实时计算的防抖函数 - 单方案模式
+  const calculateSingleDebounced = useCallback(
+    debounce(async (inputData: CostCalculationInput) => {
+      setStatus('calculating');
+      try {
+        const [calcResult, compResult] = await Promise.all([
+          calculatorApi.calculate(inputData),
+          calculatorApi.compare(inputData),
+        ]);
+        setResult(calcResult);
+        setComparison(compResult);
+        setStatus('success');
+      } catch (error) {
+        console.error('计算失败:', error);
+        setStatus('error');
+      }
+    }, 500),
+    []
+  );
+
+  // 实时计算的防抖函数 - 多方案模式
+  const calculateMultiDebounced = useCallback(
+    debounce(async (inputData: CostCalculationInput, config: MultiTechnicalConfig) => {
+      setStatus('calculating');
+      try {
+        const { results, comparison: compResult } = await calculatorApi.batchCalculate(
+          inputData.functional,
+          inputData.pricing,
+          config.schemes
+        );
+        setComparison(compResult);
+        // 设置第一个启用方案的结果为主结果
+        if (results.length > 0) {
+          setResult(results[0].result);
+        } else {
+          setResult(null);
+        }
+        setStatus('success');
+      } catch (error) {
+        console.error('批量计算失败:', error);
+        setStatus('error');
+      }
+    }, 500),
+    []
+  );
+
+  // 输入变化时自动计算
+  useEffect(() => {
+    if (useMultiScheme) {
+      calculateMultiDebounced(input, multiConfig);
     } else {
-      setCurrentStep(currentStep + 1);
+      calculateSingleDebounced(input);
     }
+  }, [input, multiConfig, useMultiScheme, calculateSingleDebounced, calculateMultiDebounced]);
+
+  // 处理参数变化
+  const handleInputChange = (newInput: CostCalculationInput) => {
+    setInput(newInput);
   };
 
-  const handlePrev = () => {
-    setCurrentStep(currentStep - 1);
+  // 处理多方案配置变化
+  const handleMultiConfigChange = (config: MultiTechnicalConfig) => {
+    setMultiConfig(config);
   };
 
-  const handleReset = () => {
-    setCurrentStep(0);
-    setResult(null);
-    setComparison(null);
+  // 处理敏感度分析中的值应用
+  const handleApplySensitivityValue = (field: string, value: any) => {
+    const newInput = { ...input };
+    if (field === 'access_pattern') {
+      newInput.functional = { ...newInput.functional, access_pattern: value };
+    } else if (field === 'video_quality') {
+      newInput.functional = { ...newInput.functional, video_quality: value };
+    } else if (field === 'device_count') {
+      newInput.functional = { ...newInput.functional, device_count: value };
+    } else if (field === 'retention_days') {
+      newInput.functional = { ...newInput.functional, retention_days: value };
+    }
+    setInput(newInput);
+    message.success('已应用新参数值');
   };
 
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 0:
+  // 处理导出
+  const handleExport = () => {
+    if (!result) {
+      message.warning('请先完成计算');
+      return;
+    }
+    setExportDialogOpen(true);
+  };
+
+  // 处理分享
+  const handleShare = () => {
+    setShareDialogOpen(true);
+  };
+
+  // 处理保存
+  const handleSave = () => {
+    if (!isLoggedIn) {
+      message.warning('请先登录');
+      return;
+    }
+    // TODO: 实现保存评估记录
+    message.info('保存功能开发中');
+  };
+
+  // 渲染计算状态指示器
+  const renderStatusIndicator = () => {
+    switch (status) {
+      case 'calculating':
         return (
-          <ScenarioSelector
-            onSelect={(selectedInput) => {
-              setInput(selectedInput);
-              setCurrentStep(1);
-            }}
-            onCustom={() => setCurrentStep(1)}
-          />
+          <span className="calculation-status calculating">
+            <SyncOutlined spin /> 计算中
+          </span>
         );
-      case 1:
+      case 'success':
         return (
-          <FunctionalForm
-            value={input.functional}
-            onChange={(functional) => setInput({ ...input, functional })}
-          />
+          <span className="calculation-status success">
+            <Badge status="success" /> 实时计算
+          </span>
         );
-      case 2:
+      case 'error':
         return (
-          <TechnicalForm
-            value={input.technical}
-            onChange={(technical) => setInput({ ...input, technical })}
-            retentionDays={input.functional.retention_days}
-          />
-        );
-      case 3:
-        return (
-          <PricingForm
-            value={input.pricing}
-            onChange={(pricing) => setInput({ ...input, pricing })}
-          />
-        );
-      case 4:
-        return (
-          <Row gutter={[16, 16]}>
-            <Col span={24}>
-              {result && <ResultDisplay result={result} onExport={handleExport} />}
-            </Col>
-            <Col span={24}>
-              {comparison && <ComparisonDisplay comparison={comparison} />}
-            </Col>
-          </Row>
+          <span className="calculation-status error">
+            <ExclamationCircleOutlined /> 参数错误
+          </span>
         );
       default:
-        return null;
+        return (
+          <span className="calculation-status idle">
+            <Badge status="default" /> 等待输入
+          </span>
+        );
     }
+  };
+
+  // 渲染结果区域
+  const renderResultArea = () => {
+    if (status === 'idle' && !result) {
+      return (
+        <div className="result-placeholder">
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description="调整左侧参数后，计算结果将在此处显示"
+          />
+        </div>
+      );
+    }
+
+    if (status === 'error') {
+      return (
+        <div className="result-placeholder error">
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description="参数验证失败，请检查输入"
+          />
+        </div>
+      );
+    }
+
+    return (
+      <Spin spinning={status === 'calculating'} tip="计算中...">
+        {result && (
+          <>
+            {/* 费用汇总卡片 */}
+            <ResultDisplay result={result} onExport={handleExport} />
+
+            {/* 方案对比表格 */}
+            {comparison && (
+              <div style={{ marginTop: 24 }}>
+                <DetailedComparisonTable
+                  comparison={comparison}
+                  metrics={result.metrics}
+                  deviceCount={result.device_count}
+                />
+              </div>
+            )}
+
+            {/* 敏感度分析 */}
+            <div style={{ marginTop: 24 }}>
+              <Card className="sensitivity-card">
+                <SensitivityAnalysis
+                  input={input}
+                  baselineCost={result.monthly_total}
+                  onApplyValue={handleApplySensitivityValue}
+                />
+              </Card>
+            </div>
+          </>
+        )}
+      </Spin>
+    );
   };
 
   return (
-    <div>
-      <Card style={{ marginBottom: 24 }}>
-        <Steps current={currentStep} items={steps} />
-      </Card>
+    <div className="calculator-page">
+      {/* 页面标题 */}
+      <div className="calculator-page-header">
+        <Title level={3} style={{ margin: 0 }}>
+          <DollarOutlined style={{ marginRight: 8 }} />
+          成本计算器
+        </Title>
+        {renderStatusIndicator()}
+      </div>
 
-      <Card>
-        {renderStepContent()}
+      {/* 双栏布局 */}
+      <div className="calculator-layout">
+        {/* 左侧：参数输入区 */}
+        <aside className="calculator-input-panel">
+          <InputPanel
+            value={input}
+            onChange={handleInputChange}
+            multiConfig={multiConfig}
+            onMultiConfigChange={handleMultiConfigChange}
+            useMultiScheme={useMultiScheme}
+            onExport={handleExport}
+            onShare={handleShare}
+            onSave={handleSave}
+            isLoggedIn={isLoggedIn}
+          />
+        </aside>
 
-        <div style={{ marginTop: 24, textAlign: 'right' }}>
-          {currentStep > 0 && currentStep < 4 && (
-            <Button style={{ marginRight: 8 }} onClick={handlePrev}>
-              上一步
-            </Button>
-          )}
-          {currentStep > 0 && currentStep < 4 && (
-            <Button type="primary" onClick={handleNext} loading={loading}>
-              {currentStep === 3 ? '开始计算' : '下一步'}
-            </Button>
-          )}
-          {currentStep === 4 && (
-            <Button type="primary" onClick={handleReset}>
-              重新计算
-            </Button>
-          )}
-        </div>
-      </Card>
+        {/* 右侧：结果展示区 */}
+        <main className="calculator-result-panel">{renderResultArea()}</main>
+      </div>
+
+      {/* 导出对话框 */}
+      {result && (
+        <ExportDialog
+          open={exportDialogOpen}
+          onClose={() => setExportDialogOpen(false)}
+          input={input}
+          result={result}
+          comparison={comparison}
+        />
+      )}
+
+      {/* 分享对话框 */}
+      <ShareDialog
+        open={shareDialogOpen}
+        onClose={() => setShareDialogOpen(false)}
+        evaluationId={evaluationId}
+        isLoggedIn={isLoggedIn}
+        onNeedSave={handleSave}
+      />
     </div>
   );
 };

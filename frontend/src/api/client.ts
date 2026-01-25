@@ -6,6 +6,7 @@ import type {
   CostCalculationInput,
   CostSummary,
   ComparisonResult,
+  ComparisonItem,
   Scenario,
   RegionPricing,
   Evaluation,
@@ -13,6 +14,10 @@ import type {
   ShareResponse,
   SharedEvaluation,
   ScenarioCategory,
+  FunctionalDimensions,
+  PricingDimensions,
+  TechnicalScheme,
+  BatchCalculationResult,
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
@@ -60,6 +65,101 @@ export const calculatorApi = {
   compare: async (input: CostCalculationInput): Promise<ComparisonResult> => {
     const response = await apiClient.post<ComparisonResult>('/compare', input);
     return response.data;
+  },
+
+  // 批量计算多个方案（前端聚合）
+  batchCalculate: async (
+    functional: FunctionalDimensions,
+    pricing: PricingDimensions,
+    schemes: TechnicalScheme[]
+  ): Promise<{ results: BatchCalculationResult[]; comparison: ComparisonResult }> => {
+    // 只计算启用的方案
+    const enabledSchemes = schemes.filter((s) => s.enabled);
+
+    if (enabledSchemes.length === 0) {
+      return {
+        results: [],
+        comparison: { baseline: '', items: [] },
+      };
+    }
+
+    // 并行调用 calculate API
+    const calculatePromises = enabledSchemes.map((scheme) =>
+      apiClient.post<CostSummary>('/calculate', {
+        functional,
+        technical: scheme.technical,
+        pricing,
+      })
+    );
+
+    const responses = await Promise.all(calculatePromises);
+
+    // 构建批量计算结果
+    const results: BatchCalculationResult[] = responses.map((response, index) => ({
+      schemeId: enabledSchemes[index].id,
+      schemeName: enabledSchemes[index].name,
+      result: response.data,
+      technical: enabledSchemes[index].technical,
+    }));
+
+    // 找出成本最低的方案
+    const minCostResult = results.reduce(
+      (min, curr) => (curr.result.monthly_total < min.result.monthly_total ? curr : min),
+      results[0]
+    );
+
+    // 第一个方案作为基准
+    const baselineResult = results[0];
+    const baselineCost = baselineResult.result.monthly_total;
+
+    // 构建对比项
+    const items: ComparisonItem[] = results.map((r, index) => {
+      const isBaseline = index === 0;
+      const isRecommended = r.schemeId === minCostResult.schemeId;
+      const vsBaseline = isBaseline
+        ? 0
+        : (r.result.monthly_total - baselineCost) / baselineCost;
+
+      // 获取存储类型显示名称
+      const storageClass = r.technical.lifecycle_policy?.enabled
+        ? 'Lifecycle Policy'
+        : r.technical.storage_class === 'STANDARD'
+        ? 'S3 Standard'
+        : r.technical.storage_class === 'GLACIER_IR'
+        ? 'S3 Glacier IR'
+        : r.technical.storage_class;
+
+      return {
+        name: r.schemeName,
+        storage_class: storageClass,
+        monthly_cost: r.result.monthly_total,
+        yearly_cost: r.result.yearly_total,
+        vs_baseline: vsBaseline,
+        breakdown: r.result.breakdown,
+        is_recommended: isRecommended,
+      };
+    });
+
+    // 构建推荐信息
+    const recommendation = minCostResult.schemeId !== baselineResult.schemeId
+      ? {
+          recommended_option: minCostResult.schemeName,
+          reason: `${minCostResult.schemeName} 相比基准方案可节省 ${(
+            ((baselineCost - minCostResult.result.monthly_total) / baselineCost) *
+            100
+          ).toFixed(1)}% 的成本`,
+          potential_savings: baselineCost - minCostResult.result.monthly_total,
+        }
+      : undefined;
+
+    return {
+      results,
+      comparison: {
+        baseline: baselineResult.schemeName,
+        items,
+        recommendation,
+      },
+    };
   },
 };
 

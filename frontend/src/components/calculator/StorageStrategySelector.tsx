@@ -1,15 +1,15 @@
 /**
  * 存储策略选择器
- * 支持预设模板选择和自定义配置
+ * 优化版本：更紧凑的布局，适合窄面板
  */
 import React, { useEffect, useState } from 'react';
-import { Card, Radio, Row, Col, Tag, Typography, Space, Tooltip, Spin, Alert } from 'antd';
+import { Radio, Tag, Typography, Tooltip, Spin, Alert } from 'antd';
 import { CheckCircleOutlined, ClockCircleOutlined, DollarOutlined } from '@ant-design/icons';
 import type { LifecycleTemplate, LifecyclePolicy, LifecycleStage } from '../../types';
 import StageEditor from './StageEditor';
 import { api } from '../../api';
 
-const { Title, Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 interface StorageStrategySelectorProps {
   value: LifecyclePolicy | undefined;
@@ -74,7 +74,6 @@ const StorageStrategySelector: React.FC<StorageStrategySelectorProps> = ({
         applyTemplate(template);
       }
     } else if (newMode === 'custom') {
-      // 默认自定义配置
       onChange({
         enabled: true,
         stages: [
@@ -88,14 +87,11 @@ const StorageStrategySelector: React.FC<StorageStrategySelectorProps> = ({
   const applyTemplate = (template: LifecycleTemplate) => {
     setSelectedTemplateId(template.id);
 
-    // 根据当前保留天数调整模板
     let stages = [...template.stages];
     const templateTotalDays = template.retention_days;
 
     if (retentionDays !== templateTotalDays) {
-      // 简单调整：按比例缩放或截断
       if (retentionDays < templateTotalDays) {
-        // 截断超出的阶段
         stages = stages.filter(s => s.start_day <= retentionDays);
         if (stages.length > 0) {
           stages[stages.length - 1] = {
@@ -104,7 +100,6 @@ const StorageStrategySelector: React.FC<StorageStrategySelectorProps> = ({
           };
         }
       } else {
-        // 扩展最后一个阶段
         stages[stages.length - 1] = {
           ...stages[stages.length - 1],
           end_day: retentionDays,
@@ -127,54 +122,30 @@ const StorageStrategySelector: React.FC<StorageStrategySelectorProps> = ({
     });
   };
 
-  // 获取存储类型颜色
-  const getStorageClassColor = (storageClass: string) => {
-    switch (storageClass) {
-      case 'STANDARD': return 'blue';
-      case 'GLACIER_IR': return 'purple';
-      case 'DEEP_ARCHIVE': return 'orange';
-      default: return 'default';
-    }
-  };
-
-  // 渲染阶段预览条
-  const renderStageBar = (stages: LifecycleStage[]) => {
+  // 渲染紧凑的阶段预览条
+  const renderCompactStageBar = (stages: LifecycleStage[]) => {
     const totalDays = stages[stages.length - 1]?.end_day || 1;
+    const colors: Record<string, string> = {
+      STANDARD: '#1890ff',
+      GLACIER_IR: '#722ed1',
+      DEEP_ARCHIVE: '#fa8c16',
+    };
 
     return (
-      <div style={{
-        display: 'flex',
-        height: 24,
-        borderRadius: 4,
-        overflow: 'hidden',
-        border: '1px solid #d9d9d9',
-      }}>
+      <div className="stage-bar-compact">
         {stages.map((stage, index) => {
           const width = ((stage.end_day - stage.start_day + 1) / totalDays) * 100;
-          const colors: Record<string, string> = {
-            STANDARD: '#1890ff',
-            GLACIER_IR: '#722ed1',
-            DEEP_ARCHIVE: '#fa8c16',
-          };
           return (
             <Tooltip
               key={index}
-              title={`第${stage.start_day}-${stage.end_day}天: ${stage.storage_class}`}
+              title={`${stage.start_day}-${stage.end_day}天: ${stage.storage_class.replace('_', ' ')}`}
             >
               <div
                 style={{
                   width: `${width}%`,
                   backgroundColor: colors[stage.storage_class] || '#d9d9d9',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontSize: 12,
-                  minWidth: 30,
                 }}
-              >
-                {stage.storage_class.replace('_', ' ')}
-              </div>
+              />
             </Tooltip>
           );
         })}
@@ -183,101 +154,73 @@ const StorageStrategySelector: React.FC<StorageStrategySelectorProps> = ({
   };
 
   if (loading) {
-    return <Spin tip="加载模板中..." />;
+    return <Spin size="small" />;
   }
 
   if (error) {
-    return <Alert message={error} type="error" />;
+    return <Alert message={error} type="error" showIcon />;
   }
 
   return (
-    <div>
-      <Title level={5}>存储策略</Title>
-
+    <div className="storage-strategy-selector">
+      {/* 模式选择 - 紧凑版 */}
       <Radio.Group
         value={mode}
         onChange={(e) => handleModeChange(e.target.value)}
-        style={{ marginBottom: 16 }}
+        size="small"
+        className="storage-mode-selector"
       >
-        <Radio.Button value="single">单一存储类型</Radio.Button>
+        <Radio.Button value="single">单一类型</Radio.Button>
         <Radio.Button value="template">预设模板</Radio.Button>
-        <Radio.Button value="custom">自定义配置</Radio.Button>
+        <Radio.Button value="custom">自定义</Radio.Button>
       </Radio.Group>
 
+      {/* 预设模板列表 - 紧凑版 */}
       {mode === 'template' && (
-        <div>
-          <Row gutter={[12, 12]}>
-            {templates.map((template) => (
-              <Col span={12} key={template.id}>
-                <Card
-                  hoverable
-                  size="small"
-                  onClick={() => applyTemplate(template)}
-                  style={{
-                    border: selectedTemplateId === template.id
-                      ? '2px solid #1890ff'
-                      : undefined,
-                    background: selectedTemplateId === template.id
-                      ? '#e6f7ff'
-                      : undefined,
-                  }}
-                >
-                  <Space direction="vertical" size={4} style={{ width: '100%' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text strong>{template.name}</Text>
-                      {selectedTemplateId === template.id && (
-                        <CheckCircleOutlined style={{ color: '#1890ff' }} />
-                      )}
-                    </div>
-                    <Text type="secondary" style={{ fontSize: 12 }}>
-                      {template.description}
-                    </Text>
-                    <Space size={4}>
-                      <Tag icon={<ClockCircleOutlined />} color="default">
-                        {template.retention_days}天
-                      </Tag>
-                      <Tag icon={<DollarOutlined />} color="green">
-                        节省 {Math.round(template.estimated_savings_vs_standard * 100)}%
-                      </Tag>
-                    </Space>
-                    {renderStageBar(template.stages)}
-                  </Space>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-
-          {selectedTemplateId && value?.stages && (
-            <Card size="small" style={{ marginTop: 16 }}>
-              <Text type="secondary">当前配置预览</Text>
-              <div style={{ marginTop: 8 }}>
-                {value.stages.map((stage, index) => (
-                  <div key={index} style={{ marginBottom: 4 }}>
-                    <Tag color={getStorageClassColor(stage.storage_class)}>
-                      第 {stage.start_day}-{stage.end_day} 天
-                    </Tag>
-                    <Text>{stage.storage_class}</Text>
-                  </div>
-                ))}
+        <div className="template-list-compact">
+          {templates.map((template) => {
+            const isSelected = selectedTemplateId === template.id;
+            return (
+              <div
+                key={template.id}
+                className={`template-item-compact ${isSelected ? 'selected' : ''}`}
+                onClick={() => applyTemplate(template)}
+              >
+                <div className="template-item-header">
+                  <Text strong className="template-name">{template.name}</Text>
+                  {isSelected && <CheckCircleOutlined className="check-icon" />}
+                </div>
+                <div className="template-item-tags">
+                  <Tag icon={<ClockCircleOutlined />}>
+                    {template.retention_days}天
+                  </Tag>
+                  <Tag color="green" icon={<DollarOutlined />}>
+                    省{Math.round(template.estimated_savings_vs_standard * 100)}%
+                  </Tag>
+                </div>
+                {renderCompactStageBar(template.stages)}
               </div>
-            </Card>
-          )}
+            );
+          })}
         </div>
       )}
 
+      {/* 自定义配置 */}
       {mode === 'custom' && (
-        <StageEditor
-          value={value?.stages || []}
-          onChange={handleStagesChange}
-          maxDays={retentionDays}
-        />
+        <div className="custom-config-compact">
+          <StageEditor
+            value={value?.stages || []}
+            onChange={handleStagesChange}
+            maxDays={retentionDays}
+          />
+        </div>
       )}
 
+      {/* 单一存储类型说明 */}
       {mode === 'single' && (
-        <Paragraph type="secondary">
-          使用单一存储类型，所有数据在整个保留期间存储在同一类型中。
-          如需混合存储策略以优化成本，请选择"预设模板"或"自定义配置"。
-        </Paragraph>
+        <Text type="secondary" className="single-mode-hint">
+          在技术维度面板中选择存储类型
+        </Text>
       )}
     </div>
   );

@@ -1,12 +1,14 @@
 /**
  * 技术维度配置表单
+ * 优化版本：紧凑布局，适合窄面板
  */
 import React from 'react';
-import { Form, Radio, Typography, Card, Row, Col, Tag, Divider } from 'antd';
+import { Radio, Typography, Space, Tag, Divider } from 'antd';
+import { InfoCircleOutlined } from '@ant-design/icons';
 import type { TechnicalDimensions, StorageClass, LifecyclePolicy } from '../../types';
 import StorageStrategySelector from './StorageStrategySelector';
 
-const { Title, Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 interface TechnicalFormProps {
   value: TechnicalDimensions;
@@ -18,15 +20,15 @@ const storageClassOptions = [
   {
     value: 'STANDARD',
     label: 'S3 Standard',
-    description: '适用于频繁访问的数据，低延迟、高吞吐量',
-    features: ['毫秒级访问', '99.99% 可用性', '无检索费用'],
+    price: '$0.025/GB',
+    hint: '频繁访问',
     color: 'blue',
   },
   {
     value: 'GLACIER_IR',
-    label: 'S3 Glacier Instant Retrieval',
-    description: '适用于很少访问但需要毫秒级检索的长期存储数据',
-    features: ['毫秒级检索', '存储成本低 68%', '有检索费用'],
+    label: 'Glacier IR',
+    price: '$0.004/GB',
+    hint: '低频访问',
     color: 'purple',
   },
 ];
@@ -44,7 +46,6 @@ const TechnicalForm: React.FC<TechnicalFormProps> = ({ value, onChange, retentio
 
   const handleLifecyclePolicyChange = (policy: LifecyclePolicy | undefined) => {
     if (policy?.enabled) {
-      // 使用生命周期策略，默认存储类型设为 STANDARD
       onChange({
         ...value,
         storage_class: 'STANDARD',
@@ -59,88 +60,57 @@ const TechnicalForm: React.FC<TechnicalFormProps> = ({ value, onChange, retentio
   };
 
   return (
-    <div>
-      <Title level={4}>技术维度配置</Title>
-      <Text type="secondary" style={{ marginBottom: 24, display: 'block' }}>
-        选择适合您使用场景的存储类型或生命周期策略
-      </Text>
-
-      {/* 存储策略选择器 */}
-      <Card style={{ marginBottom: 24 }}>
-        <StorageStrategySelector
-          value={value.lifecycle_policy}
-          onChange={handleLifecyclePolicyChange}
-          retentionDays={retentionDays}
-        />
-      </Card>
+    <div className="technical-form-compact">
+      {/* 生命周期策略选择器 */}
+      <StorageStrategySelector
+        value={value.lifecycle_policy}
+        onChange={handleLifecyclePolicyChange}
+        retentionDays={retentionDays}
+      />
 
       {/* 单一存储类型选择（仅在未启用生命周期策略时显示） */}
       {!hasLifecyclePolicy && (
         <>
-          <Divider>或选择单一存储类型</Divider>
-          <Form layout="vertical">
-            <Form.Item label="存储类型">
-              <Radio.Group
-                value={value.storage_class}
-                onChange={(e) => handleStorageClassChange(e.target.value)}
-                style={{ width: '100%' }}
-              >
-                <Row gutter={16}>
-                  {storageClassOptions.map((option) => (
-                    <Col span={12} key={option.value}>
-                      <Radio.Button
-                        value={option.value}
-                        style={{
-                          height: 'auto',
-                          width: '100%',
-                          padding: 0,
-                          border: value.storage_class === option.value ? `2px solid #1890ff` : undefined,
-                        }}
-                      >
-                        <Card
-                          bordered={false}
-                          style={{
-                            background: value.storage_class === option.value ? '#e6f7ff' : undefined,
-                          }}
-                        >
-                          <Title level={5}>
-                            <Tag color={option.color}>{option.label}</Tag>
-                          </Title>
-                          <Paragraph type="secondary">{option.description}</Paragraph>
-                          <div>
-                            {option.features.map((feature, index) => (
-                              <Tag key={index} style={{ marginBottom: 4 }}>
-                                {feature}
-                              </Tag>
-                            ))}
-                          </div>
-                        </Card>
-                      </Radio.Button>
-                    </Col>
-                  ))}
-                </Row>
-              </Radio.Group>
-            </Form.Item>
-          </Form>
+          <Divider style={{ margin: '12px 0', fontSize: 12 }}>存储类型</Divider>
+          <Radio.Group
+            value={value.storage_class}
+            onChange={(e) => handleStorageClassChange(e.target.value)}
+            className="storage-class-group-compact"
+          >
+            <Space direction="vertical" style={{ width: '100%' }}>
+              {storageClassOptions.map((option) => (
+                <Radio
+                  key={option.value}
+                  value={option.value}
+                  className="storage-class-radio-compact"
+                >
+                  <div className="storage-class-option">
+                    <div className="storage-class-main">
+                      <Tag color={option.color} style={{ margin: 0 }}>
+                        {option.label}
+                      </Tag>
+                      <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
+                        {option.price}
+                      </Text>
+                    </div>
+                    <Text type="secondary" style={{ fontSize: 11 }}>
+                      {option.hint}
+                    </Text>
+                  </div>
+                </Radio>
+              ))}
+            </Space>
+          </Radio.Group>
+
+          {/* 简短提示 */}
+          <div className="storage-hint-compact">
+            <InfoCircleOutlined style={{ marginRight: 4 }} />
+            <Text type="secondary" style={{ fontSize: 11 }}>
+              回看率 &gt;10% 推荐 Standard，&lt;10% 推荐 Glacier IR
+            </Text>
+          </div>
         </>
       )}
-
-      <Card style={{ marginTop: 16, background: '#fafafa' }}>
-        <Title level={5}>存储类型选择建议</Title>
-        <Paragraph>
-          <ul>
-            <li>
-              <Text strong>回看比例 &gt; 10%</Text>：推荐 S3 Standard，避免高额检索费用
-            </li>
-            <li>
-              <Text strong>回看比例 &lt; 10%</Text>：推荐 S3 Glacier IR，存储成本更低
-            </li>
-            <li>
-              <Text strong>混合策略</Text>：使用预设模板或自定义配置，先存 Standard，过期后转 Glacier IR，优化成本
-            </li>
-          </ul>
-        </Paragraph>
-      </Card>
     </div>
   );
 };
