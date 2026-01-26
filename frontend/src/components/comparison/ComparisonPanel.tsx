@@ -327,24 +327,31 @@ const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount }) 
 
   // === 图表配置 ===
   const totalCostData = useMemo(() => {
-    return comparison.items.map((item, index) => ({
-      scheme: item.name,
-      value: Number(item.monthly_cost.toFixed(2)),
-      isRecommended: item.is_recommended,
-      index,
-      techDescription: getTechDescription(item),
-    }));
+    return comparison.items.map((item, index) => {
+      const techLines = getTechDescription(item);
+      const label = `${item.name}\n${techLines.join('\n')}`;
+      return {
+        scheme: label,
+        value: Number(item.monthly_cost.toFixed(2)),
+        isRecommended: item.is_recommended,
+        index,
+        techDescription: techLines,
+        name: item.name,
+      };
+    });
   }, [comparison]);
 
   const breakdownData = useMemo(() => {
     const data: { scheme: string; costType: string; value: number }[] = [];
     comparison.items.forEach((item) => {
       if (item.breakdown) {
+        const techLines = getTechDescription(item);
+        const label = `${item.name}\n${techLines.join('\n')}`;
         COST_ITEMS.forEach(({ key, name }) => {
           const value = item.breakdown?.[key as keyof typeof item.breakdown] || 0;
           if (typeof value === 'number' && value > 0) {
             data.push({
-              scheme: item.name,
+              scheme: label,
               costType: name,
               value: Number(value.toFixed(2)),
             });
@@ -359,27 +366,29 @@ const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount }) 
     data: totalCostData,
     xField: 'scheme',
     yField: 'value',
-    maxWidth: 16,
+    paddingLeft: 60,
+    paddingRight: 60,
     label: {
       text: (d: { value: number }) => `$${d.value.toLocaleString()}`,
       textBaseline: 'bottom' as const,
       style: { fontSize: 11, fontWeight: 600 },
     },
     style: {
+      maxWidth: 60,
       radiusTopLeft: 4,
       radiusTopRight: 4,
       fill: (d: { index: number; isRecommended: boolean }) =>
         d.isRecommended ? '#52c41a' : SCHEME_COLORS[d.index % SCHEME_COLORS.length],
     },
     axis: {
-      x: { title: false, labelAutoRotate: false },
+      x: { title: false },
       y: {
-        title: '月度成本 (USD)',
+        title: false,
         labelFormatter: (v: number) => `$${v.toLocaleString()}`,
       },
     },
     tooltip: {
-      title: (d: { scheme: string; techDescription: string[] }) => `${d.scheme} (${d.techDescription[0]})`,
+      title: (d: { name: string; techDescription: string[] }) => `${d.name} (${d.techDescription[0]})`,
       items: [
         {
           field: 'value',
@@ -397,14 +406,18 @@ const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount }) 
     yField: 'value',
     colorField: 'costType',
     stack: true,
-    maxWidth: 16,
+    paddingLeft: 60,
+    paddingRight: 60,
+    style: {
+      maxWidth: 60,
+    },
     scale: {
       color: { range: COST_ITEMS.map(item => item.color) },
     },
     axis: {
       x: { title: false },
       y: {
-        title: '月度成本 (USD)',
+        title: false,
         labelFormatter: (v: number) => `$${v}`,
       },
     },
@@ -477,35 +490,6 @@ const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount }) 
             ) : (
               <Column key="breakdown" {...breakdownChartConfig} />
             )}
-          </div>
-          {/* 技术配置说明 */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-around',
-            marginTop: 8,
-            paddingTop: 8,
-            borderTop: '1px solid var(--color-border-light)',
-          }}>
-            {comparison.items.map((item, index) => {
-              const techLines = getTechDescription(item);
-              return (
-                <div key={item.name} style={{ textAlign: 'center', flex: 1 }}>
-                  <Text strong style={{
-                    color: item.is_recommended ? '#52c41a' : SCHEME_COLORS[index % SCHEME_COLORS.length],
-                    fontSize: 12,
-                  }}>
-                    {item.name}
-                  </Text>
-                  {techLines.map((line, idx) => (
-                    <div key={idx}>
-                      <Text type="secondary" style={{ fontSize: 11 }}>
-                        {line}
-                      </Text>
-                    </div>
-                  ))}
-                </div>
-              );
-            })}
           </div>
         </>
       )}
