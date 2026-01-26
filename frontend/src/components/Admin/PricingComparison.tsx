@@ -341,13 +341,9 @@ const PricingComparison: React.FC<PricingComparisonProps> = ({
     return columns;
   }, [selectedRegions, getRegionName, calculateDiff]);
 
-  // 构建区域名称到颜色的映射
-  const regionColorMap = useMemo(() => {
-    const map: Record<string, string> = {};
-    selectedRegions.forEach((region, index) => {
-      map[getRegionName(region)] = REGION_COLORS[index];
-    });
-    return map;
+  // 获取区域显示名称列表（用于颜色映射的 domain）
+  const regionNames = useMemo(() => {
+    return selectedRegions.map(region => getRegionName(region));
   }, [selectedRegions, getRegionName]);
 
   // 图表配置
@@ -355,23 +351,32 @@ const PricingComparison: React.FC<PricingComparisonProps> = ({
     data: chartData,
     xField: 'priceItem',
     yField: 'value',
-    seriesField: 'region',
-    isGroup: true,
-    columnWidthRatio: 0.6,
-    minColumnWidth: 20,
-    maxColumnWidth: 40,
-    columnStyle: {
-      radius: [4, 4, 0, 0],
+    colorField: 'region',
+    transform: [{ type: 'dodgeX' }],
+    scale: {
+      x: {
+        type: 'band',
+        padding: 0.3,
+      },
+      color: {
+        type: 'ordinal',
+        domain: regionNames,
+        range: REGION_COLORS.slice(0, selectedRegions.length),
+      },
+    },
+    style: {
+      radiusTopLeft: 4,
+      radiusTopRight: 4,
+      maxWidth: 40,
     },
     label: {
-      position: 'top' as const,
-      formatter: (datum: ChartDataItem) => {
-        // 根据数值大小调整显示格式
+      text: (datum: ChartDataItem) => {
         if (datum.value >= 0.01) {
           return `$${datum.value.toFixed(3)}`;
         }
         return `$${datum.value.toFixed(4)}`;
       },
+      position: 'top',
       style: {
         fontSize: 11,
         fill: '#595959',
@@ -379,25 +384,25 @@ const PricingComparison: React.FC<PricingComparisonProps> = ({
       },
     },
     legend: {
-      position: 'top-right' as const,
-      marker: {
-        symbol: 'circle',
+      color: {
+        position: 'top-right',
+        itemMarker: 'circle',
       },
     },
     tooltip: {
-      formatter: (datum: ChartDataItem) => ({
-        name: datum.region,
-        value: `$${datum.value.toFixed(4)}`,
-      }),
+      items: [
+        {
+          channel: 'y',
+          valueFormatter: (v: number) => `$${v.toFixed(4)}`,
+        },
+      ],
     },
-    color: (datum: ChartDataItem) => regionColorMap[datum.region] || REGION_COLORS[0],
-    yAxis: {
-      label: {
-        formatter: (v: string) => `$${v}`,
+    axis: {
+      y: {
+        labelFormatter: (v: number) => `$${v}`,
       },
     },
-    padding: [40, 40, 60, 60],
-  }), [chartData, regionColorMap]);
+  }), [chartData, regionNames, selectedRegions.length]);
 
   // 空状态
   if (selectedRegions.length === 0) {
