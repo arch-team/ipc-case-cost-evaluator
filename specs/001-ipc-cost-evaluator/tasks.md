@@ -260,32 +260,45 @@
 
 ---
 
-## Phase 9: User Story 6 - 评估历史记录管理 (Priority: P3)
+## Phase 9: User Story 6 - 评估历史记录管理 (Priority: P3) ✅
 
 **Goal**: 已登录用户可保存、查看、加载历史评估记录
 
-**Independent Test**: 保存评估后可在历史列表查看并加载
+**Status**: ✅ 完成 (2026-01-26) | [Eval Report](../../.claude/evals/phase9-us6-evaluation-history.md)
 
-### Backend Implementation
+**Independent Test**: 保存评估后可在历史列表查看并加载 ✅
 
-- [ ] T081 [P] [US6] 完善评估记录模型 in backend/app/models/evaluation.py
-- [ ] T082 [US6] 完善评估仓库 in backend/app/db/repositories/evaluations.py
-- [ ] T083 [US6] 实现评估服务 in backend/app/services/evaluation.py
-- [ ] T084 [US6] 完善评估路由 in backend/app/api/routes/evaluations.py
+### Backend Implementation ✅ (100%)
 
-### Frontend Implementation
+- [x] T081 [P] [US6] 实现复制评估 API in backend/app/api/routes/evaluations.py (POST /evaluations/{id}/duplicate)
+- [x] T082 [US6] 实现搜索/筛选接口 in backend/app/db/repositories/evaluations.py (search, sort_by, sort_order)
+- [x] T083 [US6] 完善评估仓库 CRUD in backend/app/db/repositories/evaluations.py
+- [x] T084 [US6] 完善评估路由 in backend/app/api/routes/evaluations.py (list, get, create, update, delete, duplicate)
 
-- [ ] T085 [P] [US6] 创建保存评估对话框 in frontend/src/components/History/SaveDialog.tsx
-- [ ] T086 [P] [US6] 创建评估历史列表组件 in frontend/src/components/History/EvaluationList.tsx
-- [ ] T087 [P] [US6] 创建评估卡片组件 in frontend/src/components/History/EvaluationCard.tsx
-- [ ] T088 [US6] 创建历史记录页面 in frontend/src/pages/HistoryPage.tsx
-- [ ] T089 [US6] 集成保存功能到计算器页面 in frontend/src/pages/CalculatorPage.tsx
+### Frontend Implementation ✅ (100%)
 
-### Integration
+- [x] T085 [P] [US6] 实现加载到计算器功能 in frontend/src/pages/Evaluations.tsx (handleLoad → navigate with state)
+- [x] T086 [P] [US6] 创建复制评估对话框 in frontend/src/pages/Evaluations.tsx (Modal + CopyOutlined)
+- [x] T087 [P] [US6] 创建搜索框组件 in frontend/src/pages/Evaluations.tsx (Input.Search)
+- [x] T088 [P] [US6] 创建排序选择器 in frontend/src/pages/Evaluations.tsx (Select)
+- [x] T089 [US6] 创建评估详情页面 in frontend/src/pages/EvaluationDetail.tsx
+- [x] T089b [US6] 集成详情页路由 in frontend/src/App.tsx (/evaluations/:id)
 
-- [ ] T090 [US6] 验证 US6 验收场景 1-3
+### Integration ✅ (100%)
 
-**Checkpoint**: 用户故事 6 完成 - 历史记录管理可独立使用
+- [x] T090 [US6] 验证 US6 验收场景 1-5
+  - 场景1: 搜索评估记录 ✅ (关键词搜索名称和描述)
+  - 场景2: 加载历史评估 ✅ (跳转并填充参数)
+  - 场景3: 复制评估配置 ✅ (创建新记录副本)
+  - 场景4: 查看评估详情 ✅ (独立详情页)
+  - 场景5: 排序评估列表 ✅ (最近修改/创建时间/名称)
+
+### Optional (P3 - 未实现)
+
+- [ ] T091 [US6] 后端: 标签系统 in backend/app/models/evaluation.py
+- [ ] T092 [US6] 前端: 标签管理 UI in frontend/src/pages/Evaluations.tsx
+
+**Checkpoint**: ✅ 用户故事 6 完成 - 历史记录管理可独立使用 (P3 标签系统为可选功能)
 
 ---
 
@@ -297,20 +310,20 @@
 
 ### Backend Implementation
 
-- [ ] T091 [P] [US7] 完善区域定价模型 in backend/app/models/pricing.py
-- [ ] T092 [US7] 实现 AWS Pricing API 集成 in backend/app/services/pricing_service.py
-- [ ] T093 [US7] 添加定价数据缓存和回退逻辑 in backend/app/services/pricing_service.py
-- [ ] T094 [US7] 完善定价路由 in backend/app/api/routes/pricing.py
+- [ ] T093 [P] [US7] 完善区域定价模型 in backend/app/models/pricing.py
+- [ ] T094 [US7] 实现 AWS Pricing API 集成 in backend/app/services/pricing_service.py
+- [ ] T095 [US7] 添加定价数据缓存和回退逻辑 in backend/app/services/pricing_service.py
+- [ ] T096 [US7] 完善定价路由 in backend/app/api/routes/pricing.py
 
 ### Frontend Implementation
 
-- [ ] T095 [P] [US7] 创建区域选择器组件 in frontend/src/components/Admin/RegionSelector.tsx
-- [ ] T096 [P] [US7] 创建定价数据表格 in frontend/src/components/Admin/PricingTable.tsx
-- [ ] T097 [US7] 创建管理员页面 in frontend/src/pages/AdminPage.tsx
+- [ ] T097 [P] [US7] 创建区域选择器组件 in frontend/src/components/Admin/RegionSelector.tsx
+- [ ] T098 [P] [US7] 创建定价数据表格 in frontend/src/components/Admin/PricingTable.tsx
+- [ ] T099 [US7] 创建管理员页面 in frontend/src/pages/AdminPage.tsx
 
 ### Integration
 
-- [ ] T098 [US7] 验证 US7 验收场景 1-3
+- [ ] T100 [US7] 验证 US7 验收场景 1-3
 
 **Checkpoint**: 用户故事 7 完成 - 定价管理可独立使用
 
@@ -320,13 +333,13 @@
 
 **Purpose**: 跨故事优化和完善
 
-- [ ] T099 [P] 添加费用构成饼图组件 in frontend/src/components/Charts/CostPieChart.tsx
-- [ ] T100 [P] 完善 API 错误处理和用户提示 in frontend/src/services/api.ts
-- [ ] T101 [P] 添加加载状态和骨架屏 in frontend/src/components/common/
-- [ ] T102 [P] 边缘情况测试：极端参数、并发访问、精度控制
-- [ ] T103 运行 quickstart.md 验证流程
-- [ ] T104 [P] 代码清理和注释完善
-- [ ] T105 [P] 性能优化：前端缓存、计算优化
+- [ ] T101 [P] 添加费用构成饼图组件 in frontend/src/components/Charts/CostPieChart.tsx
+- [ ] T102 [P] 完善 API 错误处理和用户提示 in frontend/src/services/api.ts
+- [ ] T103 [P] 添加加载状态和骨架屏 in frontend/src/components/common/
+- [ ] T104 [P] 边缘情况测试：极端参数、并发访问、精度控制
+- [ ] T105 运行 quickstart.md 验证流程
+- [ ] T106 [P] 代码清理和注释完善
+- [ ] T107 [P] 性能优化：前端缓存、计算优化
 
 ---
 

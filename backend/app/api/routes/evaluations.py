@@ -1,6 +1,6 @@
 """评估记录 API 路由"""
-from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, HTTPException, Depends
+from typing import Any, Dict, List, Literal, Optional
+from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, Field
 
 from app.api.routes.auth import get_current_user
@@ -21,6 +21,11 @@ class UpdateEvaluationRequest(BaseModel):
     """更新评估请求"""
     name: Optional[str] = Field(default=None, min_length=1, description="评估名称")
     description: Optional[str] = Field(default=None, description="描述")
+
+
+class DuplicateEvaluationRequest(BaseModel):
+    """复制评估请求"""
+    name: Optional[str] = Field(default=None, min_length=1, description="新评估名称")
 
 
 class EvaluationResponse(BaseModel):
@@ -69,15 +74,30 @@ async def create_evaluation(
 @router.get("", response_model=EvaluationsListResponse)
 async def list_evaluations(
     current_user: dict = Depends(get_current_user),
+    search: Optional[str] = Query(default=None, description="搜索关键词（名称或描述）"),
+    sort_by: Literal["created_at", "updated_at", "name"] = Query(
+        default="created_at", description="排序字段"
+    ),
+    sort_order: Literal["asc", "desc"] = Query(default="desc", description="排序顺序"),
 ) -> EvaluationsListResponse:
     """
     列出当前用户的评估记录
+
+    Args:
+        search: 搜索关键词，匹配名称或描述
+        sort_by: 排序字段
+        sort_order: 排序顺序
 
     Returns:
         评估记录列表
     """
     repo = EvaluationRepository()
-    evaluations = repo.list_by_user(current_user["id"])
+    evaluations = repo.list_by_user(
+        user_id=current_user["id"],
+        search=search,
+        sort_by=sort_by,
+        sort_order=sort_order,
+    )
     return EvaluationsListResponse(
         evaluations=[EvaluationResponse(**e) for e in evaluations]
     )
@@ -170,3 +190,44 @@ async def delete_evaluation(
 
     repo.delete(eval_id)
     return {"message": "删除成功"}
+
+
+@router.post("/{eval_id}/duplicate", response_model=EvaluationResponse)
+async def duplicate_evaluation(
+    eval_id: str,
+    request: DuplicateEvaluationRequest,
+    current_user: dict = Depends(get_current_user),
+) -> EvaluationResponse:
+    """
+    复制评估记录
+
+    Args:
+        eval_id: 原评估 ID
+        request: 复制请求（可指定新名称）
+
+    Returns:
+        新创建的评估记录
+    """
+    repo = EvaluationRepository()
+    evaluation = repo.get(eval_id)
+
+    if not evaluation:
+        raise HTTPException(status_code=404, detail="评估记录不存在")
+
+    # 验证所有权
+    if evaluation["user_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="无权复制此评估记录")
+
+    # 生成新名称
+    new_name = request.name if request.name else f"{evaluation['name']} - 副本"
+
+    # 创建副本
+    new_evaluation = repo.create(
+        user_id=current_user["id"],
+        name=new_name,
+        description=evaluation.get("description", ""),
+        input_data=evaluation["input_data"],
+        result=evaluation["result"],
+    )
+
+    return EvaluationResponse(**new_evaluation)

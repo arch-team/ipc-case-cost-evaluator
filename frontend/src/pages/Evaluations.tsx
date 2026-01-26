@@ -15,12 +15,18 @@ import {
   Modal,
   Form,
   Input,
+  Select,
+  Row,
+  Col,
 } from 'antd';
 import {
   DeleteOutlined,
-  EyeOutlined,
   EditOutlined,
   PlusOutlined,
+  CopyOutlined,
+  PlayCircleOutlined,
+  SearchOutlined,
+  EyeOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { evaluationApi } from '../api/client';
@@ -34,12 +40,24 @@ const Evaluations: React.FC = () => {
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingEval, setEditingEval] = useState<Evaluation | null>(null);
+  const [copyModalVisible, setCopyModalVisible] = useState(false);
+  const [copyingEval, setCopyingEval] = useState<Evaluation | null>(null);
   const [form] = Form.useForm();
+  const [copyForm] = Form.useForm();
 
-  const fetchEvaluations = async () => {
+  // 搜索和排序状态
+  const [searchText, setSearchText] = useState('');
+  const [sortBy, setSortBy] = useState<'created_at' | 'updated_at' | 'name'>('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const fetchEvaluations = async (search?: string) => {
     setLoading(true);
     try {
-      const data = await evaluationApi.list();
+      const data = await evaluationApi.list({
+        search: search || undefined,
+        sort_by: sortBy,
+        sort_order: sortOrder,
+      });
       setEvaluations(data);
     } catch (error: unknown) {
       const axiosError = error as { response?: { status?: number } };
@@ -54,14 +72,24 @@ const Evaluations: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchEvaluations();
-  }, []);
+    fetchEvaluations(searchText);
+  }, [sortBy, sortOrder]);
+
+  const handleSearch = () => {
+    fetchEvaluations(searchText);
+  };
+
+  const handleSortChange = (value: string) => {
+    const [field, order] = value.split('-') as ['created_at' | 'updated_at' | 'name', 'asc' | 'desc'];
+    setSortBy(field);
+    setSortOrder(order);
+  };
 
   const handleDelete = async (id: string) => {
     try {
       await evaluationApi.delete(id);
       message.success('删除成功');
-      fetchEvaluations();
+      fetchEvaluations(searchText);
     } catch {
       message.error('删除失败');
     }
@@ -83,9 +111,41 @@ const Evaluations: React.FC = () => {
       await evaluationApi.update(editingEval.id, values);
       message.success('更新成功');
       setEditModalVisible(false);
-      fetchEvaluations();
+      fetchEvaluations(searchText);
     } catch {
       message.error('更新失败');
+    }
+  };
+
+  const handleLoad = (record: Evaluation) => {
+    navigate('/calculator', {
+      state: {
+        loadFromEvaluation: record,
+      },
+    });
+    message.success('已加载评估配置到计算器');
+  };
+
+  const handleCopy = (record: Evaluation) => {
+    setCopyingEval(record);
+    copyForm.setFieldsValue({
+      name: `${record.name} - 副本`,
+    });
+    setCopyModalVisible(true);
+  };
+
+  const handleCopySubmit = async () => {
+    if (!copyingEval) return;
+    try {
+      const values = await copyForm.validateFields();
+      await evaluationApi.duplicate(copyingEval.id, values.name);
+      message.success('复制成功');
+      setCopyModalVisible(false);
+      setCopyingEval(null);
+      copyForm.resetFields();
+      fetchEvaluations(searchText);
+    } catch {
+      message.error('复制失败');
     }
   };
 
@@ -139,16 +199,39 @@ const Evaluations: React.FC = () => {
     {
       title: '操作',
       key: 'actions',
+      width: 320,
       render: (_: unknown, record: Evaluation) => (
-        <Space>
+        <Space size="small">
           <Button
             type="link"
+            size="small"
             icon={<EyeOutlined />}
             onClick={() => navigate(`/evaluations/${record.id}`)}
           >
             查看
           </Button>
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
+          <Button
+            type="link"
+            size="small"
+            icon={<PlayCircleOutlined />}
+            onClick={() => handleLoad(record)}
+          >
+            加载
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            icon={<CopyOutlined />}
+            onClick={() => handleCopy(record)}
+          >
+            复制
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record)}
+          >
             编辑
           </Button>
           <Popconfirm
@@ -157,7 +240,7 @@ const Evaluations: React.FC = () => {
             okText="确定"
             cancelText="取消"
           >
-            <Button type="link" danger icon={<DeleteOutlined />}>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
               删除
             </Button>
           </Popconfirm>
@@ -177,6 +260,35 @@ const Evaluations: React.FC = () => {
             新建评估
           </Button>
         </div>
+
+        <Row gutter={16} style={{ marginBottom: 16 }}>
+          <Col flex="auto">
+            <Input.Search
+              placeholder="搜索评估记录..."
+              allowClear
+              enterButton={<SearchOutlined />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              onSearch={handleSearch}
+              style={{ maxWidth: 400 }}
+            />
+          </Col>
+          <Col>
+            <Select
+              value={`${sortBy}-${sortOrder}`}
+              onChange={handleSortChange}
+              style={{ width: 150 }}
+              options={[
+                { value: 'created_at-desc', label: '最新创建' },
+                { value: 'created_at-asc', label: '最早创建' },
+                { value: 'updated_at-desc', label: '最近修改' },
+                { value: 'updated_at-asc', label: '最早修改' },
+                { value: 'name-asc', label: '名称 A-Z' },
+                { value: 'name-desc', label: '名称 Z-A' },
+              ]}
+            />
+          </Col>
+        </Row>
 
         {evaluations.length === 0 && !loading ? (
           <Empty description="暂无评估记录">
@@ -216,6 +328,29 @@ const Evaluations: React.FC = () => {
           </Form.Item>
           <Form.Item name="description" label="描述">
             <Input.TextArea rows={3} />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="复制评估记录"
+        open={copyModalVisible}
+        onOk={handleCopySubmit}
+        onCancel={() => {
+          setCopyModalVisible(false);
+          setCopyingEval(null);
+          copyForm.resetFields();
+        }}
+        okText="复制"
+        cancelText="取消"
+      >
+        <Form form={copyForm} layout="vertical">
+          <Form.Item
+            name="name"
+            label="新评估名称"
+            rules={[{ required: true, message: '请输入名称' }]}
+          >
+            <Input placeholder="输入新评估的名称" />
           </Form.Item>
         </Form>
       </Modal>

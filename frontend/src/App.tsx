@@ -9,6 +9,7 @@ import Layout from './components/common/Layout';
 import Home from './pages/Home';
 import Calculator from './pages/Calculator';
 import Evaluations from './pages/Evaluations';
+import EvaluationDetail from './pages/EvaluationDetail';
 import Settings from './pages/Settings';
 import SharedView from './pages/SharedView';
 
@@ -59,6 +60,7 @@ const App: React.FC = () => {
             <Route index element={<Home />} />
             <Route path="calculator" element={<Calculator />} />
             <Route path="evaluations" element={<Evaluations />} />
+            <Route path="evaluations/:id" element={<EvaluationDetail />} />
             <Route path="settings" element={<Settings />} />
           </Route>
         </Routes>

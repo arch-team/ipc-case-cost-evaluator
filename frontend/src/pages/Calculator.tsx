@@ -2,9 +2,10 @@
  * 成本计算页面 - 双栏固定式布局
  * 左侧参数输入区 (400px) + 右侧结果展示区 (自适应)
  */
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, Empty, Spin, Typography, Badge, message } from 'antd';
 import { DollarOutlined, SyncOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { useLocation } from 'react-router-dom';
 import type {
   CostCalculationInput,
   CostSummary,
@@ -28,6 +29,9 @@ const { Title } = Typography;
 type CalculationStatus = 'idle' | 'calculating' | 'success' | 'error';
 
 const Calculator: React.FC = () => {
+  const location = useLocation();
+  const loadedFromEvaluation = useRef(false);
+
   // 输入参数状态
   const [input, setInput] = useState<CostCalculationInput>({
     functional: {
@@ -64,6 +68,18 @@ const Calculator: React.FC = () => {
   // 用户登录状态（简化处理）
   const [isLoggedIn] = useState(() => !!localStorage.getItem('token'));
   const [evaluationId] = useState<string | undefined>();
+
+  // 处理从评估历史加载的数据
+  useEffect(() => {
+    const state = location.state as { loadFromEvaluation?: { input_data: CostCalculationInput } } | null;
+    if (state?.loadFromEvaluation && !loadedFromEvaluation.current) {
+      loadedFromEvaluation.current = true;
+      const loadedInput = state.loadFromEvaluation.input_data;
+      setInput(loadedInput);
+      // 清除 location state，防止刷新时重复加载
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // 实时计算的防抖函数 - 单方案模式
   const calculateSingleDebounced = useMemo(

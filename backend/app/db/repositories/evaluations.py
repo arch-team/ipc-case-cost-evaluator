@@ -64,19 +64,52 @@ class EvaluationRepository:
         """
         return self.storage.get(self.table, eval_id)
 
-    def list_by_user(self, user_id: str) -> List[Dict[str, Any]]:
+    def list_by_user(
+        self,
+        user_id: str,
+        search: Optional[str] = None,
+        sort_by: str = "created_at",
+        sort_order: str = "desc",
+    ) -> List[Dict[str, Any]]:
         """
         按用户列出评估记录
 
         Args:
             user_id: 用户 ID
+            search: 搜索关键词（匹配名称或描述）
+            sort_by: 排序字段
+            sort_order: 排序顺序
 
         Returns:
             评估记录列表
         """
         evaluations = self.storage.query(self.table, "user_id", user_id)
-        # 按创建时间倒序
-        return sorted(evaluations, key=lambda x: x.get("created_at", ""), reverse=True)
+
+        # 搜索过滤
+        if search:
+            search_lower = search.lower()
+            evaluations = [
+                e for e in evaluations
+                if search_lower in e.get("name", "").lower()
+                or search_lower in e.get("description", "").lower()
+            ]
+
+        # 排序
+        reverse = sort_order == "desc"
+        if sort_by == "name":
+            evaluations = sorted(
+                evaluations,
+                key=lambda x: x.get("name", "").lower(),
+                reverse=reverse,
+            )
+        else:
+            evaluations = sorted(
+                evaluations,
+                key=lambda x: x.get(sort_by, ""),
+                reverse=reverse,
+            )
+
+        return evaluations
 
     def update(
         self,

@@ -220,8 +220,14 @@ export const evaluationApi = {
   },
 
   // 获取评估记录列表
-  list: async (): Promise<Evaluation[]> => {
-    const response = await apiClient.get<{ evaluations: Evaluation[] }>('/evaluations');
+  list: async (params?: {
+    search?: string;
+    sort_by?: 'created_at' | 'updated_at' | 'name';
+    sort_order?: 'asc' | 'desc';
+  }): Promise<Evaluation[]> => {
+    const response = await apiClient.get<{ evaluations: Evaluation[] }>('/evaluations', {
+      params,
+    });
     return response.data.evaluations;
   },
 
@@ -243,6 +249,14 @@ export const evaluationApi = {
   // 删除评估记录
   delete: async (id: string): Promise<void> => {
     await apiClient.delete(`/evaluations/${id}`);
+  },
+
+  // 复制评估记录
+  duplicate: async (id: string, name?: string): Promise<Evaluation> => {
+    const response = await apiClient.post<Evaluation>(`/evaluations/${id}/duplicate`, {
+      name,
+    });
+    return response.data;
   },
 };
 
