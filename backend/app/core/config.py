@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     # 存储配置
     USE_LOCAL_STORAGE: bool = True
 
+    # 初始管理员配置（首次启动时自动创建）
+    ADMIN_EMAIL: Optional[str] = None
+    ADMIN_PASSWORD: Optional[str] = None
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=True,

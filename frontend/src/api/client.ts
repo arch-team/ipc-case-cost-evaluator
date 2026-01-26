@@ -314,10 +314,12 @@ export const exportApi = {
 /**
  * 认证 API
  */
+import type { TokenResponse, User, UserUpdateRequest } from '../types/auth';
+
 export const authApi = {
   // 登录
-  login: async (email: string, password: string): Promise<{ access_token: string }> => {
-    const response = await apiClient.post<{ access_token: string }>('/auth/login', {
+  login: async (email: string, password: string): Promise<TokenResponse> => {
+    const response = await apiClient.post<TokenResponse>('/auth/login', {
       email,
       password,
     });
@@ -325,12 +327,8 @@ export const authApi = {
   },
 
   // 注册
-  register: async (
-    email: string,
-    password: string,
-    name: string
-  ): Promise<{ id: string; email: string; name: string }> => {
-    const response = await apiClient.post('/auth/register', {
+  register: async (email: string, password: string, name: string): Promise<TokenResponse> => {
+    const response = await apiClient.post<TokenResponse>('/auth/register', {
       email,
       password,
       name,
@@ -339,8 +337,14 @@ export const authApi = {
   },
 
   // 获取当前用户
-  getCurrentUser: async (): Promise<{ id: string; email: string; name: string }> => {
-    const response = await apiClient.get('/auth/me');
+  getCurrentUser: async (): Promise<User> => {
+    const response = await apiClient.get<User>('/auth/me');
+    return response.data;
+  },
+
+  // 更新当前用户信息
+  updateUser: async (data: UserUpdateRequest): Promise<User> => {
+    const response = await apiClient.put<User>('/auth/update', data);
     return response.data;
   },
 };

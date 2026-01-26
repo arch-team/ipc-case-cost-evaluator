@@ -3,7 +3,8 @@ from typing import Any, Dict, List, Literal, Optional
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, Field
 
-from app.api.routes.auth import get_current_user
+from app.api.dependencies import require_role
+from app.models.enums import UserRole
 from app.db.repositories.evaluations import EvaluationRepository
 
 router = APIRouter(prefix="/evaluations", tags=["评估记录"])
@@ -48,7 +49,7 @@ class EvaluationsListResponse(BaseModel):
 @router.post("", response_model=EvaluationResponse)
 async def create_evaluation(
     request: CreateEvaluationRequest,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_role(UserRole.USER)),
 ) -> EvaluationResponse:
     """
     创建评估记录
@@ -73,7 +74,7 @@ async def create_evaluation(
 
 @router.get("", response_model=EvaluationsListResponse)
 async def list_evaluations(
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_role(UserRole.USER)),
     search: Optional[str] = Query(default=None, description="搜索关键词（名称或描述）"),
     sort_by: Literal["created_at", "updated_at", "name"] = Query(
         default="created_at", description="排序字段"
@@ -106,7 +107,7 @@ async def list_evaluations(
 @router.get("/{eval_id}", response_model=EvaluationResponse)
 async def get_evaluation(
     eval_id: str,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_role(UserRole.USER)),
 ) -> EvaluationResponse:
     """
     获取评估记录
@@ -134,7 +135,7 @@ async def get_evaluation(
 async def update_evaluation(
     eval_id: str,
     request: UpdateEvaluationRequest,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_role(UserRole.USER)),
 ) -> EvaluationResponse:
     """
     更新评估记录
@@ -167,7 +168,7 @@ async def update_evaluation(
 @router.delete("/{eval_id}")
 async def delete_evaluation(
     eval_id: str,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_role(UserRole.USER)),
 ) -> Dict[str, str]:
     """
     删除评估记录
@@ -196,7 +197,7 @@ async def delete_evaluation(
 async def duplicate_evaluation(
     eval_id: str,
     request: DuplicateEvaluationRequest,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_role(UserRole.USER)),
 ) -> EvaluationResponse:
     """
     复制评估记录

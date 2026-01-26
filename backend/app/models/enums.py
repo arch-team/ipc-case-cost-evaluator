@@ -176,3 +176,61 @@ class SharePermission(str, Enum):
     """
     VIEW = "VIEW"
     DUPLICATE = "DUPLICATE"
+
+
+class UserRole(str, Enum):
+    """用户角色
+
+    定义用户角色层级，高级角色自动继承低级角色权限。
+
+    Attributes:
+        VIEWER: 访客，权限等级 0，可使用核心计算功能
+        USER: 登录用户，权限等级 1，可保存和管理评估记录
+        ADMIN: 管理员，权限等级 2，拥有完整系统权限
+    """
+    VIEWER = "viewer"
+    USER = "user"
+    ADMIN = "admin"
+
+    @property
+    def level(self) -> int:
+        """获取角色权限等级"""
+        levels = {"viewer": 0, "user": 1, "admin": 2}
+        return levels[self.value]
+
+    def __ge__(self, other: "UserRole") -> bool:
+        """权限等级比较：大于等于"""
+        if not isinstance(other, UserRole):
+            return NotImplemented
+        return self.level >= other.level
+
+    def __gt__(self, other: "UserRole") -> bool:
+        """权限等级比较：大于"""
+        if not isinstance(other, UserRole):
+            return NotImplemented
+        return self.level > other.level
+
+    def __le__(self, other: "UserRole") -> bool:
+        """权限等级比较：小于等于"""
+        if not isinstance(other, UserRole):
+            return NotImplemented
+        return self.level <= other.level
+
+    def __lt__(self, other: "UserRole") -> bool:
+        """权限等级比较：小于"""
+        if not isinstance(other, UserRole):
+            return NotImplemented
+        return self.level < other.level
+
+
+class UserStatus(str, Enum):
+    """用户状态
+
+    定义用户账号的状态。
+
+    Attributes:
+        ACTIVE: 正常状态，可正常登录和使用系统
+        DISABLED: 已禁用，无法登录
+    """
+    ACTIVE = "active"
+    DISABLED = "disabled"

@@ -3,9 +3,10 @@
  * 左侧参数输入区 (400px) + 右侧结果展示区 (自适应)
  */
 import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
-import { Card, Empty, Spin, Typography, Badge, message } from 'antd';
-import { DollarOutlined, SyncOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
-import { useLocation } from 'react-router-dom';
+import { Card, Empty, Spin, Typography, Badge, message, Alert } from 'antd';
+import { DollarOutlined, SyncOutlined, ExclamationCircleOutlined, LoginOutlined } from '@ant-design/icons';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import type {
   CostCalculationInput,
   CostSummary,
@@ -30,6 +31,8 @@ type CalculationStatus = 'idle' | 'calculating' | 'success' | 'error';
 
 const Calculator: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const loadedFromEvaluation = useRef(false);
 
   // 输入参数状态
@@ -64,9 +67,6 @@ const Calculator: React.FC = () => {
   // 对话框状态
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
-
-  // 用户登录状态（简化处理）
-  const [isLoggedIn] = useState(() => !!localStorage.getItem('token'));
   const [evaluationId] = useState<string | undefined>();
 
   // 处理从评估历史加载的数据（使用 useLayoutEffect 避免闪烁）
@@ -182,12 +182,35 @@ const Calculator: React.FC = () => {
 
   // 处理保存
   const handleSave = () => {
-    if (!isLoggedIn) {
-      message.warning('请先登录');
+    if (!isAuthenticated) {
+      message.warning('请先登录后再保存评估记录');
       return;
     }
     // TODO: 实现保存评估记录
     message.info('保存功能开发中');
+  };
+
+  // 渲染登录提示
+  const renderLoginPrompt = () => {
+    if (isAuthenticated) return null;
+
+    return (
+      <Alert
+        message="访客模式"
+        description={
+          <span>
+            您正在以访客身份使用计算器，可正常计算和对比方案。
+            <a onClick={() => navigate('/settings')} style={{ marginLeft: 8 }}>
+              <LoginOutlined /> 登录后可保存评估记录
+            </a>
+          </span>
+        }
+        type="info"
+        showIcon
+        closable
+        style={{ marginBottom: 16 }}
+      />
+    );
   };
 
   // 渲染计算状态指示器
@@ -280,6 +303,9 @@ const Calculator: React.FC = () => {
 
   return (
     <div className="calculator-page">
+      {/* 登录提示 */}
+      {renderLoginPrompt()}
+
       {/* 页面标题 */}
       <div className="calculator-page-header">
         <Title level={3} style={{ margin: 0 }}>
@@ -302,7 +328,7 @@ const Calculator: React.FC = () => {
             onExport={handleExport}
             onShare={handleShare}
             onSave={handleSave}
-            isLoggedIn={isLoggedIn}
+            isLoggedIn={isAuthenticated}
           />
         </aside>
 
@@ -326,7 +352,7 @@ const Calculator: React.FC = () => {
         open={shareDialogOpen}
         onClose={() => setShareDialogOpen(false)}
         evaluationId={evaluationId}
-        isLoggedIn={isLoggedIn}
+        isLoggedIn={isAuthenticated}
         onNeedSave={handleSave}
       />
     </div>

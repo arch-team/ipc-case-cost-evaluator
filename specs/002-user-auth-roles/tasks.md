@@ -19,10 +19,10 @@
 
 **Purpose**: 配置更新和基础结构准备
 
-- [ ] T001 更新环境配置，添加 ADMIN_EMAIL 和 ADMIN_PASSWORD 到 backend/app/core/config.py
-- [ ] T002 [P] 添加 UserRole 枚举到 backend/app/models/enums.py
-- [ ] T003 [P] 添加 UserStatus 枚举到 backend/app/models/enums.py
-- [ ] T004 [P] 创建用户 Pydantic 模型文件 backend/app/models/user.py
+- [X] T001 更新环境配置，添加 ADMIN_EMAIL 和 ADMIN_PASSWORD 到 backend/app/core/config.py
+- [X] T002 [P] 添加 UserRole 枚举到 backend/app/models/enums.py
+- [X] T003 [P] 添加 UserStatus 枚举到 backend/app/models/enums.py
+- [X] T004 [P] 创建用户 Pydantic 模型文件 backend/app/models/user.py
 
 ---
 
@@ -34,17 +34,17 @@
 
 ### 用户实体扩展
 
-- [ ] T005 扩展用户 Repository，添加角色和状态字段到 backend/app/db/repositories/users.py
-- [ ] T006 更新 AuthService，添加角色字段到用户创建和响应中 backend/app/services/auth.py
+- [X] T005 扩展用户 Repository，添加角色和状态字段到 backend/app/db/repositories/users.py
+- [X] T006 更新 AuthService，添加角色字段到用户创建和响应中 backend/app/services/auth.py
 
 ### 权限中间件
 
-- [ ] T007 创建权限检查依赖函数 require_role() 在 backend/app/api/dependencies.py
-- [ ] T008 更新 JWT Token 结构，在 payload 中包含 role 字段 backend/app/services/auth.py
+- [X] T007 创建权限检查依赖函数 require_role() 在 backend/app/api/dependencies.py
+- [X] T008 更新 JWT Token 结构，在 payload 中包含 role 字段 backend/app/services/auth.py
 
 ### 初始管理员
 
-- [ ] T009 实现应用启动时自动创建初始管理员的逻辑 backend/app/main.py
+- [X] T009 实现应用启动时自动创建初始管理员的逻辑 backend/app/main.py
 
 **Checkpoint**: 权限基础设施就绪 - 用户故事实现可以开始
 
@@ -58,15 +58,15 @@
 
 ### Backend 实现
 
-- [ ] T010 [US1] 确保 /calculate 端点无需认证可访问 backend/app/api/routes/calculate.py
-- [ ] T011 [US1] 确保 /compare 端点无需认证可访问 backend/app/api/routes/compare.py
-- [ ] T012 [US1] 确保 /pricing/* 端点无需认证可访问 backend/app/api/routes/pricing.py
-- [ ] T013 [US1] 确保 /templates/* 端点无需认证可访问 backend/app/api/routes/templates.py
+- [X] T010 [US1] 确保 /calculate 端点无需认证可访问 backend/app/api/routes/calculate.py
+- [X] T011 [US1] 确保 /compare 端点无需认证可访问 backend/app/api/routes/compare.py
+- [X] T012 [US1] 确保 /pricing/* 端点无需认证可访问 backend/app/api/routes/pricing.py
+- [X] T013 [US1] 确保 /templates/* 端点无需认证可访问 backend/app/api/routes/templates.py
 
 ### Frontend 实现
 
-- [ ] T014 [P] [US1] 更新 AuthContext 添加 isAuthenticated 和 hasRole 方法 frontend/src/contexts/AuthContext.tsx
-- [ ] T015 [US1] 在计算页面添加"保存需登录"提示组件 frontend/src/pages/CalculatePage.tsx
+- [X] T014 [P] [US1] 更新 AuthContext 添加 isAuthenticated 和 hasRole 方法 frontend/src/contexts/AuthContext.tsx
+- [X] T015 [US1] 在计算页面添加"保存需登录"提示组件 frontend/src/pages/CalculatePage.tsx
 
 **Checkpoint**: US1 完成 - 访客可以使用所有计算功能
 
@@ -80,24 +80,24 @@
 
 ### Backend - 密码验证
 
-- [ ] T016 [US2] 添加密码强度验证器（8位+字母+数字）到 backend/app/models/user.py
-- [ ] T017 [US2] 更新注册端点，返回包含 user 对象的 TokenResponse backend/app/api/routes/auth.py
+- [X] T016 [US2] 添加密码强度验证器（8位+字母+数字）到 backend/app/models/user.py
+- [X] T017 [US2] 更新注册端点，返回包含 user 对象的 TokenResponse backend/app/api/routes/auth.py
 
 ### Backend - 登录锁定
 
-- [ ] T018 [US2] 添加登录失败计数和锁定逻辑到 AuthService backend/app/services/auth.py
-- [ ] T019 [US2] 更新登录端点，检查账号锁定状态 backend/app/api/routes/auth.py
+- [X] T018 [US2] 添加登录失败计数和锁定逻辑到 AuthService backend/app/services/auth.py
+- [X] T019 [US2] 更新登录端点，检查账号锁定状态 backend/app/api/routes/auth.py
 
 ### Backend - 用户信息更新
 
-- [ ] T020 [US2] 添加 /auth/update 端点，用户修改自己的名称和密码 backend/app/api/routes/auth.py
+- [X] T020 [US2] 添加 /auth/update 端点，用户修改自己的名称和密码 backend/app/api/routes/auth.py
 
 ### Frontend - 认证界面
 
-- [ ] T021 [P] [US2] 更新 LoginForm，添加错误提示和锁定状态显示 frontend/src/components/auth/LoginForm.tsx
-- [ ] T022 [P] [US2] 更新 RegisterForm，添加密码强度提示 frontend/src/components/auth/RegisterForm.tsx
-- [ ] T023 [US2] 更新 authService，处理新的 TokenResponse 结构 frontend/src/services/authService.ts
-- [ ] T024 [US2] 更新 useAuth hook，存储用户角色信息 frontend/src/hooks/useAuth.ts
+- [X] T021 [P] [US2] 更新 LoginForm，添加错误提示和锁定状态显示 frontend/src/components/auth/LoginForm.tsx
+- [X] T022 [P] [US2] 更新 RegisterForm，添加密码强度提示 frontend/src/components/auth/RegisterForm.tsx
+- [X] T023 [US2] 更新 authService，处理新的 TokenResponse 结构 frontend/src/services/authService.ts
+- [X] T024 [US2] 更新 useAuth hook，存储用户角色信息 frontend/src/hooks/useAuth.ts
 
 **Checkpoint**: US2 完成 - 用户可以注册、登录、退出，角色正确分配
 
@@ -111,13 +111,13 @@
 
 ### Backend - 权限控制
 
-- [ ] T025 [US3] 为 /evaluations/* 端点添加 require_role(USER) 依赖 backend/app/api/routes/evaluations.py
-- [ ] T026 [US3] 为分享创建端点添加 require_role(USER) 依赖 backend/app/api/routes/shares.py
+- [X] T025 [US3] 为 /evaluations/* 端点添加 require_role(USER) 依赖 backend/app/api/routes/evaluations.py
+- [X] T026 [US3] 为分享创建端点添加 require_role(USER) 依赖 backend/app/api/routes/shares.py
 
 ### Frontend - 路由保护
 
-- [ ] T027 [P] [US3] 创建 ProtectedRoute 组件 frontend/src/components/auth/ProtectedRoute.tsx
-- [ ] T028 [US3] 在评估历史页面使用 ProtectedRoute 保护 frontend/src/App.tsx
+- [X] T027 [P] [US3] 创建 ProtectedRoute 组件 frontend/src/components/auth/ProtectedRoute.tsx
+- [X] T028 [US3] 在评估历史页面使用 ProtectedRoute 保护 frontend/src/App.tsx
 
 **Checkpoint**: US3 完成 - 登录用户可以完整管理自己的评估记录
 
@@ -131,28 +131,28 @@
 
 ### Backend - 用户管理服务
 
-- [ ] T029 [P] [US4] 创建 UserService 用户管理服务 backend/app/services/user_service.py
-- [ ] T030 [P] [US4] 创建 StatsService 系统统计服务 backend/app/services/stats_service.py
+- [X] T029 [P] [US4] 创建 UserService 用户管理服务 backend/app/services/user_service.py
+- [X] T030 [P] [US4] 创建 StatsService 系统统计服务 backend/app/services/stats_service.py
 
 ### Backend - 管理员 API
 
-- [ ] T031 [US4] 创建管理员路由文件 backend/app/api/routes/admin.py
-- [ ] T032 [US4] 实现 GET /admin/users 用户列表端点 backend/app/api/routes/admin.py
-- [ ] T033 [US4] 实现 GET /admin/users/{id} 用户详情端点 backend/app/api/routes/admin.py
-- [ ] T034 [US4] 实现 PUT /admin/users/{id} 更新角色/状态端点 backend/app/api/routes/admin.py
-- [ ] T035 [US4] 实现 POST /admin/users/{id}/unlock 解锁端点 backend/app/api/routes/admin.py
-- [ ] T036 [US4] 实现 GET /admin/stats 系统统计端点 backend/app/api/routes/admin.py
-- [ ] T037 [US4] 添加最后一个管理员保护逻辑到 PUT /admin/users/{id} backend/app/api/routes/admin.py
-- [ ] T038 [US4] 注册管理员路由到 FastAPI 应用 backend/app/main.py
+- [X] T031 [US4] 创建管理员路由文件 backend/app/api/routes/admin.py
+- [X] T032 [US4] 实现 GET /admin/users 用户列表端点 backend/app/api/routes/admin.py
+- [X] T033 [US4] 实现 GET /admin/users/{id} 用户详情端点 backend/app/api/routes/admin.py
+- [X] T034 [US4] 实现 PUT /admin/users/{id} 更新角色/状态端点 backend/app/api/routes/admin.py
+- [X] T035 [US4] 实现 POST /admin/users/{id}/unlock 解锁端点 backend/app/api/routes/admin.py
+- [X] T036 [US4] 实现 GET /admin/stats 系统统计端点 backend/app/api/routes/admin.py
+- [X] T037 [US4] 添加最后一个管理员保护逻辑到 PUT /admin/users/{id} backend/app/api/routes/admin.py
+- [X] T038 [US4] 注册管理员路由到 FastAPI 应用 backend/app/main.py
 
 ### Frontend - 管理员界面
 
-- [ ] T039 [P] [US4] 创建 adminService API 调用服务 frontend/src/services/adminService.ts
-- [ ] T040 [P] [US4] 创建 UserList 用户列表组件 frontend/src/components/admin/UserList.tsx
-- [ ] T041 [P] [US4] 创建 UserRoleEditor 角色编辑组件 frontend/src/components/admin/UserRoleEditor.tsx
-- [ ] T042 [P] [US4] 创建 SystemStats 统计组件 frontend/src/components/admin/SystemStats.tsx
-- [ ] T043 [US4] 创建 AdminPage 管理员页面 frontend/src/pages/admin/AdminPage.tsx
-- [ ] T044 [US4] 在路由中添加管理员页面（ProtectedRoute minRole="admin"）frontend/src/App.tsx
+- [X] T039 [P] [US4] 创建 adminService API 调用服务 frontend/src/services/adminService.ts
+- [X] T040 [P] [US4] 创建 UserList 用户列表组件 frontend/src/components/admin/UserList.tsx
+- [X] T041 [P] [US4] 创建 UserRoleEditor 角色编辑组件 frontend/src/components/admin/UserRoleEditor.tsx
+- [X] T042 [P] [US4] 创建 SystemStats 统计组件 frontend/src/components/admin/SystemStats.tsx
+- [X] T043 [US4] 创建 AdminPage 管理员页面 frontend/src/pages/admin/AdminPage.tsx
+- [X] T044 [US4] 在路由中添加管理员页面（ProtectedRoute minRole="admin"）frontend/src/App.tsx
 
 **Checkpoint**: US4 完成 - 管理员可以完整管理用户和查看系统统计
 

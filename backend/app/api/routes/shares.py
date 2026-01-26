@@ -3,11 +3,11 @@ from typing import List
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Request, Depends
 
-from app.api.routes.auth import get_current_user
+from app.api.dependencies import require_role
+from app.models.enums import UserRole, SharePermission
 from app.db.repositories.shares import ShareRepository
 from app.db.repositories.evaluations import EvaluationRepository
 from app.models.share import ShareCreate, ShareResponse, SharedEvaluation
-from app.models.enums import SharePermission
 
 router = APIRouter(tags=["分享"])
 
@@ -17,7 +17,7 @@ async def create_share(
     evaluation_id: str,
     data: ShareCreate,
     request: Request,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_role(UserRole.USER))
 ) -> ShareResponse:
     """
     创建评估分享链接
@@ -101,7 +101,7 @@ async def get_shared_evaluation(token: str) -> SharedEvaluation:
 async def delete_share(
     evaluation_id: str,
     token: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_role(UserRole.USER))
 ) -> dict:
     """
     删除分享链接
@@ -139,7 +139,7 @@ class ShareListResponse:
 @router.get("/evaluations/{evaluation_id}/shares")
 async def list_evaluation_shares(
     evaluation_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_role(UserRole.USER))
 ) -> dict:
     """
     列出评估的所有分享链接

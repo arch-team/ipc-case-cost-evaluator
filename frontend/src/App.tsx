@@ -5,6 +5,8 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ConfigProvider, theme } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
+import { AuthProvider } from './contexts/AuthContext';
+import { ProtectedRoute } from './components/auth';
 import Layout from './components/common/Layout';
 import Home from './pages/Home';
 import Calculator from './pages/Calculator';
@@ -13,6 +15,7 @@ import EvaluationDetail from './pages/EvaluationDetail';
 import Settings from './pages/Settings';
 import SharedView from './pages/SharedView';
 import AdminPage from './pages/AdminPage';
+import UserManagementPage from './pages/admin/UserManagementPage';
 
 // 企业级稳重风格主题配置
 const customTheme = {
@@ -52,21 +55,52 @@ const customTheme = {
 const App: React.FC = () => {
   return (
     <ConfigProvider locale={zhCN} theme={customTheme}>
-      <BrowserRouter>
-        <Routes>
-          {/* 分享查看页面 - 独立布局 */}
-          <Route path="/shared/:token" element={<SharedView />} />
-          {/* 主应用布局 */}
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Home />} />
-            <Route path="calculator" element={<Calculator />} />
-            <Route path="evaluations" element={<Evaluations />} />
-            <Route path="evaluations/:id" element={<EvaluationDetail />} />
-            <Route path="admin" element={<AdminPage />} />
-            <Route path="settings" element={<Settings />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* 分享查看页面 - 独立布局 */}
+            <Route path="/shared/:token" element={<SharedView />} />
+            {/* 主应用布局 */}
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Home />} />
+              <Route path="calculator" element={<Calculator />} />
+              <Route
+                path="evaluations"
+                element={
+                  <ProtectedRoute minRole="user">
+                    <Evaluations />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="evaluations/:id"
+                element={
+                  <ProtectedRoute minRole="user">
+                    <EvaluationDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="admin"
+                element={
+                  <ProtectedRoute minRole="admin">
+                    <UserManagementPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="admin/pricing"
+                element={
+                  <ProtectedRoute minRole="admin">
+                    <AdminPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="settings" element={<Settings />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </ConfigProvider>
   );
 };

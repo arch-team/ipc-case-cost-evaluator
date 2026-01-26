@@ -17,6 +17,7 @@ import {
   Tag,
   Divider,
   Space,
+  Alert,
 } from 'antd';
 import {
   DollarOutlined,
@@ -137,6 +138,23 @@ const SharedView: React.FC = () => {
 
   return (
     <div className="shared-view-page">
+      {/* 只读模式提示 */}
+      <Alert
+        message="只读模式"
+        description="您正在通过分享链接查看此评估结果，无法进行修改或删除操作。如需创建自己的评估，请点击右侧按钮。"
+        type="info"
+        showIcon
+        icon={<EyeOutlined />}
+        action={
+          <Link to="/calculator">
+            <Button type="primary" size="small">
+              创建新评估
+            </Button>
+          </Link>
+        }
+        style={{ marginBottom: 0, borderRadius: 0 }}
+      />
+
       {/* 顶部提示条 */}
       <div className="shared-view-banner">
         <Space>
@@ -148,11 +166,6 @@ const SharedView: React.FC = () => {
             <Tag icon={<CopyOutlined />} color="blue">可复制参数</Tag>
           )}
         </Space>
-        <Link to="/calculator">
-          <Button type="primary" size="small">
-            创建新评估
-          </Button>
-        </Link>
       </div>
 
       {/* 主要内容 */}

@@ -1,75 +1,35 @@
 """认证 API 路由"""
-from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel, Field, EmailStr
 
 from app.services.auth import AuthService
+from app.models.user import (
+    UserCreate,
+    UserLogin,
+    UserUpdate,
+    UserResponse,
+    TokenResponse,
+)
+from app.models.enums import UserRole
+from app.api.dependencies import get_current_user, require_role
 
 router = APIRouter(prefix="/auth", tags=["认证"])
-security = HTTPBearer(auto_error=False)
-
-
-class RegisterRequest(BaseModel):
-    """注册请求"""
-    email: EmailStr = Field(..., description="邮箱")
-    password: str = Field(..., min_length=6, description="密码")
-    name: str = Field(..., min_length=1, description="用户名")
-
-
-class LoginRequest(BaseModel):
-    """登录请求"""
-    email: EmailStr = Field(..., description="邮箱")
-    password: str = Field(..., description="密码")
-
-
-class TokenResponse(BaseModel):
-    """令牌响应"""
-    access_token: str = Field(..., description="访问令牌")
-    token_type: str = Field(default="bearer", description="令牌类型")
-
-
-class UserResponse(BaseModel):
-    """用户响应"""
-    id: str = Field(..., description="用户 ID")
-    email: str = Field(..., description="邮箱")
-    name: str = Field(..., description="用户名")
-    created_at: Optional[str] = Field(default=None, description="创建时间")
-
-
-def get_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
-) -> dict:
-    """获取当前用户依赖"""
-    if not credentials:
-        raise HTTPException(status_code=401, detail="未提供认证令牌")
-
-    service = AuthService()
-    payload = service.verify_token(credentials.credentials)
-    if not payload:
-        raise HTTPException(status_code=401, detail="无效的认证令牌")
-
-    user_id = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="无效的认证令牌")
-
-    user = service.get_user_by_id(user_id)
-    if not user:
-        raise HTTPException(status_code=401, detail="用户不存在")
-
-    return user
 
 
 @router.post("/register", response_model=TokenResponse)
-async def register(request: RegisterRequest) -> TokenResponse:
+async def register(request: UserCreate) -> TokenResponse:
     """
     用户注册
 
+    新用户注册，默认角色为 User。注册成功后自动登录并返回令牌。
+
     Args:
-        request: 注册请求
+        request: 注册请求（邮箱、密码、用户名）
 
     Returns:
-        访问令牌
+        访问令牌和用户信息
+
+    Raises:
+        400: 邮箱已注册或密码不符合要求
     """
     service = AuthService()
 
@@ -78,29 +38,44 @@ async def register(request: RegisterRequest) -> TokenResponse:
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    token = service.create_access_token({"sub": user["id"]})
-    return TokenResponse(access_token=token)
+    token = service.create_access_token(user["id"], UserRole(user["role"]))
+    return TokenResponse(
+        access_token=token,
+        user=UserResponse(**user),
+    )
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(request: LoginRequest) -> TokenResponse:
+async def login(request: UserLogin) -> TokenResponse:
     """
     用户登录
 
+    使用邮箱和密码登录。连续登录失败 3 次将锁定账号 15 分钟。
+
     Args:
-        request: 登录请求
+        request: 登录请求（邮箱、密码）
 
     Returns:
-        访问令牌
+        访问令牌和用户信息
+
+    Raises:
+        401: 邮箱或密码错误
+        403: 账号已锁定或已禁用
     """
     service = AuthService()
-    user = service.authenticate(request.email, request.password)
 
-    if not user:
-        raise HTTPException(status_code=401, detail="邮箱或密码错误")
+    try:
+        user = service.authenticate(request.email, request.password)
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
 
-    token = service.create_access_token({"sub": user["id"]})
-    return TokenResponse(access_token=token)
+    token = service.create_access_token(user["id"], UserRole(user["role"]))
+    return TokenResponse(
+        access_token=token,
+        user=UserResponse(**user),
+    )
 
 
 @router.get("/me", response_model=UserResponse)
@@ -108,7 +83,43 @@ async def get_me(current_user: dict = Depends(get_current_user)) -> UserResponse
     """
     获取当前用户信息
 
+    需要登录认证。
+
     Returns:
         当前用户信息
     """
     return UserResponse(**current_user)
+
+
+@router.put("/update", response_model=UserResponse)
+async def update_me(
+    request: UserUpdate,
+    current_user: dict = Depends(require_role(UserRole.USER)),
+) -> UserResponse:
+    """
+    更新当前用户信息
+
+    用户可以修改自己的名称和密码。
+
+    Args:
+        request: 更新请求（名称、密码）
+
+    Returns:
+        更新后的用户信息
+
+    Raises:
+        400: 密码不符合要求
+        401: 未认证
+    """
+    service = AuthService()
+
+    user = service.update_user(
+        user_id=current_user["id"],
+        name=request.name,
+        password=request.password,
+    )
+
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+
+    return UserResponse(**user)
