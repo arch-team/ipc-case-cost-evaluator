@@ -383,12 +383,7 @@ const PricingComparison: React.FC<PricingComparisonProps> = ({
         fontWeight: 500,
       },
     },
-    legend: {
-      color: {
-        position: 'top-right',
-        itemMarker: 'circle',
-      },
-    },
+    legend: false,
     tooltip: {
       items: [
         {
