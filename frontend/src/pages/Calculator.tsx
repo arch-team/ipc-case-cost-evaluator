@@ -71,6 +71,11 @@ const Calculator: React.FC = () => {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [evaluationId] = useState<string | undefined>();
 
+  // 访客模式提示关闭状态（从 localStorage 读取）
+  const [guestAlertDismissed, setGuestAlertDismissed] = useState(() => {
+    return localStorage.getItem('guestAlertDismissed') === 'true';
+  });
+
   // 处理从评估历史加载的数据（使用 useLayoutEffect 避免闪烁）
   // 这是一个合法的初始化场景：从路由 state 加载表单数据，仅执行一次
   useLayoutEffect(() => {
@@ -194,9 +199,15 @@ const Calculator: React.FC = () => {
     message.info('保存功能开发中');
   };
 
+  // 处理关闭访客模式提示
+  const handleDismissGuestAlert = () => {
+    setGuestAlertDismissed(true);
+    localStorage.setItem('guestAlertDismissed', 'true');
+  };
+
   // 渲染登录提示
   const renderLoginPrompt = () => {
-    if (isAuthenticated) return null;
+    if (isAuthenticated || guestAlertDismissed) return null;
 
     return (
       <Alert
@@ -212,6 +223,7 @@ const Calculator: React.FC = () => {
         type="info"
         showIcon
         closable
+        onClose={handleDismissGuestAlert}
         style={{ marginBottom: 16 }}
       />
     );
