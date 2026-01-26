@@ -604,6 +604,10 @@ body {
   background: linear-gradient(90deg, #1890ff 0%, #69c0ff 100%);
 }
 
+.sensitivity-bar-current {
+  background: linear-gradient(90deg, #fa8c16 0%, #ffc069 100%);
+}
+
 .sensitivity-bar-max {
   background: linear-gradient(90deg, #ff4d4f 0%, #ff7875 100%);
 }

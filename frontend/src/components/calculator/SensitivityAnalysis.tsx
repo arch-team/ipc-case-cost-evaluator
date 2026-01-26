@@ -102,7 +102,7 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
         ...inp,
         functional: {
           ...inp.functional,
-          video_quality: (['720p', '1080p', '2k', '4k'] as const)[val] || '1080p',
+          video_quality: (['720p', '1080p', '2K', '4K'] as const)[val] || '1080p',
         },
       }),
     },
@@ -117,9 +117,9 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
     setSliderValues(initialValues);
   }, [sensitivityItems]);
 
-  // 计算成本的防抖函数
-  const calculateCostDebounced = useCallback(
-    debounce(async (key: string, value: number, item: SensitivityItem) => {
+  // 计算单个项目的成本影响（不带防抖）
+  const calculateCost = useCallback(
+    async (key: string, value: number, item: SensitivityItem) => {
       setLoading((prev) => ({ ...prev, [key]: true }));
       try {
         const modifiedInput = item.getInputValue(value, input);
@@ -152,21 +152,42 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
       } finally {
         setLoading((prev) => ({ ...prev, [key]: false }));
       }
-    }, 300),
+    },
     [input, baselineCost]
   );
 
-  // 初始化计算各项影响
-  useEffect(() => {
-    sensitivityItems.forEach((item) => {
-      calculateCostDebounced(item.key, item.currentValue, item);
-    });
-  }, [sensitivityItems, baselineCost]);
+  // 每个 key 的防抖函数引用
+  const debouncedCalculatorsRef = React.useRef<Record<string, ReturnType<typeof debounce>>>({});
 
-  // 处理滑块变化
+  // 获取或创建针对特定 key 的防抖函数
+  const getDebouncedCalculator = useCallback(
+    (key: string) => {
+      if (!debouncedCalculatorsRef.current[key]) {
+        debouncedCalculatorsRef.current[key] = debounce(
+          (value: number, item: SensitivityItem) => {
+            calculateCost(key, value, item);
+          },
+          300
+        );
+      }
+      return debouncedCalculatorsRef.current[key];
+    },
+    [calculateCost]
+  );
+
+  // 初始化计算各项影响（并行计算所有项目）
+  useEffect(() => {
+    // 并行计算所有敏感度项目
+    sensitivityItems.forEach((item) => {
+      calculateCost(item.key, item.currentValue, item);
+    });
+  }, [sensitivityItems, baselineCost, calculateCost]);
+
+  // 处理滑块变化（使用每个 key 独立的防抖函数）
   const handleSliderChange = (key: string, value: number, item: SensitivityItem) => {
     setSliderValues((prev) => ({ ...prev, [key]: value }));
-    calculateCostDebounced(key, value, item);
+    const debouncedCalculator = getDebouncedCalculator(key);
+    debouncedCalculator(value, item);
   };
 
   // 计算影响排序
@@ -209,7 +230,7 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
     if (item.key === 'access_pattern') {
       onApplyValue(item.key, value / 100);
     } else if (item.key === 'video_quality') {
-      onApplyValue(item.key, ['720p', '1080p', '2k', '4k'][value]);
+      onApplyValue(item.key, ['720p', '1080p', '2K', '4K'][value]);
     } else {
       onApplyValue(item.key, value);
     }
@@ -306,17 +327,21 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
                           </div>
                         </Tooltip>
 
-                        {/* 基准值条 */}
+                        {/* 当前值条（滑块位置对应的成本） */}
                         <div className="sensitivity-bar-row sensitivity-bar-row-baseline">
                           <div
-                            className="sensitivity-bar sensitivity-bar-baseline"
+                            className={`sensitivity-bar ${hasChanged ? 'sensitivity-bar-current' : 'sensitivity-bar-baseline'}`}
                             style={{
-                              width: `${getBarWidth(baselineCost, globalCostRange.min, globalCostRange.max)}%`
+                              width: `${getBarWidth(impact.currentCost, globalCostRange.min, globalCostRange.max)}%`
                             }}
                           />
-                          <span className="sensitivity-bar-label sensitivity-bar-label-baseline">
-                            {formatCost(baselineCost)}
-                            <span className="sensitivity-bar-percent">基准</span>
+                          <span className={`sensitivity-bar-label ${hasChanged ? '' : 'sensitivity-bar-label-baseline'}`}>
+                            {formatCost(impact.currentCost)}
+                            <span className="sensitivity-bar-percent">
+                              {hasChanged
+                                ? formatPercent(((impact.currentCost - baselineCost) / baselineCost) * 100)
+                                : '基准'}
+                            </span>
                           </span>
                         </div>
 
@@ -378,8 +403,11 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
 
 // 获取视频质量索引
 function getQualityIndex(quality: string): number {
-  const qualities = ['720p', '1080p', '2k', '4k'];
-  return qualities.indexOf(quality.toLowerCase());
+  const qualities = ['720p', '1080p', '2K', '4K'];
+  // 标准化为小写后比较，支持大小写混合输入
+  const normalizedQuality = quality.toLowerCase();
+  const normalizedQualities = qualities.map(q => q.toLowerCase());
+  return normalizedQualities.indexOf(normalizedQuality);
 }
 
 export default SensitivityAnalysis;
