@@ -89,6 +89,28 @@ const storageClassOrder: string[] = [
   'DEEP_ARCHIVE',
 ];
 
+// 最小存储期限（天）
+const storageClassMinDuration: { [key: string]: string } = {
+  STANDARD: '-',
+  INTELLIGENT_TIERING: '-',
+  STANDARD_IA: '30 天',
+  ONEZONE_IA: '30 天',
+  GLACIER_IR: '90 天',
+  GLACIER_FR: '90 天',
+  DEEP_ARCHIVE: '180 天',
+};
+
+// 最小计费大小
+const storageClassMinSize: { [key: string]: string } = {
+  STANDARD: '-',
+  INTELLIGENT_TIERING: '128 KB',
+  STANDARD_IA: '128 KB',
+  ONEZONE_IA: '128 KB',
+  GLACIER_IR: '128 KB',
+  GLACIER_FR: '-',
+  DEEP_ARCHIVE: '-',
+};
+
 const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false, comparisonSlot }) => {
   if (!pricing) {
     return (
@@ -143,6 +165,34 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false, c
         <Tag color="default" style={{ margin: 0 }}>
           {storageClassUseCases[value]}
         </Tag>
+      ),
+    },
+    {
+      title: (
+        <Tooltip title="删除对象前的最小存储时间，提前删除仍按此时长计费">
+          最小存储期限
+        </Tooltip>
+      ),
+      dataIndex: 'storageClass',
+      key: 'minDuration',
+      width: 110,
+      align: 'center' as const,
+      render: (value: string) => (
+        <Text>{storageClassMinDuration[value]}</Text>
+      ),
+    },
+    {
+      title: (
+        <Tooltip title="小于此大小的对象按此大小计费">
+          最小计费大小
+        </Tooltip>
+      ),
+      dataIndex: 'storageClass',
+      key: 'minSize',
+      width: 110,
+      align: 'center' as const,
+      render: (value: string) => (
+        <Text>{storageClassMinSize[value]}</Text>
       ),
     },
     {
@@ -364,7 +414,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false, c
           pagination={false}
           loading={loading}
           size="large"
-          scroll={{ x: 1300 }}
+          scroll={{ x: 1520 }}
           style={{
             '--ant-table-cell-padding-block': '16px',
             '--ant-table-cell-padding-inline': '16px',
