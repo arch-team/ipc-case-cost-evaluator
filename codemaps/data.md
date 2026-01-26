@@ -1,7 +1,7 @@
 # IPC Cost Evaluator - 数据模型与 Schema
 
-> **Freshness**: 2026-01-26T00:00:00Z
-> **版本**: 1.0.0
+> **Freshness**: 2026-01-26T14:30:00Z
+> **版本**: 1.1.0
 
 ## 概述
 

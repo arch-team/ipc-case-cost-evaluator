@@ -72,34 +72,17 @@ class StorageRecommender:
             分析结果字典
         """
         functional = input_data.functional
+        access_pattern = functional.access_pattern
+        retention_days = functional.retention_days
 
         # 确定访问级别
-        access_pattern = functional.access_pattern
-        if access_pattern < self.LOW_ACCESS_THRESHOLD:
-            access_level = "low"
-        elif access_pattern > self.HIGH_ACCESS_THRESHOLD:
-            access_level = "high"
-        else:
-            access_level = "medium"
+        access_level = self._classify_access_level(access_pattern)
 
         # 确定保留期级别
-        retention_days = functional.retention_days
-        if retention_days <= self.SHORT_RETENTION_DAYS:
-            retention_level = "short"
-        elif retention_days >= self.LONG_RETENTION_DAYS:
-            retention_level = "long"
-        else:
-            retention_level = "medium"
+        retention_level = self._classify_retention_level(retention_days)
 
         # 确定主要成本
-        # 简化判断：长保留+低访问 → 存储为主
-        #          短保留+高访问 → 请求/检索为主
-        if retention_level == "long" and access_level == "low":
-            dominant_cost = "storage"
-        elif retention_level == "short" and access_level == "high":
-            dominant_cost = "requests"
-        else:
-            dominant_cost = "mixed"
+        dominant_cost = self._determine_dominant_cost(access_level, retention_level)
 
         return {
             "access_level": access_level,
@@ -108,6 +91,32 @@ class StorageRecommender:
             "access_pattern": access_pattern,
             "retention_days": retention_days,
         }
+
+    def _classify_access_level(self, access_pattern: float) -> str:
+        """分类访问级别"""
+        if access_pattern < self.LOW_ACCESS_THRESHOLD:
+            return "low"
+        if access_pattern > self.HIGH_ACCESS_THRESHOLD:
+            return "high"
+        return "medium"
+
+    def _classify_retention_level(self, retention_days: int) -> str:
+        """分类保留期级别"""
+        if retention_days <= self.SHORT_RETENTION_DAYS:
+            return "short"
+        if retention_days >= self.LONG_RETENTION_DAYS:
+            return "long"
+        return "medium"
+
+    def _determine_dominant_cost(self, access_level: str, retention_level: str) -> str:
+        """确定主要成本类型"""
+        # 长保留+低访问 → 存储为主
+        if retention_level == "long" and access_level == "low":
+            return "storage"
+        # 短保留+高访问 → 请求/检索为主
+        if retention_level == "short" and access_level == "high":
+            return "requests"
+        return "mixed"
 
     def _generate_reason(
         self, input_data: CostCalculationInput, analysis: Dict, recommended: str
@@ -130,30 +139,37 @@ class StorageRecommender:
             "long": f"长保留期 ({retention_days}天)",
         }
 
-        if "Glacier" in recommended or "Lifecycle" in recommended:
-            if access_level == "low":
-                return (
-                    f"由于{access_desc[access_level]}和{retention_desc[retention_level]}，"
-                    f"推荐使用 {recommended} 以降低存储成本。"
-                    f"Glacier 存储单价约为 Standard 的 1/5，适合低频访问数据。"
-                )
-            else:
-                return (
-                    f"基于{access_desc[access_level]}和{retention_desc[retention_level]}的综合分析，"
-                    f"推荐使用 {recommended}。"
-                    f"虽然有检索费用，但存储节省仍能带来总体成本优化。"
-                )
-        else:
-            if access_level == "high":
-                return (
-                    f"由于{access_desc[access_level]}，推荐使用 {recommended}。"
-                    f"高访问频率场景下，Glacier 的检索费用会显著增加总成本。"
-                )
-            else:
-                return (
-                    f"基于{access_desc[access_level]}和{retention_desc[retention_level]}的综合分析，"
-                    f"推荐使用 {recommended}。"
-                )
+        access_info = access_desc[access_level]
+        retention_info = retention_desc[retention_level]
+
+        # 判断是否为 Glacier/Lifecycle 方案
+        is_glacier_based = "Glacier" in recommended or "Lifecycle" in recommended
+
+        # 构建推荐原因
+        if is_glacier_based and access_level == "low":
+            return (
+                f"由于{access_info}和{retention_info}，"
+                f"推荐使用 {recommended} 以降低存储成本。"
+                f"Glacier 存储单价约为 Standard 的 1/5，适合低频访问数据。"
+            )
+
+        if is_glacier_based:
+            return (
+                f"基于{access_info}和{retention_info}的综合分析，"
+                f"推荐使用 {recommended}。"
+                f"虽然有检索费用，但存储节省仍能带来总体成本优化。"
+            )
+
+        if access_level == "high":
+            return (
+                f"由于{access_info}，推荐使用 {recommended}。"
+                f"高访问频率场景下，Glacier 的检索费用会显著增加总成本。"
+            )
+
+        return (
+            f"基于{access_info}和{retention_info}的综合分析，"
+            f"推荐使用 {recommended}。"
+        )
 
     def _generate_suggestions(
         self,

@@ -1,7 +1,7 @@
 # IPC Cost Evaluator - 前端结构
 
-> **Freshness**: 2026-01-26T00:00:00Z
-> **版本**: 1.0.0
+> **Freshness**: 2026-01-26T14:30:00Z
+> **版本**: 1.1.0
 
 ## 目录结构
 
@@ -16,7 +16,8 @@ frontend/src/
 │   ├── Home.tsx                     # 首页/仪表板
 │   ├── Calculator.tsx               # 成本计算页面
 │   ├── Evaluations.tsx              # 评估历史管理
-│   └── Settings.tsx                 # 设置页面
+│   ├── Settings.tsx                 # 设置页面
+│   └── SharedView.tsx               # 分享链接查看页面 [NEW]
 │
 ├── components/                      # 可复用组件
 │   ├── common/
@@ -37,41 +38,34 @@ frontend/src/
 │   │   ├── StorageStrategySelector.tsx # 存储策略选择
 │   │   ├── StageEditor.tsx          # 生命周期阶段编辑
 │   │   ├── ExportDialog.tsx         # 导出对话框
-│   │   └── ShareDialog.tsx          # 分享对话框
+│   │   ├── ShareDialog.tsx          # 分享对话框
+│   │   └── index.ts                 # 计算器组件导出
 │   │
-│   ├── comparison/                  # 对比组件
-│   │   ├── ComparisonDisplay.tsx
-│   │   ├── ComparisonChart.tsx
-│   │   └── DetailedComparisonTable.tsx
+│   ├── comparison/                  # 对比组件 [UPDATED]
+│   │   ├── ComparisonPanel.tsx      # 对比面板容器 [NEW]
+│   │   ├── ComparisonDisplay.tsx    # 对比展示列表
+│   │   ├── ComparisonChart.tsx      # 对比柱状图
+│   │   └── DetailedComparisonTable.tsx # 详细对比表格
 │   │
 │   └── share/                       # 分享组件
-│       └── ShareDialog.tsx
+│       ├── ShareDialog.tsx
+│       └── index.ts
 │
-├── hooks/                           # 自定义 Hooks
-│   ├── useCalculate.ts              # 计算逻辑
-│   ├── useComparison.ts             # 对比逻辑
-│   └── usePricing.ts                # 定价数据
+├── constants/                       # 常量定义 [NEW]
+│   └── comparison.ts                # 对比相关常量
+│
+├── config/                          # 配置文件
+│   └── costCalculation.ts           # 成本计算配置
 │
 ├── utils/                           # 工具函数
-│   ├── formatters.ts                # 格式化
-│   ├── validators.ts                # 数据验证
-│   └── storage.ts                   # 本地存储
+│   └── formatters.ts                # 数字/货币格式化
 │
 ├── types/                           # TypeScript 类型
-│   ├── index.ts
-│   ├── api.types.ts                 # API 类型
-│   ├── models.types.ts              # 业务模型类型
-│   └── ui.types.ts                  # UI 组件类型
+│   └── index.ts                     # 统一类型定义
 │
 └── api/                             # API 通信层
-    ├── client.ts                    # Axios 客户端
-    ├── hooks.ts                     # API Hooks
-    └── services/                    # 业务服务
-        ├── calculate.ts
-        ├── compare.ts
-        ├── evaluations.ts
-        ├── shares.ts
-        └── export.ts
+    ├── client.ts                    # Axios 客户端 (模块化)
+    └── index.ts                     # API 导出
 ```
 
 ---
@@ -99,13 +93,20 @@ frontend/src/
                 │   ├── <ResultDisplay>
                 │   │   ├── <CostBreakdownTable>
                 │   │   ├── <CostPieChart>
-                │   │   ├── <ComparisonChart>
                 │   │   └── <SensitivityAnalysis>
+                │   │
+                │   ├── <ComparisonPanel>       # [NEW] 对比面板
+                │   │   ├── <ComparisonDisplay>
+                │   │   ├── <ComparisonChart>
+                │   │   └── <DetailedComparisonTable>
                 │   │
                 │   ├── <MultiSchemePanel>
                 │   ├── <StageEditor>
                 │   ├── <ExportDialog>
                 │   └── <ShareDialog>
+                │
+                ├── <SharedView>     # [NEW] 分享链接查看页面
+                │   └── 只读评估展示
                 │
                 ├── <Evaluations>    # 评估历史
                 │   └── 历史记录列表与管理
@@ -151,6 +152,14 @@ frontend/src/
 - 主题配置
 - 用户偏好
 
+### SharedView.tsx - 分享链接查看页面 [NEW]
+
+功能：
+- 根据分享 Token 加载评估数据
+- 只读模式展示评估结果
+- 支持克隆到自己的评估
+- 分享权限验证
+
 ---
 
 ## 核心组件说明
@@ -174,6 +183,15 @@ frontend/src/
 | CostPieChart | 费用占比饼图 |
 | ComparisonChart | 多方案对比图表 |
 | SensitivityAnalysis | 灵敏度分析热力图 |
+
+### 对比组件 [UPDATED]
+
+| 组件 | 功能 |
+|------|------|
+| ComparisonPanel | 对比面板容器（管理对比状态和布局） [NEW] |
+| ComparisonDisplay | 对比展示列表视图 |
+| ComparisonChart | 对比柱状图可视化 |
+| DetailedComparisonTable | 详细对比表格（费用/指标明细） |
 
 ### 交互组件
 
@@ -281,11 +299,11 @@ const theme = {
 
 ## 组件数量统计
 
-| 类别 | 数量 |
-|------|------|
-| 页面组件 | 4 |
-| 计算器组件 | 13 |
-| 对比组件 | 3 |
-| 分享组件 | 2 |
-| 通用组件 | 1 |
-| **总计** | **23** |
+| 类别 | 数量 | 变更 |
+|------|------|------|
+| 页面组件 | 5 | +1 (SharedView) |
+| 计算器组件 | 14 | +1 (index.ts) |
+| 对比组件 | 4 | +1 (ComparisonPanel) |
+| 分享组件 | 2 | - |
+| 通用组件 | 1 | - |
+| **总计** | **26** | **+3** |

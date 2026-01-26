@@ -12,7 +12,14 @@ import {
   TableOutlined,
   BarChartOutlined,
 } from '@ant-design/icons';
-import type { ComparisonResult, ComparisonItem, CostBreakdown, UsageMetrics } from '../../types';
+import type { ComparisonResult, ComparisonItem, UsageMetrics } from '../../types';
+import {
+  SCHEME_COLORS,
+  COST_ITEMS,
+  getTechDescription
+} from '../../constants/comparison';
+import { formatAmount, formatUnitPrice } from '../../utils/formatters';
+import { COST_ROW_CONFIGS } from '../../config/costCalculation';
 
 const { Text, Title } = Typography;
 
@@ -28,110 +35,14 @@ const formatReasonWithBoldPercent = (reason: string): React.ReactNode => {
   });
 };
 
-// 存储类型名称映射
-const STORAGE_CLASS_NAMES: Record<string, string> = {
-  'STANDARD': 'S3 Standard',
-  'GLACIER_IR': 'S3 Glacier IR',
-  'DEEP_ARCHIVE': 'S3 Deep Archive',
-};
-
-// 方案颜色
-const SCHEME_COLORS = ['#5B8FF9', '#61DDAA', '#F6BD16', '#7262FD'];
-
-// 费用项配置
-const COST_ITEMS = [
-  { key: 'storage_cost', name: '存储费用', color: '#5B8FF9' },
-  { key: 'put_request_cost', name: 'PUT请求费', color: '#5AD8A6' },
-  { key: 'get_request_cost', name: 'GET请求费', color: '#F6BD16' },
-  { key: 'retrieval_cost', name: '数据检索费', color: '#E86452' },
-  { key: 'data_transfer_cost', name: '数据传输费', color: '#6DC8EC' },
-  { key: 'lifecycle_cost', name: '生命周期费', color: '#945FB9' },
-];
-
-// AWS 定价
-const AWS_PRICING = {
-  'S3 Standard': {
-    storage: 0.025,
-    put: 0.0047,
-    get: 0.0004,
-    retrieval: 0,
-    transfer: 0.114,
-    lifecycle: 0,
-  },
-  'S3 Glacier IR': {
-    storage: 0.005,
-    put: 0.02,
-    get: 0.01,
-    retrieval: 0.03,
-    transfer: 0.114,
-    lifecycle: 0.02,
-  },
-  'Lifecycle Policy': {
-    storage: 0.015,
-    put: 0.01,
-    get: 0.005,
-    retrieval: 0.015,
-    transfer: 0.114,
-    lifecycle: 0.02,
-  },
-};
-
-// 生成技术配置描述
-const getTechDescription = (item: ComparisonItem): string[] => {
-  const technical = item.technical;
-  if (!technical) {
-    return [item.storage_class];
-  }
-
-  const lines: string[] = [];
-
-  if (technical.lifecycle_policy?.enabled) {
-    const policy = technical.lifecycle_policy;
-
-    if (policy.stages && policy.stages.length > 0) {
-      const stageDescs = policy.stages.map(stage => {
-        const className = STORAGE_CLASS_NAMES[stage.storage_class] || stage.storage_class;
-        if (stage.start_day === stage.end_day) {
-          return `第${stage.start_day}天: ${className}`;
-        }
-        return `${stage.start_day}-${stage.end_day}天: ${className}`;
-      });
-      lines.push(`生命周期策略 (${policy.stages.length}阶段)`);
-      lines.push(stageDescs.join(' → '));
-    } else if (policy.transition_days && policy.target_class) {
-      const targetName = STORAGE_CLASS_NAMES[policy.target_class] || policy.target_class;
-      lines.push(`生命周期策略`);
-      lines.push(`${policy.transition_days}天后 → ${targetName}`);
-    } else {
-      lines.push('生命周期策略');
-    }
-  } else {
-    const className = STORAGE_CLASS_NAMES[technical.storage_class] || technical.storage_class;
-    lines.push(className);
-  }
-
-  return lines;
-};
-
 interface Props {
   comparison: ComparisonResult;
   metrics?: UsageMetrics;
   deviceCount: number;
 }
 
-// 费用项配置类型
-interface CostRow {
-  key: string;
-  name: string;
-  unit: string;
-  getQuantity: (metrics?: UsageMetrics) => number | null;
-  formatQuantity: (val: number) => string;
-  getAmount: (breakdown?: CostBreakdown) => number;
-  unitPrices: Record<string, number>;
-}
-
 // 表格行类型
-interface TableRow extends Partial<CostRow> {
+interface TableRow extends Partial<typeof COST_ROW_CONFIGS[0]> {
   key: string;
   name: string;
   unit: string;
@@ -139,80 +50,9 @@ interface TableRow extends Partial<CostRow> {
   isSummary?: boolean;
 }
 
-// 费用项定义
-const costRows: CostRow[] = [
-  {
-    key: 'storage',
-    name: '存储费用',
-    unit: '/GB/月',
-    getQuantity: (metrics) => metrics?.avg_storage_gb || null,
-    formatQuantity: (val) => `${(val / 1024).toFixed(2)} TB`,
-    getAmount: (breakdown) => breakdown?.storage_cost || 0,
-    unitPrices: { 'S3 Standard': AWS_PRICING['S3 Standard'].storage, 'S3 Glacier IR': AWS_PRICING['S3 Glacier IR'].storage, 'Lifecycle Policy': AWS_PRICING['Lifecycle Policy'].storage },
-  },
-  {
-    key: 'put',
-    name: 'PUT 请求费',
-    unit: '/千次',
-    getQuantity: (metrics) => metrics?.monthly_puts || null,
-    formatQuantity: (val) => `${(val / 10000).toFixed(0)} 万次`,
-    getAmount: (breakdown) => breakdown?.put_request_cost || 0,
-    unitPrices: { 'S3 Standard': AWS_PRICING['S3 Standard'].put, 'S3 Glacier IR': AWS_PRICING['S3 Glacier IR'].put, 'Lifecycle Policy': AWS_PRICING['Lifecycle Policy'].put },
-  },
-  {
-    key: 'get',
-    name: 'GET 请求费',
-    unit: '/千次',
-    getQuantity: (metrics) => metrics?.monthly_gets || null,
-    formatQuantity: (val) => `${(val / 10000).toFixed(0)} 万次`,
-    getAmount: (breakdown) => breakdown?.get_request_cost || 0,
-    unitPrices: { 'S3 Standard': AWS_PRICING['S3 Standard'].get, 'S3 Glacier IR': AWS_PRICING['S3 Glacier IR'].get, 'Lifecycle Policy': AWS_PRICING['Lifecycle Policy'].get },
-  },
-  {
-    key: 'retrieval',
-    name: '数据检索费',
-    unit: '/GB',
-    getQuantity: (metrics) => metrics?.monthly_retrieval_gb || null,
-    formatQuantity: (val) => (val > 0 ? `${(val / 1024).toFixed(2)} TB` : '-'),
-    getAmount: (breakdown) => breakdown?.retrieval_cost || 0,
-    unitPrices: { 'S3 Standard': AWS_PRICING['S3 Standard'].retrieval, 'S3 Glacier IR': AWS_PRICING['S3 Glacier IR'].retrieval, 'Lifecycle Policy': AWS_PRICING['Lifecycle Policy'].retrieval },
-  },
-  {
-    key: 'transfer',
-    name: '数据传输费',
-    unit: '/GB',
-    getQuantity: (metrics) => metrics?.monthly_transfer_gb || null,
-    formatQuantity: (val) => (val > 0 ? `${(val / 1024).toFixed(2)} TB` : '-'),
-    getAmount: (breakdown) => breakdown?.data_transfer_cost || 0,
-    unitPrices: { 'S3 Standard': AWS_PRICING['S3 Standard'].transfer, 'S3 Glacier IR': AWS_PRICING['S3 Glacier IR'].transfer, 'Lifecycle Policy': AWS_PRICING['Lifecycle Policy'].transfer },
-  },
-  {
-    key: 'lifecycle',
-    name: '生命周期转换费',
-    unit: '/千次',
-    getQuantity: (metrics) => metrics?.monthly_puts || null,
-    formatQuantity: () => '-',
-    getAmount: (breakdown) => breakdown?.lifecycle_cost || 0,
-    unitPrices: { 'S3 Standard': AWS_PRICING['S3 Standard'].lifecycle, 'S3 Glacier IR': AWS_PRICING['S3 Glacier IR'].lifecycle, 'Lifecycle Policy': AWS_PRICING['Lifecycle Policy'].lifecycle },
-  },
-];
-
 const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount }) => {
   const [viewMode, setViewMode] = useState<'table' | 'chart'>('table');
   const [chartMode, setChartMode] = useState<'total' | 'breakdown'>('total');
-
-  // 格式化金额
-  const formatAmount = (val: number) => {
-    if (val === 0) return '-';
-    return `$${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
-
-  // 格式化单价
-  const formatUnitPrice = (price: number, unit: string) => {
-    if (price === 0) return '-';
-    const decimals = price < 0.001 ? 5 : price < 0.01 ? 4 : price < 0.1 ? 3 : 2;
-    return `$${price.toFixed(decimals)}${unit}`;
-  };
 
   // 计算相对节省
   const formatSavings = (item: ComparisonItem) => {
@@ -327,7 +167,7 @@ const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount }) 
   ];
 
   const tableDataSource = [
-    ...costRows.map((row) => ({
+    ...COST_ROW_CONFIGS.map((row) => ({
       ...row,
       key: row.key,
     })),
