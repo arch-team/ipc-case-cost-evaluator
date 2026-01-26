@@ -377,7 +377,7 @@ const PricingComparison: React.FC<PricingComparisonProps> = ({
         return `$${datum.value.toFixed(4)}`;
       },
       position: 'top',
-      dy: -8,
+      dy: -10,
       style: {
         fontSize: 10,
         fill: '#333',
