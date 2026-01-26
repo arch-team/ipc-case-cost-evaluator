@@ -67,31 +67,51 @@ const StageEditor: React.FC<StageEditorProps> = ({ value, onChange, maxDays }) =
   // 添加新阶段
   const handleAddStage = () => {
     const lastStage = value[value.length - 1];
-    const newStartDay = lastStage ? lastStage.end_day + 1 : 1;
 
-    if (newStartDay > maxDays) {
-      return; // 已经覆盖所有天数
+    // 如果没有阶段，创建第一个阶段
+    if (!lastStage) {
+      const newStage: LifecycleStage = {
+        start_day: 1,
+        end_day: maxDays,
+        storage_class: 'STANDARD',
+      };
+      onChange([newStage]);
+      return;
     }
 
-    const newStage: LifecycleStage = {
-      start_day: newStartDay,
-      end_day: maxDays,
-      storage_class: 'GLACIER_IR',
-    };
+    // 如果最后阶段已覆盖到 maxDays，需要拆分该阶段
+    if (lastStage.end_day >= maxDays) {
+      // 检查是否还能拆分（至少需要2天才能拆分）
+      const stageDays = lastStage.end_day - lastStage.start_day + 1;
+      if (stageDays < 2) {
+        return; // 只有1天，无法再拆分
+      }
 
-    // 如果有上一阶段，调整其结束天数
-    if (lastStage && lastStage.end_day === maxDays) {
-      const midPoint = Math.floor((lastStage.start_day + maxDays) / 2);
+      // 拆分最后一个阶段
+      const midPoint = Math.floor((lastStage.start_day + lastStage.end_day) / 2);
       const updatedStages = [...value];
       updatedStages[updatedStages.length - 1] = {
         ...lastStage,
         end_day: midPoint,
       };
-      newStage.start_day = midPoint + 1;
+
+      const newStage: LifecycleStage = {
+        start_day: midPoint + 1,
+        end_day: maxDays,
+        storage_class: 'GLACIER_IR',
+      };
+
       onChange([...updatedStages, newStage]);
-    } else {
-      onChange([...value, newStage]);
+      return;
     }
+
+    // 最后阶段未覆盖到 maxDays，直接添加新阶段填补空隙
+    const newStage: LifecycleStage = {
+      start_day: lastStage.end_day + 1,
+      end_day: maxDays,
+      storage_class: 'GLACIER_IR',
+    };
+    onChange([...value, newStage]);
   };
 
   // 删除阶段
@@ -236,7 +256,11 @@ const StageEditor: React.FC<StageEditorProps> = ({ value, onChange, maxDays }) =
           onClick={handleAddStage}
           icon={<PlusOutlined />}
           style={{ width: '100%' }}
-          disabled={value.length > 0 && value[value.length - 1]?.end_day >= maxDays}
+          disabled={
+            value.length > 0 &&
+            value[value.length - 1]?.end_day >= maxDays &&
+            value[value.length - 1]?.start_day === value[value.length - 1]?.end_day
+          }
         >
           添加阶段
         </Button>

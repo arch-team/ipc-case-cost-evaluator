@@ -26,8 +26,8 @@ import {
   DatabaseOutlined,
   ClockCircleOutlined,
 } from '@ant-design/icons';
-import RegionSelector from '../components/Admin/RegionSelector';
-import PricingTable from '../components/Admin/PricingTable';
+import RegionSelector from '../components/admin/RegionSelector';
+import PricingTable from '../components/admin/PricingTable';
 import type {
   RegionInfo,
   PricingDetailResponse,

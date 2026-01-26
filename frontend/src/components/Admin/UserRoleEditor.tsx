@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { Modal, Form, Select, message, Alert } from 'antd';
 import { adminApi } from '../../api/adminApi';
-import type { User, UserRole, UserStatus, AdminUserUpdateRequest } from '../../types/auth';
+import type { User, AdminUserUpdateRequest } from '../../types/auth';
 import { ROLE_LABELS, STATUS_LABELS } from '../../types/auth';
 import { useAuth } from '../../hooks/useAuth';
 

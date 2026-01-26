@@ -166,11 +166,11 @@
 
 ### Backend 实现
 
-- [ ] T045 [US5] 确保 /shared/{token} 端点无需认证可访问 backend/app/api/routes/shares.py
+- [X] T045 [US5] 确保 /shared/{token} 端点无需认证可访问 backend/app/api/routes/shares.py
 
 ### Frontend 实现
 
-- [ ] T046 [US5] 在分享页面显示只读提示 frontend/src/pages/SharedPage.tsx
+- [X] T046 [US5] 在分享页面显示只读提示 frontend/src/pages/SharedView.tsx
 
 **Checkpoint**: US5 完成 - 访客可以通过分享链接查看评估结果
 
@@ -180,10 +180,10 @@
 
 **Purpose**: 跨故事的改进和完善
 
-- [ ] T047 [P] 更新 API 文档，添加角色权限说明 backend/app/main.py
-- [ ] T048 [P] 添加权限错误的友好中文提示 backend/app/api/dependencies.py
-- [ ] T049 验证 quickstart.md 中所有场景可正常运行
-- [ ] T050 代码清理和重构
+- [X] T047 [P] 更新 API 文档，添加角色权限说明 backend/app/main.py
+- [X] T048 [P] 添加权限错误的友好中文提示 backend/app/api/dependencies.py
+- [X] T049 验证 quickstart.md 中所有场景可正常运行
+- [X] T050 代码清理和重构
 
 ---
 

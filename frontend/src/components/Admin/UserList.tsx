@@ -1,7 +1,7 @@
 /**
  * 用户列表组件
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Tag, Input, Select, Space, Button, message, Popconfirm, Tooltip } from 'antd';
 import { SearchOutlined, UnlockOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
@@ -24,7 +24,7 @@ const UserList: React.FC<UserListProps> = ({ onUserUpdated }) => {
   const [search, setSearch] = useState<string>('');
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const response = await adminApi.listUsers({
@@ -39,15 +39,15 @@ const UserList: React.FC<UserListProps> = ({ onUserUpdated }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [roleFilter, statusFilter, search]);
 
   useEffect(() => {
     fetchUsers();
-  }, [roleFilter, statusFilter]);
+  }, [fetchUsers]);
 
   const handleSearch = (value: string) => {
     setSearch(value);
-    fetchUsers();
+    // fetchUsers 会在 search 变化时通过 useEffect 自动触发
   };
 
   const handleUnlock = async (userId: string) => {

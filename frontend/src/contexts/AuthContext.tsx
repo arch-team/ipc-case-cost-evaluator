@@ -3,11 +3,11 @@
  *
  * 提供全局认证状态和用户角色管理。
  */
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useState, useCallback, useMemo } from 'react';
 import type { User, UserRole, TokenResponse } from '../types/auth';
 import { ROLE_LEVELS } from '../types/auth';
 
-interface AuthContextType {
+export interface AuthContextType {
   /** 当前用户信息 */
   user: User | null;
   /** 是否已认证 */
@@ -26,37 +26,39 @@ interface AuthContextType {
   isRole: (role: UserRole) => boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// eslint-disable-next-line react-refresh/only-export-components
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const TOKEN_KEY = 'token';
 const USER_KEY = 'user';
+
+/**
+ * 从 localStorage 恢复用户状态的初始化函数
+ */
+const getInitialUser = (): User | null => {
+  try {
+    const storedToken = localStorage.getItem(TOKEN_KEY);
+    const storedUser = localStorage.getItem(USER_KEY);
+
+    if (storedToken && storedUser) {
+      return JSON.parse(storedUser) as User;
+    }
+  } catch {
+    // 存储的数据无效，清除
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+  }
+  return null;
+};
 
 interface AuthProviderProps {
   children: React.ReactNode;
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // 从 localStorage 恢复认证状态
-  useEffect(() => {
-    const storedToken = localStorage.getItem(TOKEN_KEY);
-    const storedUser = localStorage.getItem(USER_KEY);
-
-    if (storedToken && storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser) as User;
-        setUser(parsedUser);
-      } catch (error) {
-        // 存储的数据无效，清除
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(USER_KEY);
-      }
-    }
-
-    setIsLoading(false);
-  }, []);
+  // 使用惰性初始化避免 useEffect 中的 setState
+  const [user, setUser] = useState<User | null>(getInitialUser);
+  const [isLoading] = useState(false);
 
   const login = useCallback((tokenResponse: TokenResponse) => {
     localStorage.setItem(TOKEN_KEY, tokenResponse.access_token);
@@ -107,16 +109,3 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-
-/**
- * 使用认证上下文的 Hook
- */
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-export default AuthContext;
