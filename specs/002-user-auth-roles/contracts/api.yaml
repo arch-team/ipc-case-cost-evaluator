@@ -1,0 +1,477 @@
+openapi: 3.0.3
+info:
+  title: IPC Cost Evaluator - 用户认证与角色管理 API
+  description: 用户登录、注册、角色管理相关 API 端点
+  version: 2.0.0
+
+servers:
+  - url: /api/v1
+    description: API v1
+
+tags:
+  - name: 认证
+    description: 用户认证相关端点
+  - name: 用户
+    description: 用户个人信息管理
+  - name: 管理员
+    description: 管理员专用端点
+
+paths:
+  # ============================================
+  # 认证端点 (Viewer 可访问)
+  # ============================================
+  /auth/register:
+    post:
+      tags: [认证]
+      summary: 用户注册
+      description: 新用户注册，默认角色为 User
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: 注册成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: 验证错误（邮箱已注册、密码不符合要求等）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      tags: [认证]
+      summary: 用户登录
+      description: 使用邮箱和密码登录
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: 邮箱或密码错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 账号已锁定或已禁用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================
+  # 用户端点 (User 角色)
+  # ============================================
+  /auth/me:
+    get:
+      tags: [用户]
+      summary: 获取当前用户信息
+      description: 需要登录
+      operationId: getMe
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 用户信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/update:
+    put:
+      tags: [用户]
+      summary: 更新当前用户信息
+      description: 用户修改自己的名称或密码
+      operationId: updateMe
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: 验证错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================
+  # 管理员端点 (Admin 角色)
+  # ============================================
+  /admin/users:
+    get:
+      tags: [管理员]
+      summary: 获取用户列表
+      description: 管理员查看所有用户
+      operationId: listUsers
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: role
+          in: query
+          schema:
+            $ref: '#/components/schemas/UserRole'
+          description: 按角色筛选
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/UserStatus'
+          description: 按状态筛选
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: 搜索邮箱或名称
+      responses:
+        '200':
+          description: 用户列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 权限不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/users/{user_id}:
+    get:
+      tags: [管理员]
+      summary: 获取指定用户详情
+      operationId: getUser
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 用户详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          description: 用户不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags: [管理员]
+      summary: 更新用户角色或状态
+      description: 管理员修改其他用户的角色或状态
+      operationId: updateUser
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUserUpdateRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: 操作不允许（如降级最后一个管理员）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 不能修改自己
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 用户不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/users/{user_id}/unlock:
+    post:
+      tags: [管理员]
+      summary: 解锁用户账号
+      description: 管理员手动解锁被锁定的用户
+      operationId: unlockUser
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 解锁成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          description: 用户不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/stats:
+    get:
+      tags: [管理员]
+      summary: 获取系统统计
+      description: 管理员查看系统使用统计
+      operationId: getStats
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 系统统计
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemStats'
+        '403':
+          description: 权限不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ============================================
+    # 枚举
+    # ============================================
+    UserRole:
+      type: string
+      enum: [viewer, user, admin]
+      description: 用户角色
+
+    UserStatus:
+      type: string
+      enum: [active, disabled]
+      description: 用户状态
+
+    # ============================================
+    # 请求模型
+    # ============================================
+    RegisterRequest:
+      type: object
+      required: [email, password, name]
+      properties:
+        email:
+          type: string
+          format: email
+          description: 邮箱
+        password:
+          type: string
+          minLength: 8
+          description: 密码（最低8位，包含字母和数字）
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: 用户名
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          description: 邮箱
+        password:
+          type: string
+          description: 密码
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: 用户名
+        password:
+          type: string
+          minLength: 8
+          description: 新密码
+
+    AdminUserUpdateRequest:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRole'
+        status:
+          $ref: '#/components/schemas/UserStatus'
+
+    # ============================================
+    # 响应模型
+    # ============================================
+    UserResponse:
+      type: object
+      required: [id, email, name, role, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 用户 ID
+        email:
+          type: string
+          format: email
+          description: 邮箱
+        name:
+          type: string
+          description: 用户名
+        role:
+          $ref: '#/components/schemas/UserRole'
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        created_at:
+          type: string
+          format: date-time
+          description: 创建时间
+
+    TokenResponse:
+      type: object
+      required: [access_token, token_type, user]
+      properties:
+        access_token:
+          type: string
+          description: JWT 访问令牌
+        token_type:
+          type: string
+          default: bearer
+          description: 令牌类型
+        user:
+          $ref: '#/components/schemas/UserResponse'
+
+    UserListResponse:
+      type: object
+      required: [users, total]
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserResponse'
+        total:
+          type: integer
+          description: 总用户数
+
+    SystemStats:
+      type: object
+      required: [total_users, active_users, disabled_users, admin_count, total_evaluations, total_shares]
+      properties:
+        total_users:
+          type: integer
+          description: 总用户数
+        active_users:
+          type: integer
+          description: 活跃用户数
+        disabled_users:
+          type: integer
+          description: 禁用用户数
+        admin_count:
+          type: integer
+          description: 管理员数量
+        total_evaluations:
+          type: integer
+          description: 总评估数
+        total_shares:
+          type: integer
+          description: 总分享数
+
+    MessageResponse:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          description: 消息
+
+    ErrorResponse:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+          description: 错误详情
