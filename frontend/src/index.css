@@ -602,6 +602,7 @@ body {
 
 .detailed-comparison-recommendation {
   margin-top: 16px;
+  border: none !important;
 }
 
 /* ============================================

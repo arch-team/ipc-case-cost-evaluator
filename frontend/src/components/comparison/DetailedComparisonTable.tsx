@@ -13,6 +13,18 @@ import type { ComparisonResult, ComparisonItem, CostBreakdown, UsageMetrics } fr
 
 const { Text, Title } = Typography;
 
+// 格式化推荐理由文本，将百分比数字加粗
+const formatReasonWithBoldPercent = (reason: string): React.ReactNode => {
+  // 匹配百分比数字，如 38.3%、50%、100% 等
+  const parts = reason.split(/(\d+\.?\d*%)/g);
+  return parts.map((part, index) => {
+    if (/\d+\.?\d*%/.test(part)) {
+      return <Text key={index} strong>{part}</Text>;
+    }
+    return part;
+  });
+};
+
 // 存储类型名称映射
 const STORAGE_CLASS_NAMES: Record<string, string> = {
   'STANDARD': 'S3 Standard',
@@ -373,7 +385,7 @@ const DetailedComparisonTable: React.FC<DetailedComparisonTableProps> = ({
           message={
             <span>
               <Text strong>推荐理由：</Text>
-              {comparison.recommendation.reason}
+              {formatReasonWithBoldPercent(comparison.recommendation.reason)}
             </span>
           }
           description={
