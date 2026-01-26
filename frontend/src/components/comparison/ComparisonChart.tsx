@@ -14,25 +14,18 @@ interface Props {
   comparison: ComparisonResult;
 }
 
-// 费用项键名到中文名的映射
-const COST_ITEM_NAMES: Record<string, string> = {
-  storage_cost: '存储费用',
-  put_request_cost: 'PUT请求费',
-  get_request_cost: 'GET请求费',
-  retrieval_cost: '数据检索费',
-  data_transfer_cost: '数据传输费',
-  lifecycle_cost: '生命周期费',
-};
+// 费用项配置：键名、中文名、颜色
+const COST_ITEMS = [
+  { key: 'storage_cost', name: '存储费用', color: '#1890ff' },
+  { key: 'put_request_cost', name: 'PUT请求费', color: '#52c41a' },
+  { key: 'get_request_cost', name: 'GET请求费', color: '#faad14' },
+  { key: 'retrieval_cost', name: '数据检索费', color: '#eb2f96' },
+  { key: 'data_transfer_cost', name: '数据传输费', color: '#722ed1' },
+  { key: 'lifecycle_cost', name: '生命周期费', color: '#13c2c2' },
+];
 
-// 费用项颜色
-const COST_ITEM_COLORS: Record<string, string> = {
-  存储费用: '#1890ff',
-  'PUT请求费': '#52c41a',
-  'GET请求费': '#faad14',
-  数据检索费: '#eb2f96',
-  数据传输费: '#722ed1',
-  生命周期费: '#13c2c2',
-};
+// 创建颜色映射
+const COLOR_MAP = Object.fromEntries(COST_ITEMS.map(item => [item.name, item.color]));
 
 const ComparisonChart: React.FC<Props> = ({ comparison }) => {
   const [viewMode, setViewMode] = React.useState<'total' | 'breakdown'>('total');
@@ -46,19 +39,20 @@ const ComparisonChart: React.FC<Props> = ({ comparison }) => {
     }));
   }, [comparison]);
 
-  // 费用构成数据（堆叠图）
+  // 费用构成数据（堆叠图）- 添加颜色字段
   const breakdownData = useMemo(() => {
-    const data: { scheme: string; costType: string; value: number }[] = [];
+    const data: { scheme: string; costType: string; value: number; color: string }[] = [];
 
     comparison.items.forEach((item) => {
       if (item.breakdown) {
-        Object.entries(COST_ITEM_NAMES).forEach(([key, name]) => {
+        COST_ITEMS.forEach(({ key, name, color }) => {
           const value = item.breakdown?.[key as keyof typeof item.breakdown] || 0;
           if (typeof value === 'number' && value > 0) {
             data.push({
               scheme: item.name,
               costType: name,
               value: Number(value.toFixed(2)),
+              color,
             });
           }
         });
@@ -112,9 +106,6 @@ const ComparisonChart: React.FC<Props> = ({ comparison }) => {
   };
 
   // 费用构成堆叠柱状图配置
-  const costTypes = Object.values(COST_ITEM_NAMES);
-  const costColors = costTypes.map(name => COST_ITEM_COLORS[name] || '#1890ff');
-
   const breakdownConfig = {
     data: breakdownData,
     xField: 'scheme',
@@ -123,9 +114,13 @@ const ComparisonChart: React.FC<Props> = ({ comparison }) => {
     stack: true,
     scale: {
       color: {
-        domain: costTypes,
-        range: costColors,
+        domain: COST_ITEMS.map(item => item.name),
+        range: COST_ITEMS.map(item => item.color),
       },
+    },
+    style: {
+      radiusTopLeft: 4,
+      radiusTopRight: 4,
     },
     label: {
       text: (d: { value: number }) => (d.value > 20 ? `$${d.value.toFixed(0)}` : ''),
@@ -159,6 +154,9 @@ const ComparisonChart: React.FC<Props> = ({ comparison }) => {
       color: {
         position: 'bottom' as const,
         layout: { justifyContent: 'center' as const },
+        itemMarker: (name: string) => ({
+          style: { fill: COLOR_MAP[name] || '#1890ff' },
+        }),
       },
     },
     interaction: {
@@ -190,9 +188,9 @@ const ComparisonChart: React.FC<Props> = ({ comparison }) => {
 
       <div style={{ height: 300 }}>
         {viewMode === 'total' ? (
-          <Column {...totalConfig} />
+          <Column key="total" {...totalConfig} />
         ) : (
-          <Column {...breakdownConfig} />
+          <Column key="breakdown" {...breakdownConfig} />
         )}
       </div>
     </div>
