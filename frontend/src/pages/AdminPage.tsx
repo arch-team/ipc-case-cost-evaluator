@@ -32,9 +32,11 @@ import {
   SyncOutlined,
   InfoCircleOutlined,
   DollarOutlined,
+  SwapOutlined,
 } from '@ant-design/icons';
 import RegionSelector from '../components/admin/RegionSelector';
 import PricingTable from '../components/admin/PricingTable';
+import PricingComparison from '../components/admin/PricingComparison';
 import type {
   RegionInfo,
   PricingDetailResponse,
@@ -102,6 +104,18 @@ const AdminPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // 获取指定区域定价（纯函数，用于对比组件）
+  const fetchRegionPricing = useCallback(async (region: string): Promise<PricingDetailResponse> => {
+    const response = await fetch(`${API_BASE}/pricing/${region}`);
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error(`区域 ${region} 暂无定价数据`);
+      }
+      throw new Error('加载定价数据失败');
+    }
+    return response.json();
   }, []);
 
   // 刷新定价数据
@@ -410,6 +424,21 @@ const AdminPage: React.FC = () => {
                   </Space>
                 ),
                 children: <HelpContent />,
+              },
+              {
+                key: 'comparison',
+                label: (
+                  <Space>
+                    <SwapOutlined />
+                    定价对比
+                  </Space>
+                ),
+                children: (
+                  <PricingComparison
+                    regions={regions}
+                    onLoadPricing={fetchRegionPricing}
+                  />
+                ),
               },
             ]}
           />
