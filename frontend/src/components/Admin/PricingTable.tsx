@@ -170,12 +170,12 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false, c
     {
       title: (
         <Tooltip title="删除对象前的最小存储时间，提前删除仍按此时长计费">
-          最小存储期限
+          <span style={{ whiteSpace: 'nowrap' }}>最小存储期限</span>
         </Tooltip>
       ),
       dataIndex: 'storageClass',
       key: 'minDuration',
-      width: 110,
+      width: 120,
       align: 'center' as const,
       render: (value: string) => (
         <Text>{storageClassMinDuration[value]}</Text>
@@ -184,12 +184,12 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false, c
     {
       title: (
         <Tooltip title="小于此大小的对象按此大小计费">
-          最小计费大小
+          <span style={{ whiteSpace: 'nowrap' }}>最小计费大小</span>
         </Tooltip>
       ),
       dataIndex: 'storageClass',
       key: 'minSize',
-      width: 110,
+      width: 120,
       align: 'center' as const,
       render: (value: string) => (
         <Text>{storageClassMinSize[value]}</Text>
@@ -414,7 +414,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false, c
           pagination={false}
           loading={loading}
           size="large"
-          scroll={{ x: 1520 }}
+          scroll={{ x: 1540 }}
           style={{
             '--ant-table-cell-padding-block': '16px',
             '--ant-table-cell-padding-inline': '16px',
