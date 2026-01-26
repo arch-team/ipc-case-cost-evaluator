@@ -34,20 +34,45 @@ const STORAGE_CLASS_NAMES: Record<string, string> = {
   'DEEP_ARCHIVE': 'Deep Archive',
 };
 
-// 生成技术配置简短描述
-const getTechSummary = (item: ComparisonResult['items'][0]): string => {
+// 生成技术配置描述（与表格保持一致）
+const getTechDescription = (item: ComparisonResult['items'][0]): string[] => {
   const technical = item.technical;
-  if (!technical) return item.storage_class;
-
-  if (technical.lifecycle_policy?.enabled) {
-    const policy = technical.lifecycle_policy;
-    if (policy.stages && policy.stages.length > 0) {
-      return `生命周期(${policy.stages.length}阶段)`;
-    }
-    return '生命周期策略';
+  if (!technical) {
+    return [item.storage_class];
   }
 
-  return STORAGE_CLASS_NAMES[technical.storage_class] || technical.storage_class;
+  const lines: string[] = [];
+
+  // 检查是否启用生命周期策略
+  if (technical.lifecycle_policy?.enabled) {
+    const policy = technical.lifecycle_policy;
+
+    // 如果有阶段配置
+    if (policy.stages && policy.stages.length > 0) {
+      const stageDescs = policy.stages.map(stage => {
+        const className = STORAGE_CLASS_NAMES[stage.storage_class] || stage.storage_class;
+        if (stage.start_day === stage.end_day) {
+          return `第${stage.start_day}天: ${className}`;
+        }
+        return `${stage.start_day}-${stage.end_day}天: ${className}`;
+      });
+      lines.push(`生命周期策略 (${policy.stages.length}阶段)`);
+      lines.push(stageDescs.join(' → '));
+    } else if (policy.transition_days && policy.target_class) {
+      // 简单模式
+      const targetName = STORAGE_CLASS_NAMES[policy.target_class] || policy.target_class;
+      lines.push(`生命周期策略`);
+      lines.push(`${policy.transition_days}天后 → ${targetName}`);
+    } else {
+      lines.push('生命周期策略');
+    }
+  } else {
+    // 单一存储类型
+    const className = STORAGE_CLASS_NAMES[technical.storage_class] || technical.storage_class;
+    lines.push(className);
+  }
+
+  return lines;
 };
 
 const ComparisonChart: React.FC<Props> = ({ comparison }) => {
@@ -60,7 +85,7 @@ const ComparisonChart: React.FC<Props> = ({ comparison }) => {
       value: Number(item.monthly_cost.toFixed(2)),
       isRecommended: item.is_recommended,
       index,
-      techSummary: getTechSummary(item),
+      techDescription: getTechDescription(item),
     }));
   }, [comparison]);
 
@@ -117,7 +142,7 @@ const ComparisonChart: React.FC<Props> = ({ comparison }) => {
       },
     },
     tooltip: {
-      title: (d: { scheme: string; techSummary: string }) => `${d.scheme} (${d.techSummary})`,
+      title: (d: { scheme: string; techDescription: string[] }) => `${d.scheme} (${d.techDescription[0]})`,
       items: [
         {
           field: 'value',
@@ -168,7 +193,7 @@ const ComparisonChart: React.FC<Props> = ({ comparison }) => {
   }
 
   return (
-    <div className="comparison-chart" style={{ marginTop: 24 }}>
+    <div className="comparison-chart">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <Title level={5} style={{ margin: 0 }}>
           <BarChartOutlined style={{ marginRight: 8 }} />
@@ -201,21 +226,26 @@ const ComparisonChart: React.FC<Props> = ({ comparison }) => {
         paddingTop: 8,
         borderTop: '1px solid var(--color-border-light)',
       }}>
-        {comparison.items.map((item, index) => (
-          <div key={item.name} style={{ textAlign: 'center', flex: 1 }}>
-            <Text strong style={{
-              color: item.is_recommended ? '#52c41a' : SCHEME_COLORS[index % SCHEME_COLORS.length],
-              fontSize: 12,
-            }}>
-              {item.name}
-            </Text>
-            <div>
-              <Text type="secondary" style={{ fontSize: 11 }}>
-                {getTechSummary(item)}
+        {comparison.items.map((item, index) => {
+          const techLines = getTechDescription(item);
+          return (
+            <div key={item.name} style={{ textAlign: 'center', flex: 1 }}>
+              <Text strong style={{
+                color: item.is_recommended ? '#52c41a' : SCHEME_COLORS[index % SCHEME_COLORS.length],
+                fontSize: 12,
+              }}>
+                {item.name}
               </Text>
+              {techLines.map((line, idx) => (
+                <div key={idx}>
+                  <Text type="secondary" style={{ fontSize: 11 }}>
+                    {line}
+                  </Text>
+                </div>
+              ))}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -16,8 +16,7 @@ import { calculatorApi } from '../api/client';
 import { createInitialMultiConfig } from '../components/calculator/MultiSchemePanel';
 import InputPanel from '../components/calculator/InputPanel';
 import ResultDisplay from '../components/calculator/ResultDisplay';
-import DetailedComparisonTable from '../components/comparison/DetailedComparisonTable';
-import ComparisonChart from '../components/comparison/ComparisonChart';
+import ComparisonPanel from '../components/comparison/ComparisonPanel';
 import SensitivityAnalysis from '../components/calculator/SensitivityAnalysis';
 import ExportDialog from '../components/calculator/ExportDialog';
 import ShareDialog from '../components/calculator/ShareDialog';
@@ -234,16 +233,14 @@ const Calculator: React.FC = () => {
             {/* 费用汇总卡片 */}
             <ResultDisplay result={result} onExport={handleExport} />
 
-            {/* 方案对比表格 */}
+            {/* 方案对比 */}
             {comparison && (
               <div style={{ marginTop: 24 }}>
-                <DetailedComparisonTable
+                <ComparisonPanel
                   comparison={comparison}
                   metrics={result.metrics}
                   deviceCount={result.device_count}
                 />
-                {/* 方案对比柱状图 */}
-                <ComparisonChart comparison={comparison} />
               </div>
             )}
 

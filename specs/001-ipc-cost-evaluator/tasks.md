@@ -225,33 +225,38 @@
 
 ---
 
-## Phase 8: User Story 5 - 评估结果导出与分享 (Priority: P3)
+## Phase 8: User Story 5 - 评估结果导出与分享 (Priority: P3) ✅
 
 **Goal**: 用户导出 Excel 报告或生成分享链接
 
-**Independent Test**: 导出 Excel 文件可正常打开，分享链接可访问
+**Status**: ✅ 完成 (2026-01-26) | [Eval Report](../../.claude/evals/phase8-us5-export-share.md)
 
-### Backend Implementation
+**Independent Test**: 导出 Excel 文件可正常打开，分享链接可访问 ✅
 
-- [ ] T070 [P] [US5] 实现 Excel 导出服务 in backend/app/services/export.py
-- [ ] T071 [P] [US5] 完善分享链接模型 in backend/app/models/share.py
-- [ ] T072 [US5] 完善分享仓库 in backend/app/db/repositories/shares.py
-- [ ] T073 [US5] 实现分享服务 in backend/app/services/share.py
-- [ ] T074 [US5] 实现导出路由 in backend/app/api/routes/export.py
-- [ ] T075 [US5] 完善分享路由 in backend/app/api/routes/share.py
+### Backend Implementation ✅ (100%)
 
-### Frontend Implementation
+- [x] T070 [P] [US5] 实现 Excel 导出服务 in backend/app/services/excel_export.py
+- [x] T071 [P] [US5] 完善分享链接模型 in backend/app/models/share.py
+- [x] T072 [US5] 完善分享仓库 in backend/app/db/repositories/shares.py
+- [x] T073 [US5] 实现分享服务 (集成在路由中)
+- [x] T074 [US5] 实现导出路由 in backend/app/api/routes/export.py
+- [x] T075 [US5] 完善分享路由 in backend/app/api/routes/shares.py
 
-- [ ] T076 [P] [US5] 创建导出按钮组件 in frontend/src/components/Export/ExportButton.tsx
-- [ ] T077 [P] [US5] 创建分享对话框组件 in frontend/src/components/Share/ShareDialog.tsx
-- [ ] T078 [US5] 创建分享查看页面 in frontend/src/pages/SharePage.tsx
-- [ ] T079 [US5] 集成导出分享到计算器页面 in frontend/src/pages/CalculatorPage.tsx
+### Frontend Implementation ✅ (100%)
 
-### Integration
+- [x] T076 [P] [US5] 创建导出按钮组件 in frontend/src/components/calculator/ExportDialog.tsx
+- [x] T077 [P] [US5] 创建分享对话框组件 in frontend/src/components/calculator/ShareDialog.tsx
+- [x] T078 [US5] 创建分享查看页面 in frontend/src/pages/SharedView.tsx
+- [x] T079 [US5] 集成导出分享到计算器页面 in frontend/src/pages/Calculator.tsx
 
-- [ ] T080 [US5] 验证 US5 验收场景 1-3
+### Integration ✅ (100%)
 
-**Checkpoint**: 用户故事 5 完成 - 导出分享可独立使用
+- [x] T080 [US5] 验证 US5 验收场景 1-3
+  - 场景1: 点击导出按钮下载 Excel 文件 ✅
+  - 场景2: 生成分享链接并复制 ✅
+  - 场景3: 访问分享链接查看结果 ✅
+
+**Checkpoint**: ✅ 用户故事 5 完成 - 导出分享可独立使用
 
 ---
 

@@ -10,6 +10,7 @@ import Home from './pages/Home';
 import Calculator from './pages/Calculator';
 import Evaluations from './pages/Evaluations';
 import Settings from './pages/Settings';
+import SharedView from './pages/SharedView';
 
 // 企业级稳重风格主题配置
 const customTheme = {
@@ -51,6 +52,9 @@ const App: React.FC = () => {
     <ConfigProvider locale={zhCN} theme={customTheme}>
       <BrowserRouter>
         <Routes>
+          {/* 分享查看页面 - 独立布局 */}
+          <Route path="/shared/:token" element={<SharedView />} />
+          {/* 主应用布局 */}
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="calculator" element={<Calculator />} />
