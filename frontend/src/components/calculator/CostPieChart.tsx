@@ -14,7 +14,7 @@ interface ChartData {
   value: number;
 }
 
-const CostPieChart: React.FC<Props> = ({ breakdown }) => {
+const CostPieChart: React.FC<Props> = React.memo(({ breakdown }) => {
   const data = useMemo<ChartData[]>(() => {
     const items: ChartData[] = [
       { name: '存储费用', value: breakdown.storage_cost },
@@ -71,6 +71,8 @@ const CostPieChart: React.FC<Props> = ({ breakdown }) => {
   }
 
   return <Pie {...config} height={300} />;
-};
+});
+
+CostPieChart.displayName = 'CostPieChart';
 
 export default CostPieChart;

@@ -1,7 +1,7 @@
 /**
  * 分享对话框
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Modal,
   Form,
@@ -50,15 +50,7 @@ const ShareDialog: React.FC<Props> = ({
   const [newShareUrl, setNewShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    if (visible && evaluationId) {
-      loadShares();
-      setNewShareUrl(null);
-      form.resetFields();
-    }
-  }, [visible, evaluationId, form]);
-
-  const loadShares = async () => {
+  const loadShares = useCallback(async () => {
     setListLoading(true);
     try {
       const data = await shareApi.list(evaluationId);
@@ -68,7 +60,15 @@ const ShareDialog: React.FC<Props> = ({
     } finally {
       setListLoading(false);
     }
-  };
+  }, [evaluationId]);
+
+  useEffect(() => {
+    if (visible && evaluationId) {
+      loadShares();
+      setNewShareUrl(null);
+      form.resetFields();
+    }
+  }, [visible, evaluationId, form, loadShares]);
 
   const handleCreate = async () => {
     try {

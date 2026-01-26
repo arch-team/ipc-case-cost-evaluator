@@ -22,8 +22,25 @@ import type {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
+/**
+ * 错误消息映射
+ */
+const ERROR_MESSAGES: Record<number | string, string> = {
+  400: '请求参数错误',
+  401: '登录已过期，请重新登录',
+  403: '没有访问权限',
+  404: '资源不存在',
+  422: '参数验证失败',
+  500: '服务器内部错误',
+  502: '网关错误',
+  503: '服务暂时不可用',
+  504: '网关超时',
+  default: '网络请求失败，请稍后重试',
+};
+
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -38,15 +55,31 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// 响应拦截器 - 处理错误
+// 响应拦截器 - 增强错误处理
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // 清除无效令牌，但不自动跳转
-      // 让各组件自行处理 401 错误
+    // 处理网络错误（无响应）
+    if (!error.response) {
+      if (error.code === 'ECONNABORTED') {
+        error.message = '请求超时，请检查网络连接';
+      } else {
+        error.message = '网络连接失败，请检查网络';
+      }
+      return Promise.reject(error);
+    }
+
+    const status = error.response?.status;
+
+    // 处理 401 未授权
+    if (status === 401) {
       localStorage.removeItem('token');
     }
+
+    // 设置友好的错误消息
+    const serverMessage = error.response?.data?.detail;
+    error.message = serverMessage || ERROR_MESSAGES[status] || ERROR_MESSAGES.default;
+
     return Promise.reject(error);
   }
 );

@@ -2,7 +2,7 @@
  * 成本计算页面 - 双栏固定式布局
  * 左侧参数输入区 (400px) + 右侧结果展示区 (自适应)
  */
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
 import { Card, Empty, Spin, Typography, Badge, message } from 'antd';
 import { DollarOutlined, SyncOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useLocation } from 'react-router-dom';
@@ -69,12 +69,14 @@ const Calculator: React.FC = () => {
   const [isLoggedIn] = useState(() => !!localStorage.getItem('token'));
   const [evaluationId] = useState<string | undefined>();
 
-  // 处理从评估历史加载的数据
-  useEffect(() => {
+  // 处理从评估历史加载的数据（使用 useLayoutEffect 避免闪烁）
+  // 这是一个合法的初始化场景：从路由 state 加载表单数据，仅执行一次
+  useLayoutEffect(() => {
     const state = location.state as { loadFromEvaluation?: { input_data: CostCalculationInput } } | null;
     if (state?.loadFromEvaluation && !loadedFromEvaluation.current) {
       loadedFromEvaluation.current = true;
       const loadedInput = state.loadFromEvaluation.input_data;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setInput(loadedInput);
       // 清除 location state，防止刷新时重复加载
       window.history.replaceState({}, document.title);

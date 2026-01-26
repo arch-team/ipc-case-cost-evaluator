@@ -1,7 +1,7 @@
 /**
  * 评估记录页面
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   Table,
@@ -50,7 +50,7 @@ const Evaluations: React.FC = () => {
   const [sortBy, setSortBy] = useState<'created_at' | 'updated_at' | 'name'>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const fetchEvaluations = async (search?: string) => {
+  const fetchEvaluations = useCallback(async (search?: string) => {
     setLoading(true);
     try {
       const data = await evaluationApi.list({
@@ -69,11 +69,11 @@ const Evaluations: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [sortBy, sortOrder]);
 
   useEffect(() => {
     fetchEvaluations(searchText);
-  }, [sortBy, sortOrder]);
+  }, [fetchEvaluations, searchText]);
 
   const handleSearch = () => {
     fetchEvaluations(searchText);

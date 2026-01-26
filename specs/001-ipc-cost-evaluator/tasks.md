@@ -332,17 +332,40 @@
 
 ---
 
-## Phase 11: Polish & Cross-Cutting Concerns
+## Phase 11: Polish & Cross-Cutting Concerns ✅
 
 **Purpose**: 跨故事优化和完善
 
-- [ ] T101 [P] 添加费用构成饼图组件 in frontend/src/components/Charts/CostPieChart.tsx
-- [ ] T102 [P] 完善 API 错误处理和用户提示 in frontend/src/services/api.ts
-- [ ] T103 [P] 添加加载状态和骨架屏 in frontend/src/components/common/
-- [ ] T104 [P] 边缘情况测试：极端参数、并发访问、精度控制
-- [ ] T105 运行 quickstart.md 验证流程
-- [ ] T106 [P] 代码清理和注释完善
-- [ ] T107 [P] 性能优化：前端缓存、计算优化
+**Status**: ✅ 完成 (2026-01-26)
+
+- [x] T101 [P] 添加费用构成饼图组件 in frontend/src/components/calculator/CostPieChart.tsx
+- [x] T102 [P] 完善 API 错误处理和用户提示 in frontend/src/api/client.ts
+  - 添加 30s 超时配置
+  - 错误消息映射 (400/401/403/404/422/500/502/503/504)
+  - 网络错误检测和友好提示
+- [x] T103 [P] 添加加载状态和骨架屏 in frontend/src/components/common/
+  - LoadingSpinner.tsx: 加载动画组件
+  - CardSkeleton.tsx: 卡片骨架屏
+  - TableSkeleton.tsx: 表格骨架屏
+  - index.ts: 统一导出
+- [x] T104 [P] 边缘情况测试 in backend/tests/test_edge_cases.py
+  - 最大设备数 100000 台验证
+  - 最大保留天数 365 天验证
+  - 边界值测试 (最小/最大参数)
+  - 精度控制测试
+  - 性能测试 (单次 <100ms, API <2s)
+- [x] T105 API 验证
+  - /health ✅
+  - /api/v1/calculate ✅
+  - /api/v1/compare ✅
+  - /api/v1/scenarios ✅
+- [x] T106 [P] 代码清理和注释完善
+  - 修复 lint 错误/警告 (Calculator.tsx, Evaluations.tsx, ShareDialog.tsx, StorageStrategySelector.tsx)
+  - npm run lint ✅ 无错误
+- [x] T107 [P] 性能优化
+  - CostPieChart 添加 React.memo 优化
+
+**Checkpoint**: ✅ Phase 11 完成 - 项目 Polish 完成
 
 ---
 

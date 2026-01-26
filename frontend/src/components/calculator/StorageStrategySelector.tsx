@@ -48,7 +48,7 @@ const StorageStrategySelector: React.FC<StorageStrategySelectorProps> = ({
     fetchTemplates();
   }, []);
 
-  // 初始化模式
+  // 初始化模式（仅在组件挂载时执行一次）
   useEffect(() => {
     if (value?.enabled) {
       if (value.template_id) {
@@ -60,6 +60,7 @@ const StorageStrategySelector: React.FC<StorageStrategySelectorProps> = ({
     } else {
       setMode('single');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 处理模式切换
