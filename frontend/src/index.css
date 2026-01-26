@@ -1368,3 +1368,452 @@ body {
     padding: 16px !important;
   }
 }
+
+/* ============================================
+   登录/注册表单增强样式
+   ============================================ */
+
+/* 表单输入框增强 Focus 状态 */
+.auth-form .ant-input:focus,
+.auth-form .ant-input-affix-wrapper-focused {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.auth-form .ant-input-affix-wrapper-focused .ant-input-prefix {
+  color: var(--color-primary) !important;
+}
+
+/* 输入框图标过渡动画 */
+.auth-form .ant-input-prefix {
+  transition: color 0.2s ease;
+}
+
+/* 错误状态震动动画 */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.auth-form .ant-form-item-has-error .ant-input-affix-wrapper {
+  animation: shake 0.4s ease;
+}
+
+/* 成功动画 */
+@keyframes successPop {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes checkmarkDraw {
+  0% { stroke-dashoffset: 100; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.auth-success-animation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  animation: successPop 0.4s ease-out;
+}
+
+.auth-success-animation .anticon {
+  font-size: 64px;
+  color: #52c41a;
+  margin-bottom: 16px;
+}
+
+.auth-success-animation .success-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* 表单切换动画 */
+.auth-form-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-form-slide-enter {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.auth-form-slide-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: all 0.3s ease-out;
+}
+
+.auth-form-slide-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.auth-form-slide-exit-active {
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: all 0.3s ease-out;
+}
+
+/* Tabs 增强样式 */
+.auth-tabs .ant-tabs-tab {
+  transition: all 0.2s ease;
+  padding: 8px 20px !important;
+}
+
+.auth-tabs .ant-tabs-tab:hover {
+  transform: translateY(-1px);
+}
+
+.auth-tabs .ant-tabs-tab-active {
+  transform: scale(1.02);
+}
+
+.auth-tabs .ant-tabs-ink-bar {
+  height: 3px !important;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #1890ff 0%, #096dd9 100%);
+}
+
+/* 密码强度指示器容器 */
+.password-strength-container {
+  margin-top: 10px;
+  padding: 12px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+}
+
+.password-strength-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.password-strength-requirements {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  font-size: 12px;
+}
+
+.password-requirement {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.2s ease;
+}
+
+.password-requirement.met {
+  color: #52c41a;
+}
+
+.password-requirement.unmet {
+  color: #bfbfbf;
+}
+
+.password-requirement .anticon {
+  font-size: 12px;
+}
+
+/* 密码要求提示（始终可见） */
+.password-hint-always {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.password-hint-always .anticon {
+  font-size: 12px;
+}
+
+/* 记住我复选框样式 */
+.remember-checkbox {
+  margin-top: -8px;
+  margin-bottom: 16px;
+}
+
+.remember-checkbox .ant-checkbox-wrapper {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+/* 表单底部链接区域 */
+.auth-form-footer {
+  text-align: center;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+  margin-top: 8px;
+}
+
+.auth-form-footer a {
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.auth-form-footer a:hover {
+  text-decoration: underline;
+}
+
+/* 登录卡片增强 */
+.settings-card.auth-card {
+  transition: all 0.3s ease;
+}
+
+.settings-card.auth-card:focus-within {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* 按钮悬停增强 */
+.auth-form .ant-btn-primary {
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-form .ant-btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.auth-form .ant-btn-primary:hover::before {
+  left: 100%;
+}
+
+.auth-form .ant-btn-primary:hover {
+  transform: translateY(-1px);
+}
+
+.auth-form .ant-btn-primary:active {
+  transform: translateY(0);
+}
+
+/* 系统信息面板增强 */
+.system-info-panel {
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.system-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.system-info-item:last-child {
+  border-bottom: none;
+}
+
+.system-info-label {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.system-info-value {
+  font-weight: 500;
+}
+
+/* API 状态指示器 */
+.api-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.api-status.connected {
+  background: rgba(82, 196, 26, 0.1);
+  color: #52c41a;
+}
+
+.api-status.disconnected {
+  background: rgba(255, 77, 79, 0.1);
+  color: #ff4d4f;
+}
+
+.api-status .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.api-status.connected .status-dot {
+  background: #52c41a;
+}
+
+.api-status.disconnected .status-dot {
+  background: #ff4d4f;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* 环境徽章 */
+.env-badge {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 1000;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.env-badge.dev {
+  background: linear-gradient(135deg, #fa8c16 0%, #faad14 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(250, 140, 22, 0.4);
+}
+
+.env-badge.prod {
+  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(82, 196, 26, 0.4);
+}
+
+/* 页面标题增强 */
+.settings-page-subtitle {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+}
+
+/* 登录提示卡片 */
+.login-prompt-card {
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #fff7e6 0%, #fff 100%);
+  border: 1px solid #ffd591;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.login-prompt-card .anticon {
+  font-size: 24px;
+  color: #fa8c16;
+  margin-bottom: 8px;
+}
+
+.login-prompt-card .prompt-text {
+  font-size: 13px;
+  color: #8c6d1f;
+}
+
+/* 屏幕阅读器专用 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 忘记密码链接 */
+.forgot-password-link {
+  display: block;
+  text-align: right;
+  margin-top: -8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.forgot-password-link a {
+  color: var(--color-text-secondary);
+  transition: color 0.2s ease;
+}
+
+.forgot-password-link a:hover {
+  color: var(--color-primary);
+}
+
+/* 新用户标签 */
+.new-user-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 10px;
+  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+  color: #fff;
+  border-radius: 8px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* 加载遮罩 */
+.auth-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 16px;
+}
+
+.auth-loading-overlay .ant-spin {
+  margin-bottom: 12px;
+}
+
+.auth-loading-overlay .loading-text {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+/* 响应式优化 */
+@media (max-width: 576px) {
+  .password-strength-requirements {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .env-badge {
+    top: auto;
+    bottom: 12px;
+    right: 12px;
+  }
+}

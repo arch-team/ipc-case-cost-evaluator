@@ -1,14 +1,16 @@
 /**
- * 设置页面
+ * 设置页面 - 增强版
  *
- * 根据登录状态动态调整布局：
- * - 未登录：登录卡片居中显示
- * - 已登录：个人信息 + 偏好设置
- * - 系统信息：底部折叠展示
+ * 功能增强:
+ * - 修正页面标题与内容一致性
+ * - 增强的系统信息面板（API状态、会话信息）
+ * - 开发环境徽章
+ * - 增强的 Tabs 动画
+ * - 无障碍性支持
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, Typography, Descriptions, Tag, Row, Col, Tabs, Button, Divider, message, Modal, Form, Input, Progress, Collapse, Switch, Select } from 'antd';
-import { UserOutlined, LogoutOutlined, EditOutlined, InfoCircleOutlined, SaveOutlined, CheckCircleFilled, CloseCircleFilled, LockOutlined, SettingOutlined, BellOutlined, GlobalOutlined } from '@ant-design/icons';
+import { UserOutlined, LogoutOutlined, EditOutlined, InfoCircleOutlined, SaveOutlined, CheckCircleFilled, CloseCircleFilled, LockOutlined, SettingOutlined, BellOutlined, GlobalOutlined, ExclamationCircleOutlined, ApiOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { useAuth } from '../hooks/useAuth';
 import { authApi } from '../api/client';
 import { LoginForm, RegisterForm } from '../components/auth';
@@ -61,6 +63,123 @@ const calculatePasswordStrength = (password: string): { score: number; text: str
   return { score: 100, text: '非常强', color: '#1890ff' };
 };
 
+// API 状态检查 Hook
+const useApiStatus = () => {
+  const [status, setStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
+
+  useEffect(() => {
+    const checkApi = async () => {
+      try {
+        // 简单的 API 健康检查
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'}/health`);
+        setStatus(response.ok ? 'connected' : 'disconnected');
+      } catch {
+        setStatus('disconnected');
+      }
+    };
+
+    checkApi();
+    // 每 30 秒检查一次
+    const interval = setInterval(checkApi, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return status;
+};
+
+// 环境徽章组件
+const EnvBadge: React.FC = () => {
+  const isDev = import.meta.env.DEV;
+
+  if (!isDev) return null;
+
+  return (
+    <div className={`env-badge ${isDev ? 'dev' : 'prod'}`}>
+      {isDev ? 'DEV' : 'PROD'}
+    </div>
+  );
+};
+
+// 系统信息面板组件
+const SystemInfoPanel: React.FC<{ expanded?: boolean }> = ({ expanded = false }) => {
+  const apiStatus = useApiStatus();
+  const sessionStart = useMemo(() => new Date().toLocaleString('zh-CN'), []);
+
+  const getApiStatusDisplay = () => {
+    switch (apiStatus) {
+      case 'connected':
+        return (
+          <span className="api-status connected">
+            <span className="status-dot" />
+            已连接
+          </span>
+        );
+      case 'disconnected':
+        return (
+          <span className="api-status disconnected">
+            <span className="status-dot" />
+            未连接
+          </span>
+        );
+      default:
+        return (
+          <Tag color="processing">检查中...</Tag>
+        );
+    }
+  };
+
+  return (
+    <div className="system-info-panel">
+      <div className="system-info-item">
+        <span className="system-info-label">
+          <ApiOutlined style={{ marginRight: 6 }} />
+          API 状态
+        </span>
+        <span className="system-info-value">{getApiStatusDisplay()}</span>
+      </div>
+      <div className="system-info-item">
+        <span className="system-info-label">
+          <InfoCircleOutlined style={{ marginRight: 6 }} />
+          版本
+        </span>
+        <span className="system-info-value">
+          <Tag color="blue">v2.0.0</Tag>
+        </span>
+      </div>
+      <div className="system-info-item">
+        <span className="system-info-label">
+          <SettingOutlined style={{ marginRight: 6 }} />
+          环境
+        </span>
+        <span className="system-info-value">
+          <Tag color={import.meta.env.DEV ? 'orange' : 'green'}>
+            {import.meta.env.DEV ? '开发环境' : '生产环境'}
+          </Tag>
+        </span>
+      </div>
+      {expanded && (
+        <>
+          <div className="system-info-item">
+            <span className="system-info-label">
+              <ClockCircleOutlined style={{ marginRight: 6 }} />
+              会话开始
+            </span>
+            <span className="system-info-value" style={{ fontSize: 12 }}>
+              {sessionStart}
+            </span>
+          </div>
+          <div className="system-info-item">
+            <span className="system-info-label">API 地址</span>
+            <Text copyable style={{ fontSize: 11 }}>
+              {import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'}
+            </Text>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 const Settings: React.FC = () => {
   const { user, isAuthenticated, logout, updateUser } = useAuth();
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login');
@@ -110,21 +229,38 @@ const Settings: React.FC = () => {
   if (!isAuthenticated || !user) {
     return (
       <div className="settings-page">
-        {/* 页面标题 */}
+        {/* 开发环境徽章 */}
+        <EnvBadge />
+
+        {/* 页面标题 - 修正为正确的标题 */}
         <div className="settings-page-header" style={{ textAlign: 'center' }}>
-          <h1 className="settings-page-title">登录</h1>
+          <h1 className="settings-page-title">设置</h1>
           <Paragraph type="secondary" style={{ margin: 0 }}>
-            登录后可保存和管理您的评估记录
+            请先登录以访问设置功能
           </Paragraph>
+          <div className="settings-page-subtitle">
+            登录后可保存和管理您的评估记录
+          </div>
+        </div>
+
+        {/* 登录提示 */}
+        <div style={{ maxWidth: 420, margin: '0 auto 20px' }}>
+          <div className="login-prompt-card">
+            <ExclamationCircleOutlined />
+            <div className="prompt-text">
+              设置页面需要登录才能访问完整功能
+            </div>
+          </div>
         </div>
 
         {/* 居中的登录卡片 */}
         <div style={{ maxWidth: 420, margin: '0 auto' }}>
-          <Card className="settings-card">
+          <Card className="settings-card auth-card">
             <Tabs
               activeKey={authTab}
               onChange={(key) => setAuthTab(key as 'login' | 'register')}
               centered
+              className="auth-tabs"
               items={[
                 {
                   key: 'login',
@@ -138,7 +274,12 @@ const Settings: React.FC = () => {
                 },
                 {
                   key: 'register',
-                  label: '注册',
+                  label: (
+                    <span>
+                      注册
+                      <span className="new-user-badge">新用户</span>
+                    </span>
+                  ),
                   children: (
                     <RegisterForm
                       onSuccess={handleAuthSuccess}
@@ -151,10 +292,11 @@ const Settings: React.FC = () => {
           </Card>
         </div>
 
-        {/* 底部系统信息 - 折叠 */}
+        {/* 底部系统信息 - 开发环境默认展开 */}
         <div style={{ maxWidth: 420, margin: '24px auto 0' }}>
           <Collapse
             ghost
+            defaultActiveKey={import.meta.env.DEV ? ['system'] : []}
             items={[
               {
                 key: 'system',
@@ -164,20 +306,7 @@ const Settings: React.FC = () => {
                     系统信息
                   </span>
                 ),
-                children: (
-                  <div style={{ fontSize: 13, color: '#666' }}>
-                    <div style={{ marginBottom: 8 }}>
-                      <Text type="secondary">版本：</Text>
-                      <Tag color="blue" style={{ marginLeft: 8 }}>v2.0.0</Tag>
-                    </div>
-                    <div>
-                      <Text type="secondary">环境：</Text>
-                      <Tag color={import.meta.env.DEV ? 'orange' : 'green'} style={{ marginLeft: 8 }}>
-                        {import.meta.env.DEV ? '开发环境' : '生产环境'}
-                      </Tag>
-                    </div>
-                  </div>
-                ),
+                children: <SystemInfoPanel expanded={false} />,
               },
             ]}
           />
@@ -189,6 +318,9 @@ const Settings: React.FC = () => {
   // 已登录状态：个人信息 + 偏好设置
   return (
     <div className="settings-page">
+      {/* 开发环境徽章 */}
+      <EnvBadge />
+
       {/* 页面标题 */}
       <div className="settings-page-header">
         <h1 className="settings-page-title">设置</h1>
@@ -329,6 +461,7 @@ const Settings: React.FC = () => {
       <div style={{ marginTop: 24 }}>
         <Collapse
           ghost
+          defaultActiveKey={import.meta.env.DEV ? ['system'] : []}
           items={[
             {
               key: 'system',
@@ -340,27 +473,7 @@ const Settings: React.FC = () => {
               ),
               children: (
                 <Card size="small" style={{ background: '#fafafa' }}>
-                  <Row gutter={[24, 12]}>
-                    <Col xs={24} sm={8}>
-                      <Text type="secondary">API 地址：</Text>
-                      <br />
-                      <Text copyable style={{ fontSize: 12 }}>
-                        {import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'}
-                      </Text>
-                    </Col>
-                    <Col xs={12} sm={8}>
-                      <Text type="secondary">版本：</Text>
-                      <br />
-                      <Tag color="blue">v2.0.0</Tag>
-                    </Col>
-                    <Col xs={12} sm={8}>
-                      <Text type="secondary">环境：</Text>
-                      <br />
-                      <Tag color={import.meta.env.DEV ? 'orange' : 'green'}>
-                        {import.meta.env.DEV ? '开发环境' : '生产环境'}
-                      </Tag>
-                    </Col>
-                  </Row>
+                  <SystemInfoPanel expanded={true} />
                 </Card>
               ),
             },
@@ -396,6 +509,7 @@ const Settings: React.FC = () => {
           layout="vertical"
           onFinish={handleEditSubmit}
           initialValues={{ name: user?.name }}
+          className="auth-form"
         >
           <Form.Item
             name="name"
@@ -425,8 +539,8 @@ const Settings: React.FC = () => {
             ]}
             extra={
               editPassword && (
-                <div style={{ marginTop: 10 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <div className="password-strength-container" style={{ marginTop: 10 }}>
+                  <div className="password-strength-bar">
                     <Progress
                       percent={editPasswordStrength.score}
                       showInfo={false}
@@ -439,20 +553,24 @@ const Settings: React.FC = () => {
                       color: editPasswordStrength.color,
                       fontSize: 12,
                       fontWeight: 600,
-                      minWidth: 50
+                      minWidth: 50,
+                      textAlign: 'right'
                     }}>
                       {editPasswordStrength.text}
                     </Text>
                   </div>
-                  <div style={{ display: 'flex', gap: 12, fontSize: 12 }}>
-                    <span style={{ color: editPassword.length >= 8 ? '#52c41a' : '#bfbfbf' }}>
-                      {editPassword.length >= 8 ? <CheckCircleFilled /> : <CloseCircleFilled />} 8位以上
+                  <div className="password-strength-requirements">
+                    <span className={`password-requirement ${editPassword.length >= 8 ? 'met' : 'unmet'}`}>
+                      {editPassword.length >= 8 ? <CheckCircleFilled /> : <CloseCircleFilled />}
+                      <span>8位以上</span>
                     </span>
-                    <span style={{ color: /[A-Za-z]/.test(editPassword) ? '#52c41a' : '#bfbfbf' }}>
-                      {/[A-Za-z]/.test(editPassword) ? <CheckCircleFilled /> : <CloseCircleFilled />} 含字母
+                    <span className={`password-requirement ${/[A-Za-z]/.test(editPassword) ? 'met' : 'unmet'}`}>
+                      {/[A-Za-z]/.test(editPassword) ? <CheckCircleFilled /> : <CloseCircleFilled />}
+                      <span>含字母</span>
                     </span>
-                    <span style={{ color: /[0-9]/.test(editPassword) ? '#52c41a' : '#bfbfbf' }}>
-                      {/[0-9]/.test(editPassword) ? <CheckCircleFilled /> : <CloseCircleFilled />} 含数字
+                    <span className={`password-requirement ${/[0-9]/.test(editPassword) ? 'met' : 'unmet'}`}>
+                      {/[0-9]/.test(editPassword) ? <CheckCircleFilled /> : <CloseCircleFilled />}
+                      <span>含数字</span>
                     </span>
                   </div>
                 </div>
