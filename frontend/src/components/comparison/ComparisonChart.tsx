@@ -112,6 +112,9 @@ const ComparisonChart: React.FC<Props> = ({ comparison }) => {
   };
 
   // 费用构成堆叠柱状图配置
+  const costTypes = Object.values(COST_ITEM_NAMES);
+  const costColors = costTypes.map(name => COST_ITEM_COLORS[name] || '#1890ff');
+
   const breakdownConfig = {
     data: breakdownData,
     xField: 'scheme',
@@ -120,7 +123,8 @@ const ComparisonChart: React.FC<Props> = ({ comparison }) => {
     stack: true,
     scale: {
       color: {
-        range: Object.values(COST_ITEM_COLORS),
+        domain: costTypes,
+        range: costColors,
       },
     },
     label: {
