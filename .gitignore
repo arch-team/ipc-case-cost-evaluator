@@ -71,3 +71,7 @@ build/
 
 # Personal notes
 prompt.md
+
+# Test outputs
+test-results/
+frontend/tests/e2e/screenshots/
