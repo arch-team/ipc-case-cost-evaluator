@@ -17,6 +17,7 @@ import { createInitialMultiConfig } from '../components/calculator/MultiSchemePa
 import InputPanel from '../components/calculator/InputPanel';
 import ResultDisplay from '../components/calculator/ResultDisplay';
 import DetailedComparisonTable from '../components/comparison/DetailedComparisonTable';
+import ComparisonChart from '../components/comparison/ComparisonChart';
 import SensitivityAnalysis from '../components/calculator/SensitivityAnalysis';
 import ExportDialog from '../components/calculator/ExportDialog';
 import ShareDialog from '../components/calculator/ShareDialog';
@@ -241,6 +242,8 @@ const Calculator: React.FC = () => {
                   metrics={result.metrics}
                   deviceCount={result.device_count}
                 />
+                {/* 方案对比柱状图 */}
+                <ComparisonChart comparison={comparison} />
               </div>
             )}
 
