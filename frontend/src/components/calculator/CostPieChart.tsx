@@ -44,7 +44,12 @@ const CostPieChart: React.FC<Props> = React.memo(({ breakdown }) => {
     innerRadius: 0.5,
     label: {
       text: (d: ChartData) => `${d.name}\n$${d.value.toFixed(2)}`,
-      position: 'outside' as const,
+      position: 'spider' as const,
+      connectorEnd: 'arrow',
+      style: {
+        fontSize: 12,
+        textAlign: 'center',
+      },
     },
     legend: {
       color: {

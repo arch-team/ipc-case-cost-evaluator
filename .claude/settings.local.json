@@ -101,7 +101,9 @@
       "mcp__chrome-devtools__click",
       "mcp__chrome-devtools__hover",
       "mcp__chrome-devtools__list_pages",
-      "mcp__chrome-devtools__evaluate_script"
+      "mcp__chrome-devtools__evaluate_script",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1MGRjYmNlYS1jZjQ0LTRhZDgtOGI5NC0yYWNmMWI3MjI3MmUiLCJyb2xlIjoiYWRtaW4iLCJleHAiOjE3Njk1Mjg3OTl9.GIwXQ7vroTBxEjTSW5qTIviEYglFHOkhl__29TDRIMA\")",
+      "Bash(__NEW_LINE_775be1421bf59066__ echo \"=== 刷新定价数据 ===\")"
     ],
     "deny": []
   },
