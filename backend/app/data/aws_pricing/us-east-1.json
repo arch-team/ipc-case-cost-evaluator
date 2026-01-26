@@ -2,7 +2,7 @@
   "region": "us-east-1",
   "region_name": "US East (N. Virginia)",
   "currency": "USD",
-  "last_updated": "2025-01-24",
+  "last_updated": "2025-01-27",
   "storage_classes": {
     "STANDARD": {
       "storage_per_gb_month": 0.023,
@@ -11,12 +11,40 @@
       "retrieval_per_gb": 0,
       "lifecycle_transition_per_1000": 0
     },
+    "INTELLIGENT_TIERING": {
+      "storage_per_gb_month": 0.023,
+      "put_per_1000": 0.005,
+      "get_per_1000": 0.0004,
+      "retrieval_per_gb": 0,
+      "lifecycle_transition_per_1000": 0
+    },
+    "STANDARD_IA": {
+      "storage_per_gb_month": 0.0125,
+      "put_per_1000": 0.01,
+      "get_per_1000": 0.001,
+      "retrieval_per_gb": 0.01,
+      "lifecycle_transition_per_1000": 0.01
+    },
+    "ONEZONE_IA": {
+      "storage_per_gb_month": 0.01,
+      "put_per_1000": 0.01,
+      "get_per_1000": 0.001,
+      "retrieval_per_gb": 0.01,
+      "lifecycle_transition_per_1000": 0.01
+    },
     "GLACIER_IR": {
       "storage_per_gb_month": 0.004,
       "put_per_1000": 0.02,
       "get_per_1000": 0.01,
       "retrieval_per_gb": 0.03,
       "lifecycle_transition_per_1000": 0.02
+    },
+    "GLACIER_FR": {
+      "storage_per_gb_month": 0.0036,
+      "put_per_1000": 0.03,
+      "get_per_1000": 0.0004,
+      "retrieval_per_gb": 0.01,
+      "lifecycle_transition_per_1000": 0.03
     },
     "DEEP_ARCHIVE": {
       "storage_per_gb_month": 0.00099,

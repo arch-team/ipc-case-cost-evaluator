@@ -129,18 +129,30 @@ class StorageClass(LabeledEnum):
 
     Attributes:
         STANDARD: S3 Standard，标准存储，适合频繁访问
+        INTELLIGENT_TIERING: S3 Intelligent-Tiering，智能分层存储
+        STANDARD_IA: S3 Standard-IA，不频繁访问存储
+        ONEZONE_IA: S3 One Zone-IA，单可用区不频繁访问存储
         GLACIER_IR: S3 Glacier Instant Retrieval，即时检索归档存储
+        GLACIER_FR: S3 Glacier Flexible Retrieval，灵活检索归档存储
         DEEP_ARCHIVE: S3 Glacier Deep Archive，深度归档存储
     """
     STANDARD = "STANDARD"
+    INTELLIGENT_TIERING = "INTELLIGENT_TIERING"
+    STANDARD_IA = "STANDARD_IA"
+    ONEZONE_IA = "ONEZONE_IA"
     GLACIER_IR = "GLACIER_IR"
+    GLACIER_FR = "GLACIER_FR"
     DEEP_ARCHIVE = "DEEP_ARCHIVE"
 
     def _get_labels(self) -> dict:
         """获取存储类型全称映射"""
         return {
             "STANDARD": "S3 Standard",
+            "INTELLIGENT_TIERING": "S3 Intelligent-Tiering",
+            "STANDARD_IA": "S3 Standard-IA",
+            "ONEZONE_IA": "S3 One Zone-IA",
             "GLACIER_IR": "S3 Glacier Instant Retrieval",
+            "GLACIER_FR": "S3 Glacier Flexible Retrieval",
             "DEEP_ARCHIVE": "S3 Glacier Deep Archive",
         }
 

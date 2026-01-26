@@ -5,25 +5,53 @@
   "last_updated": "2025-01-27",
   "storage_classes": {
     "STANDARD": {
-      "storage_per_gb_month": 0.0405,
-      "put_per_1000": 0.007,
-      "get_per_1000": 0.00056,
+      "storage_per_gb_month": 0.04048,
+      "put_per_1000": 0.0088,
+      "get_per_1000": 0.000704,
       "retrieval_per_gb": 0,
       "lifecycle_transition_per_1000": 0
     },
+    "INTELLIGENT_TIERING": {
+      "storage_per_gb_month": 0.04048,
+      "put_per_1000": 0.0088,
+      "get_per_1000": 0.000704,
+      "retrieval_per_gb": 0,
+      "lifecycle_transition_per_1000": 0
+    },
+    "STANDARD_IA": {
+      "storage_per_gb_month": 0.022,
+      "put_per_1000": 0.0176,
+      "get_per_1000": 0.00176,
+      "retrieval_per_gb": 0.0176,
+      "lifecycle_transition_per_1000": 0.0176
+    },
+    "ONEZONE_IA": {
+      "storage_per_gb_month": 0.0176,
+      "put_per_1000": 0.0176,
+      "get_per_1000": 0.00176,
+      "retrieval_per_gb": 0.0176,
+      "lifecycle_transition_per_1000": 0.0176
+    },
     "GLACIER_IR": {
-      "storage_per_gb_month": 0.0068,
-      "put_per_1000": 0.028,
-      "get_per_1000": 0.014,
-      "retrieval_per_gb": 0.042,
-      "lifecycle_transition_per_1000": 0.028
+      "storage_per_gb_month": 0.00704,
+      "put_per_1000": 0.0352,
+      "get_per_1000": 0.0176,
+      "retrieval_per_gb": 0.0528,
+      "lifecycle_transition_per_1000": 0.0352
+    },
+    "GLACIER_FR": {
+      "storage_per_gb_month": 0.006336,
+      "put_per_1000": 0.0528,
+      "get_per_1000": 0.000704,
+      "retrieval_per_gb": 0.0176,
+      "lifecycle_transition_per_1000": 0.0528
     },
     "DEEP_ARCHIVE": {
-      "storage_per_gb_month": 0.0014,
-      "put_per_1000": 0.07,
-      "get_per_1000": 0.00056,
-      "retrieval_per_gb": 0.028,
-      "lifecycle_transition_per_1000": 0.07
+      "storage_per_gb_month": 0.001742,
+      "put_per_1000": 0.088,
+      "get_per_1000": 0.000704,
+      "retrieval_per_gb": 0.0352,
+      "lifecycle_transition_per_1000": 0.088
     }
   },
   "data_transfer": {

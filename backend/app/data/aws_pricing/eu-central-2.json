@@ -5,25 +5,53 @@
   "last_updated": "2025-01-27",
   "storage_classes": {
     "STANDARD": {
-      "storage_per_gb_month": 0.027,
-      "put_per_1000": 0.0058,
-      "get_per_1000": 0.00046,
+      "storage_per_gb_month": 0.02691,
+      "put_per_1000": 0.00585,
+      "get_per_1000": 0.000468,
       "retrieval_per_gb": 0,
       "lifecycle_transition_per_1000": 0
     },
+    "INTELLIGENT_TIERING": {
+      "storage_per_gb_month": 0.02691,
+      "put_per_1000": 0.00585,
+      "get_per_1000": 0.000468,
+      "retrieval_per_gb": 0,
+      "lifecycle_transition_per_1000": 0
+    },
+    "STANDARD_IA": {
+      "storage_per_gb_month": 0.014625,
+      "put_per_1000": 0.0117,
+      "get_per_1000": 0.00117,
+      "retrieval_per_gb": 0.0117,
+      "lifecycle_transition_per_1000": 0.0117
+    },
+    "ONEZONE_IA": {
+      "storage_per_gb_month": 0.0117,
+      "put_per_1000": 0.0117,
+      "get_per_1000": 0.00117,
+      "retrieval_per_gb": 0.0117,
+      "lifecycle_transition_per_1000": 0.0117
+    },
     "GLACIER_IR": {
-      "storage_per_gb_month": 0.0045,
-      "put_per_1000": 0.022,
-      "get_per_1000": 0.011,
-      "retrieval_per_gb": 0.033,
-      "lifecycle_transition_per_1000": 0.022
+      "storage_per_gb_month": 0.00468,
+      "put_per_1000": 0.0234,
+      "get_per_1000": 0.0117,
+      "retrieval_per_gb": 0.0351,
+      "lifecycle_transition_per_1000": 0.0234
+    },
+    "GLACIER_FR": {
+      "storage_per_gb_month": 0.004212,
+      "put_per_1000": 0.0351,
+      "get_per_1000": 0.000468,
+      "retrieval_per_gb": 0.0117,
+      "lifecycle_transition_per_1000": 0.0351
     },
     "DEEP_ARCHIVE": {
-      "storage_per_gb_month": 0.0011,
-      "put_per_1000": 0.055,
-      "get_per_1000": 0.00046,
-      "retrieval_per_gb": 0.022,
-      "lifecycle_transition_per_1000": 0.055
+      "storage_per_gb_month": 0.001158,
+      "put_per_1000": 0.0585,
+      "get_per_1000": 0.000468,
+      "retrieval_per_gb": 0.0234,
+      "lifecycle_transition_per_1000": 0.0585
     }
   },
   "data_transfer": {

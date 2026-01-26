@@ -24,7 +24,11 @@ logger = logging.getLogger(__name__)
 # AWS 存储类型到 Pricing API 存储类型的映射
 STORAGE_CLASS_MAPPING = {
     StorageClass.STANDARD: "General Purpose",
+    StorageClass.INTELLIGENT_TIERING: "Intelligent-Tiering",
+    StorageClass.STANDARD_IA: "Standard - Infrequent Access",
+    StorageClass.ONEZONE_IA: "One Zone - Infrequent Access",
     StorageClass.GLACIER_IR: "Glacier Instant Retrieval",
+    StorageClass.GLACIER_FR: "Glacier Flexible Retrieval",
     StorageClass.DEEP_ARCHIVE: "Glacier Deep Archive",
 }
 
@@ -456,11 +460,32 @@ class AWSPricingClient:
         """
         defaults = {
             StorageClass.STANDARD: StorageClassPricing(
-                storage_per_gb_month=0.025,
-                put_per_1000=0.0047,
-                get_per_1000=0.00037,
+                storage_per_gb_month=0.023,
+                put_per_1000=0.005,
+                get_per_1000=0.0004,
                 retrieval_per_gb=0,
                 lifecycle_transition_per_1000=0,
+            ),
+            StorageClass.INTELLIGENT_TIERING: StorageClassPricing(
+                storage_per_gb_month=0.023,  # 频繁访问层
+                put_per_1000=0.005,
+                get_per_1000=0.0004,
+                retrieval_per_gb=0,
+                lifecycle_transition_per_1000=0,
+            ),
+            StorageClass.STANDARD_IA: StorageClassPricing(
+                storage_per_gb_month=0.0125,
+                put_per_1000=0.01,
+                get_per_1000=0.001,
+                retrieval_per_gb=0.01,
+                lifecycle_transition_per_1000=0.01,
+            ),
+            StorageClass.ONEZONE_IA: StorageClassPricing(
+                storage_per_gb_month=0.01,
+                put_per_1000=0.01,
+                get_per_1000=0.001,
+                retrieval_per_gb=0.01,
+                lifecycle_transition_per_1000=0.01,
             ),
             StorageClass.GLACIER_IR: StorageClassPricing(
                 storage_per_gb_month=0.004,
@@ -468,6 +493,13 @@ class AWSPricingClient:
                 get_per_1000=0.01,
                 retrieval_per_gb=0.03,
                 lifecycle_transition_per_1000=0.02,
+            ),
+            StorageClass.GLACIER_FR: StorageClassPricing(
+                storage_per_gb_month=0.0036,
+                put_per_1000=0.03,
+                get_per_1000=0.0004,
+                retrieval_per_gb=0.01,  # Standard 检索
+                lifecycle_transition_per_1000=0.03,
             ),
             StorageClass.DEEP_ARCHIVE: StorageClassPricing(
                 storage_per_gb_month=0.00099,
@@ -486,35 +518,51 @@ class AWSPricingClient:
     def _get_default_storage_price(self, storage_class: StorageClass) -> float:
         """获取默认存储价格"""
         defaults = {
-            StorageClass.STANDARD: 0.025,
+            StorageClass.STANDARD: 0.023,
+            StorageClass.INTELLIGENT_TIERING: 0.023,
+            StorageClass.STANDARD_IA: 0.0125,
+            StorageClass.ONEZONE_IA: 0.01,
             StorageClass.GLACIER_IR: 0.004,
+            StorageClass.GLACIER_FR: 0.0036,
             StorageClass.DEEP_ARCHIVE: 0.00099,
         }
-        return defaults.get(storage_class, 0.025)
+        return defaults.get(storage_class, 0.023)
 
     def _get_default_put_price(self, storage_class: StorageClass) -> float:
         """获取默认 PUT 请求价格"""
         defaults = {
-            StorageClass.STANDARD: 0.0047,
+            StorageClass.STANDARD: 0.005,
+            StorageClass.INTELLIGENT_TIERING: 0.005,
+            StorageClass.STANDARD_IA: 0.01,
+            StorageClass.ONEZONE_IA: 0.01,
             StorageClass.GLACIER_IR: 0.02,
+            StorageClass.GLACIER_FR: 0.03,
             StorageClass.DEEP_ARCHIVE: 0.05,
         }
-        return defaults.get(storage_class, 0.0047)
+        return defaults.get(storage_class, 0.005)
 
     def _get_default_get_price(self, storage_class: StorageClass) -> float:
         """获取默认 GET 请求价格"""
         defaults = {
-            StorageClass.STANDARD: 0.00037,
+            StorageClass.STANDARD: 0.0004,
+            StorageClass.INTELLIGENT_TIERING: 0.0004,
+            StorageClass.STANDARD_IA: 0.001,
+            StorageClass.ONEZONE_IA: 0.001,
             StorageClass.GLACIER_IR: 0.01,
+            StorageClass.GLACIER_FR: 0.0004,
             StorageClass.DEEP_ARCHIVE: 0.0004,
         }
-        return defaults.get(storage_class, 0.00037)
+        return defaults.get(storage_class, 0.0004)
 
     def _get_default_retrieval_price(self, storage_class: StorageClass) -> float:
         """获取默认检索价格 (每 GB)"""
         defaults = {
             StorageClass.STANDARD: 0.0,
+            StorageClass.INTELLIGENT_TIERING: 0.0,
+            StorageClass.STANDARD_IA: 0.01,
+            StorageClass.ONEZONE_IA: 0.01,
             StorageClass.GLACIER_IR: 0.03,
+            StorageClass.GLACIER_FR: 0.01,
             StorageClass.DEEP_ARCHIVE: 0.02,
         }
         return defaults.get(storage_class, 0.0)
@@ -523,7 +571,11 @@ class AWSPricingClient:
         """获取默认生命周期转换价格 (每千次)"""
         defaults = {
             StorageClass.STANDARD: 0.0,
+            StorageClass.INTELLIGENT_TIERING: 0.0,
+            StorageClass.STANDARD_IA: 0.01,
+            StorageClass.ONEZONE_IA: 0.01,
             StorageClass.GLACIER_IR: 0.02,
+            StorageClass.GLACIER_FR: 0.03,
             StorageClass.DEEP_ARCHIVE: 0.05,
         }
         return defaults.get(storage_class, 0.0)

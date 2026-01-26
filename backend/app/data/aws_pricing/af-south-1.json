@@ -5,25 +5,53 @@
   "last_updated": "2025-01-27",
   "storage_classes": {
     "STANDARD": {
-      "storage_per_gb_month": 0.0274,
-      "put_per_1000": 0.0059,
-      "get_per_1000": 0.00047,
+      "storage_per_gb_month": 0.02737,
+      "put_per_1000": 0.00595,
+      "get_per_1000": 0.000476,
       "retrieval_per_gb": 0,
       "lifecycle_transition_per_1000": 0
     },
+    "INTELLIGENT_TIERING": {
+      "storage_per_gb_month": 0.02737,
+      "put_per_1000": 0.00595,
+      "get_per_1000": 0.000476,
+      "retrieval_per_gb": 0,
+      "lifecycle_transition_per_1000": 0
+    },
+    "STANDARD_IA": {
+      "storage_per_gb_month": 0.014875,
+      "put_per_1000": 0.0119,
+      "get_per_1000": 0.00119,
+      "retrieval_per_gb": 0.0119,
+      "lifecycle_transition_per_1000": 0.0119
+    },
+    "ONEZONE_IA": {
+      "storage_per_gb_month": 0.0119,
+      "put_per_1000": 0.0119,
+      "get_per_1000": 0.00119,
+      "retrieval_per_gb": 0.0119,
+      "lifecycle_transition_per_1000": 0.0119
+    },
     "GLACIER_IR": {
-      "storage_per_gb_month": 0.0046,
-      "put_per_1000": 0.024,
-      "get_per_1000": 0.012,
-      "retrieval_per_gb": 0.036,
-      "lifecycle_transition_per_1000": 0.024
+      "storage_per_gb_month": 0.00476,
+      "put_per_1000": 0.0238,
+      "get_per_1000": 0.0119,
+      "retrieval_per_gb": 0.0357,
+      "lifecycle_transition_per_1000": 0.0238
+    },
+    "GLACIER_FR": {
+      "storage_per_gb_month": 0.004284,
+      "put_per_1000": 0.0357,
+      "get_per_1000": 0.000476,
+      "retrieval_per_gb": 0.0119,
+      "lifecycle_transition_per_1000": 0.0357
     },
     "DEEP_ARCHIVE": {
-      "storage_per_gb_month": 0.0012,
-      "put_per_1000": 0.059,
-      "get_per_1000": 0.00047,
-      "retrieval_per_gb": 0.024,
-      "lifecycle_transition_per_1000": 0.059
+      "storage_per_gb_month": 0.001178,
+      "put_per_1000": 0.0595,
+      "get_per_1000": 0.000476,
+      "retrieval_per_gb": 0.0238,
+      "lifecycle_transition_per_1000": 0.0595
     }
   },
   "data_transfer": {

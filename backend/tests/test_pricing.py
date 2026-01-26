@@ -54,46 +54,47 @@ class TestS3Pricing:
 
     def test_get_storage_price(self):
         """测试获取存储价格"""
-        pricing = PricingLoader.load("ap-northeast-1")
+        # 使用 us-east-1 作为基准区域进行测试
+        pricing = PricingLoader.load("us-east-1")
         price = pricing.get_storage_price(StorageClass.STANDARD)
-        assert price == pytest.approx(0.025, rel=0.01)
+        assert price == pytest.approx(0.023, rel=0.01)
 
     def test_get_put_request_price(self):
         """测试获取 PUT 请求价格"""
-        pricing = PricingLoader.load("ap-northeast-1")
+        pricing = PricingLoader.load("us-east-1")
         price = pricing.get_put_price(StorageClass.STANDARD)
-        assert price == pytest.approx(0.0047, rel=0.01)
+        assert price == pytest.approx(0.005, rel=0.01)
 
     def test_get_get_request_price(self):
         """测试获取 GET 请求价格"""
-        pricing = PricingLoader.load("ap-northeast-1")
+        pricing = PricingLoader.load("us-east-1")
         price = pricing.get_get_price(StorageClass.STANDARD)
         assert price == pytest.approx(0.0004, rel=0.01)
 
     def test_get_retrieval_price_standard(self):
         """测试 Standard 存储没有检索费用"""
-        pricing = PricingLoader.load("ap-northeast-1")
+        pricing = PricingLoader.load("us-east-1")
         price = pricing.get_retrieval_price(StorageClass.STANDARD)
         assert price == 0
 
     def test_get_retrieval_price_glacier_ir(self):
         """测试 Glacier IR 存储有检索费用"""
-        pricing = PricingLoader.load("ap-northeast-1")
+        pricing = PricingLoader.load("us-east-1")
         price = pricing.get_retrieval_price(StorageClass.GLACIER_IR)
         assert price == pytest.approx(0.03, rel=0.01)
 
     def test_get_lifecycle_price(self):
         """测试获取生命周期转换费用"""
-        pricing = PricingLoader.load("ap-northeast-1")
+        pricing = PricingLoader.load("us-east-1")
         price = pricing.get_lifecycle_price(StorageClass.GLACIER_IR)
         assert price == pytest.approx(0.02, rel=0.01)
 
     def test_all_storage_classes_loaded(self):
         """测试所有存储类型都已加载"""
-        pricing = PricingLoader.load("ap-northeast-1")
-        assert StorageClass.STANDARD in pricing.storage_classes
-        assert StorageClass.GLACIER_IR in pricing.storage_classes
-        assert StorageClass.DEEP_ARCHIVE in pricing.storage_classes
+        pricing = PricingLoader.load("us-east-1")
+        # 验证所有 7 种存储类型都已加载
+        for sc in StorageClass:
+            assert sc in pricing.storage_classes, f"缺少存储类型: {sc.value}"
 
 
 class TestDataTransferPricing:
