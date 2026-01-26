@@ -25,7 +25,6 @@ import {
 import {
   TableOutlined,
   BarChartOutlined,
-  InfoCircleOutlined,
   SwapOutlined,
 } from '@ant-design/icons';
 import { Column } from '@ant-design/charts';
@@ -431,53 +430,59 @@ const PricingComparison: React.FC<PricingComparisonProps> = ({
   }
 
   return (
-    <div>
+    <Card
+      title={
+        <Space>
+          <SwapOutlined />
+          <span>定价对比</span>
+        </Space>
+      }
+      style={{ marginBottom: 16 }}
+    >
       {/* 控制面板 */}
-      <Card style={{ marginBottom: 16 }}>
-        <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} md={10}>
-            <Space direction="vertical" size={4} style={{ width: '100%' }}>
-              <Text type="secondary">对比区域（最多 {MAX_REGIONS} 个）</Text>
-              <Select
-                mode="multiple"
-                style={{ width: '100%' }}
-                placeholder="选择区域"
-                value={selectedRegions}
-                onChange={handleRegionChange}
-                maxTagCount={MAX_REGIONS}
-                options={regions.map(r => ({
-                  value: r.region,
-                  label: `${r.name} (${r.region})`,
-                }))}
-              />
-            </Space>
-          </Col>
-          <Col xs={24} md={8}>
-            <Space direction="vertical" size={4} style={{ width: '100%' }}>
-              <Text type="secondary">存储类型</Text>
-              <Select
-                style={{ width: '100%' }}
-                value={selectedStorageClass}
-                onChange={setSelectedStorageClass}
-                options={STORAGE_CLASS_OPTIONS}
-              />
-            </Space>
-          </Col>
-          <Col xs={24} md={6}>
-            <Space direction="vertical" size={4}>
-              <Text type="secondary">视图模式</Text>
-              <Segmented
-                value={viewMode}
-                onChange={v => setViewMode(v as ViewMode)}
-                options={[
-                  { value: 'table', icon: <TableOutlined />, label: '表格' },
-                  { value: 'chart', icon: <BarChartOutlined />, label: '图表' },
-                ]}
-              />
-            </Space>
-          </Col>
-        </Row>
-      </Card>
+      <Row gutter={[16, 16]} align="middle" style={{ marginBottom: 16 }}>
+        <Col xs={24} md={10}>
+          <Space direction="vertical" size={4} style={{ width: '100%' }}>
+            <Text type="secondary">对比区域（最多 {MAX_REGIONS} 个）</Text>
+            <Select
+              mode="multiple"
+              style={{ width: '100%' }}
+              placeholder="选择区域"
+              value={selectedRegions}
+              onChange={handleRegionChange}
+              maxTagCount={MAX_REGIONS}
+              options={regions.map(r => ({
+                value: r.region,
+                label: `${r.name} (${r.region})`,
+              }))}
+            />
+          </Space>
+        </Col>
+        <Col xs={24} md={8}>
+          <Space direction="vertical" size={4} style={{ width: '100%' }}>
+            <Text type="secondary">存储类型</Text>
+            <Select
+              style={{ width: '100%' }}
+              value={selectedStorageClass}
+              onChange={setSelectedStorageClass}
+              options={STORAGE_CLASS_OPTIONS}
+            />
+          </Space>
+        </Col>
+        <Col xs={24} md={6}>
+          <Space direction="vertical" size={4}>
+            <Text type="secondary">视图模式</Text>
+            <Segmented
+              value={viewMode}
+              onChange={v => setViewMode(v as ViewMode)}
+              options={[
+                { value: 'table', icon: <TableOutlined />, label: '表格' },
+                { value: 'chart', icon: <BarChartOutlined />, label: '图表' },
+              ]}
+            />
+          </Space>
+        </Col>
+      </Row>
 
       {/* 错误提示 */}
       {error && (
@@ -492,61 +497,43 @@ const PricingComparison: React.FC<PricingComparisonProps> = ({
         />
       )}
 
-      {/* 提示信息 */}
-      <Alert
-        message={
-          <Space>
-            <InfoCircleOutlined />
-            <span>
-              已选择 {selectedRegions.length} 个区域进行对比。
-              {selectedRegions.length >= 2 && '差异列显示相对于第一个选择区域的价格变化。'}
-            </span>
-          </Space>
-        }
-        type="info"
-        style={{ marginBottom: 16 }}
-      />
-
       {/* 对比内容 */}
       <Spin spinning={loading}>
-        <Card
-          title={
-            <Space>
-              <Title level={5} style={{ margin: 0 }}>
-                {STORAGE_CLASS_OPTIONS.find(o => o.value === selectedStorageClass)?.label} 定价对比
-              </Title>
-              {selectedRegions.map((region, index) => (
-                <Tag
-                  key={region}
-                  color={REGION_COLORS[index]}
-                  style={{ marginLeft: index === 0 ? 8 : 0 }}
-                >
-                  {getRegionName(region)}
-                </Tag>
-              ))}
-            </Space>
-          }
-        >
-          {viewMode === 'table' ? (
-            <Table
-              columns={tableColumns}
-              dataSource={tableData}
-              pagination={false}
-              size="middle"
-              scroll={{ x: 'max-content' }}
-            />
-          ) : (
-            <div style={{ height: 320 }}>
-              {chartData.length > 0 ? (
-                <Column {...chartConfig} />
-              ) : (
-                <Empty description="暂无图表数据" />
-              )}
-            </div>
-          )}
-        </Card>
+        <div style={{ marginBottom: 12 }}>
+          <Space>
+            <Title level={5} style={{ margin: 0 }}>
+              {STORAGE_CLASS_OPTIONS.find(o => o.value === selectedStorageClass)?.label}
+            </Title>
+            {selectedRegions.map((region, index) => (
+              <Tag
+                key={region}
+                color={REGION_COLORS[index]}
+                style={{ marginLeft: index === 0 ? 8 : 0 }}
+              >
+                {getRegionName(region)}
+              </Tag>
+            ))}
+          </Space>
+        </div>
+        {viewMode === 'table' ? (
+          <Table
+            columns={tableColumns}
+            dataSource={tableData}
+            pagination={false}
+            size="middle"
+            scroll={{ x: 'max-content' }}
+          />
+        ) : (
+          <div style={{ height: 320 }}>
+            {chartData.length > 0 ? (
+              <Column {...chartConfig} />
+            ) : (
+              <Empty description="暂无图表数据" />
+            )}
+          </div>
+        )}
       </Spin>
-    </div>
+    </Card>
   );
 };
 
