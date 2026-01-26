@@ -87,7 +87,18 @@
       "Bash(uvicorn app.main:app:*)",
       "Bash(ruff check:*)",
       "Bash(mypy:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(./.specify/scripts/bash/create-new-feature.sh:*)",
+      "Bash(.specify/scripts/bash/check-prerequisites.sh:*)",
+      "Bash(/Users/jinhuasu/Project_Workspace/Anker-Projects/ipc-case-cost-evaluator/.specify/scripts/bash/check-prerequisites.sh:*)",
+      "Bash(/Users/jinhuasu/Project_Workspace/Anker-Projects/ipc-case-cost-evaluator/.specify/scripts/bash/setup-plan.sh:*)",
+      "Bash(/Users/jinhuasu/Project_Workspace/Anker-Projects/ipc-case-cost-evaluator/.specify/scripts/bash/update-agent-context.sh:*)",
+      "Bash(tr:*)",
+      "Bash(/Users/jinhuasu/Project_Workspace/Anker-Projects/ipc-case-cost-evaluator/.specify/scripts/bash/create-new-feature.sh:*)",
+      "mcp__chrome-devtools__navigate_page",
+      "mcp__chrome-devtools__take_snapshot",
+      "mcp__chrome-devtools__take_screenshot",
+      "mcp__chrome-devtools__click"
     ],
     "deny": []
   },
