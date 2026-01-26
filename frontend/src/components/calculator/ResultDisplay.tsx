@@ -3,7 +3,7 @@
  * 优化版本：三层信息架构，Hero 区域突出单设备成本
  */
 import React, { useState } from 'react';
-import { Statistic, Button, Typography, Segmented, Collapse } from 'antd';
+import { Statistic, Button, Typography, Segmented, Collapse, Tag } from 'antd';
 import {
   DownloadOutlined,
   DollarOutlined,
@@ -11,20 +11,28 @@ import {
   TableOutlined,
   DownOutlined,
 } from '@ant-design/icons';
-import type { CostSummary } from '../../types';
+import type { CostSummary, TechnicalDimensions } from '../../types';
 import CostPieChart from './CostPieChart';
 import CostBreakdownTable from './CostBreakdownTable';
 
 const { Title, Text } = Typography;
 
+// 方案信息
+interface SchemeInfo {
+  id: string;
+  name: string;
+  technical: TechnicalDimensions;
+}
+
 interface ResultDisplayProps {
   result: CostSummary;
+  schemeInfo?: SchemeInfo;  // 当前显示结果对应的方案信息
   onExport?: () => void;
 }
 
 type BreakdownViewType = 'chart' | 'table';
 
-const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, onExport }) => {
+const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, schemeInfo, onExport }) => {
   const [breakdownView, setBreakdownView] = useState<BreakdownViewType>('table');
 
   // 格式化数字显示
@@ -33,6 +41,29 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, onExport }) => {
       minimumFractionDigits: precision,
       maximumFractionDigits: precision,
     });
+  };
+
+  // 获取存储类型的中文描述
+  const getStorageClassLabel = (storageClass: string): string => {
+    const labels: Record<string, string> = {
+      'STANDARD': 'S3 Standard',
+      'GLACIER_IR': 'S3 Glacier IR',
+    };
+    return labels[storageClass] || storageClass;
+  };
+
+  // 获取方案技术描述
+  const getSchemeDescription = (): string => {
+    if (!schemeInfo) return '';
+    const { technical } = schemeInfo;
+    if (technical.lifecycle_policy?.enabled) {
+      const stages = technical.lifecycle_policy.stages || [];
+      if (stages.length > 0) {
+        return `生命周期策略 (${stages.length}阶段)`;
+      }
+      return '生命周期策略';
+    }
+    return getStorageClassLabel(technical.storage_class);
   };
 
   return (
@@ -52,6 +83,17 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, onExport }) => {
 
       {/* Hero 区域 - 单设备月均费用 */}
       <div className="result-hero" data-testid="result-hero">
+        {/* 方案标识 */}
+        {schemeInfo && (
+          <div className="result-hero-scheme" data-testid="result-scheme-badge">
+            <Tag color="blue" style={{ fontSize: 14, padding: '4px 12px' }}>
+              {schemeInfo.name}
+            </Tag>
+            <Text type="secondary" style={{ fontSize: 13, marginLeft: 8 }}>
+              {getSchemeDescription()}
+            </Text>
+          </div>
+        )}
         <div className="result-hero-label">单设备月均费用</div>
         <div className="result-hero-value">
           <span>$</span>

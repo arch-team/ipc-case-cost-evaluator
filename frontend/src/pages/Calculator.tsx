@@ -13,6 +13,7 @@ import type {
   ComparisonResult,
   MultiTechnicalConfig,
   VideoQuality,
+  BatchCalculationResult,
 } from '../types';
 import { calculatorApi } from '../api/client';
 import { createInitialMultiConfig } from '../components/calculator/MultiSchemePanel';
@@ -61,6 +62,7 @@ const Calculator: React.FC = () => {
 
   // 计算结果状态
   const [result, setResult] = useState<CostSummary | null>(null);
+  const [currentSchemeResult, setCurrentSchemeResult] = useState<BatchCalculationResult | null>(null);
   const [comparison, setComparison] = useState<ComparisonResult | null>(null);
   const [status, setStatus] = useState<CalculationStatus>('idle');
 
@@ -116,11 +118,13 @@ const Calculator: React.FC = () => {
             config.schemes
           );
           setComparison(compResult);
-          // 设置第一个启用方案的结果为主结果
+          // 设置第一个启用方案的结果为主结果，并保存完整方案信息
           if (results.length > 0) {
             setResult(results[0].result);
+            setCurrentSchemeResult(results[0]);
           } else {
             setResult(null);
+            setCurrentSchemeResult(null);
           }
           setStatus('success');
         } catch (error) {
@@ -272,7 +276,15 @@ const Calculator: React.FC = () => {
         {result && (
           <>
             {/* 费用汇总卡片 */}
-            <ResultDisplay result={result} onExport={handleExport} />
+            <ResultDisplay
+              result={result}
+              schemeInfo={currentSchemeResult ? {
+                id: currentSchemeResult.schemeId,
+                name: currentSchemeResult.schemeName,
+                technical: currentSchemeResult.technical,
+              } : undefined}
+              onExport={handleExport}
+            />
 
             {/* 方案对比 */}
             {comparison && (
