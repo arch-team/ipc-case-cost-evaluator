@@ -10,6 +10,7 @@ import {
   HomeOutlined,
   LeftOutlined,
   RightOutlined,
+  CloudServerOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 
@@ -36,6 +37,11 @@ const Layout: React.FC = () => {
       key: '/evaluations',
       icon: <HistoryOutlined />,
       label: '评估记录',
+    },
+    {
+      key: '/admin',
+      icon: <CloudServerOutlined />,
+      label: '定价管理',
     },
     {
       key: '/settings',

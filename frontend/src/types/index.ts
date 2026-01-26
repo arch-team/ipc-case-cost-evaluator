@@ -313,3 +313,77 @@ export interface BatchCalculationResult {
   result: CostSummary;
   technical: TechnicalDimensions;
 }
+
+// ============================================
+// 定价管理相关类型
+// ============================================
+
+// 区域信息
+export interface RegionInfo {
+  region: string;
+  name: string;
+}
+
+// 存储类型定价详情
+export interface StorageClassPricingDetail {
+  storage_per_gb_month: number;
+  put_per_1000: number;
+  get_per_1000: number;
+  retrieval_per_gb: number;
+  lifecycle_transition_per_1000: number;
+}
+
+// 数据传输定价
+export interface DataTransferPricing {
+  out_first_10tb_per_gb: number;
+  out_next_40tb_per_gb: number;
+  out_next_100tb_per_gb: number;
+  out_over_150tb_per_gb: number;
+}
+
+// 完整区域定价响应
+export interface PricingDetailResponse {
+  region: string;
+  region_name: string;
+  currency: string;
+  last_updated: string;
+  storage_classes: {
+    [key: string]: StorageClassPricingDetail;
+  };
+  data_transfer: DataTransferPricing;
+}
+
+// 缓存状态项
+export interface CacheStatusItem {
+  cached: boolean;
+  source: string;
+  updated_at: string;
+  is_fallback: boolean;
+  age_seconds: number;
+  expires_in_seconds: number;
+}
+
+// 定价服务状态
+export interface PricingServiceStatus {
+  api_enabled: boolean;
+  api_available: boolean | null;
+  fallback_enabled: boolean;
+  cache: {
+    [region: string]: CacheStatusItem;
+  };
+  available_regions: string[];
+}
+
+// 定价刷新请求
+export interface PricingRefreshRequest {
+  region: string;
+}
+
+// 定价刷新响应
+export interface PricingRefreshResponse {
+  success: boolean;
+  region: string;
+  source: string;
+  updated_at: string;
+  is_fallback: boolean;
+}

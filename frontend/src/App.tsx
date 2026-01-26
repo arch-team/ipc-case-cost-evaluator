@@ -12,6 +12,7 @@ import Evaluations from './pages/Evaluations';
 import EvaluationDetail from './pages/EvaluationDetail';
 import Settings from './pages/Settings';
 import SharedView from './pages/SharedView';
+import AdminPage from './pages/AdminPage';
 
 // 企业级稳重风格主题配置
 const customTheme = {
@@ -61,6 +62,7 @@ const App: React.FC = () => {
             <Route path="calculator" element={<Calculator />} />
             <Route path="evaluations" element={<Evaluations />} />
             <Route path="evaluations/:id" element={<EvaluationDetail />} />
+            <Route path="admin" element={<AdminPage />} />
             <Route path="settings" element={<Settings />} />
           </Route>
         </Routes>
