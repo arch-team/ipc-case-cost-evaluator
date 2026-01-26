@@ -341,6 +341,15 @@ const PricingComparison: React.FC<PricingComparisonProps> = ({
     return columns;
   }, [selectedRegions, getRegionName, calculateDiff]);
 
+  // 构建区域名称到颜色的映射
+  const regionColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    selectedRegions.forEach((region, index) => {
+      map[getRegionName(region)] = REGION_COLORS[index];
+    });
+    return map;
+  }, [selectedRegions, getRegionName]);
+
   // 图表配置
   const chartConfig = useMemo(() => ({
     data: chartData,
@@ -381,14 +390,14 @@ const PricingComparison: React.FC<PricingComparisonProps> = ({
         value: `$${datum.value.toFixed(4)}`,
       }),
     },
-    color: REGION_COLORS.slice(0, selectedRegions.length),
+    color: (datum: ChartDataItem) => regionColorMap[datum.region] || REGION_COLORS[0],
     yAxis: {
       label: {
         formatter: (v: string) => `$${v}`,
       },
     },
     padding: [40, 40, 60, 60],
-  }), [chartData, selectedRegions.length]);
+  }), [chartData, regionColorMap]);
 
   // 空状态
   if (selectedRegions.length === 0) {
