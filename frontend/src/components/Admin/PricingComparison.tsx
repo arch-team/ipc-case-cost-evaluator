@@ -56,8 +56,8 @@ const PRICING_ITEMS = [
   { key: 'lifecycle_transition_per_1000', name: '生命周期转换', unit: '$/千次' },
 ];
 
-// 区域颜色配置
-const REGION_COLORS = ['#5B8FF9', '#61DDAA', '#F6BD16'];
+// 区域颜色配置（参考方案对比的配色，更鲜明区分）
+const REGION_COLORS = ['#7B68EE', '#52C41A', '#1890FF'];
 
 interface PricingComparisonProps {
   regions: RegionInfo[];
@@ -348,19 +348,32 @@ const PricingComparison: React.FC<PricingComparisonProps> = ({
     yField: 'value',
     seriesField: 'region',
     isGroup: true,
+    columnWidthRatio: 0.6,
+    minColumnWidth: 20,
+    maxColumnWidth: 40,
     columnStyle: {
       radius: [4, 4, 0, 0],
     },
     label: {
       position: 'top' as const,
-      formatter: (datum: ChartDataItem) => `$${datum.value.toFixed(4)}`,
+      formatter: (datum: ChartDataItem) => {
+        // 根据数值大小调整显示格式
+        if (datum.value >= 0.01) {
+          return `$${datum.value.toFixed(3)}`;
+        }
+        return `$${datum.value.toFixed(4)}`;
+      },
       style: {
-        fontSize: 10,
-        fill: '#666',
+        fontSize: 11,
+        fill: '#595959',
+        fontWeight: 500,
       },
     },
     legend: {
-      position: 'top' as const,
+      position: 'top-right' as const,
+      marker: {
+        symbol: 'circle',
+      },
     },
     tooltip: {
       formatter: (datum: ChartDataItem) => ({
@@ -369,6 +382,12 @@ const PricingComparison: React.FC<PricingComparisonProps> = ({
       }),
     },
     color: REGION_COLORS.slice(0, selectedRegions.length),
+    yAxis: {
+      label: {
+        formatter: (v: string) => `$${v}`,
+      },
+    },
+    padding: [40, 40, 60, 60],
   }), [chartData, selectedRegions.length]);
 
   // 空状态
@@ -505,7 +524,7 @@ const PricingComparison: React.FC<PricingComparisonProps> = ({
               scroll={{ x: 'max-content' }}
             />
           ) : (
-            <div style={{ height: 400 }}>
+            <div style={{ height: 320 }}>
               {chartData.length > 0 ? (
                 <Column {...chartConfig} />
               ) : (
