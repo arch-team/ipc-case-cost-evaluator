@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Slider, Typography, Button, Spin, Tooltip } from 'antd';
-import { SlidersOutlined, BulbOutlined, CheckOutlined } from '@ant-design/icons';
+import { SlidersOutlined, BulbOutlined, CheckOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import type { CostCalculationInput } from '../../types';
 import { calculatorApi } from '../../api/client';
 import debounce from 'lodash/debounce';
@@ -394,6 +394,12 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
           <BulbOutlined />
           <Text type="secondary">
             <strong>成本敏感度：</strong>{impactRanking}
+            <Tooltip
+              title="排序依据：各参数从最小值到最大值变化时，对月度成本的影响幅度（绝对值）。影响越大，该参数越敏感。"
+              placement="top"
+            >
+              <QuestionCircleOutlined style={{ marginLeft: 6, cursor: 'help', color: '#8c8c8c' }} />
+            </Tooltip>
           </Text>
         </div>
       )}
