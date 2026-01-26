@@ -102,61 +102,35 @@ const ComparisonChart: React.FC<Props> = ({ comparison }) => {
     },
   };
 
-  // 费用构成堆叠柱状图配置 (G2 5.x API)
+  // 颜色映射
+  const colorMap: Record<string, string> = {};
+  COST_ITEMS.forEach(item => { colorMap[item.name] = item.color; });
+
+  // 费用构成堆叠柱状图配置
   const breakdownConfig = {
     data: breakdownData,
     xField: 'scheme',
     yField: 'value',
     colorField: 'costType',
     stack: true,
-    style: {
-      fill: ({ costType }: { costType: string }) => {
-        const item = COST_ITEMS.find(i => i.name === costType);
-        return item?.color || '#1890ff';
-      },
-      radiusTopLeft: 4,
-      radiusTopRight: 4,
-    },
-    label: {
-      text: (d: { value: number }) => (d.value > 20 ? `$${d.value.toFixed(0)}` : ''),
-      position: 'inside' as const,
-      style: {
-        fontSize: 10,
-        fill: '#fff',
+    scale: {
+      color: {
+        range: COST_ITEMS.map(item => item.color),
       },
     },
     axis: {
       x: {
         title: false,
-        labelAutoRotate: false,
       },
       y: {
         title: '月度成本 (USD)',
-        labelFormatter: (v: number) => `$${v.toLocaleString()}`,
+        labelFormatter: (v: number) => `$${v}`,
       },
-    },
-    tooltip: {
-      title: (d: { scheme: string }) => d.scheme,
-      items: [
-        {
-          field: 'value',
-          name: (d: { costType: string }) => d.costType,
-          valueFormatter: (v: number) => `$${v.toFixed(2)}`,
-        },
-      ],
     },
     legend: {
       color: {
         position: 'bottom' as const,
-        layout: { justifyContent: 'center' as const },
-        itemMarker: (costType: string) => {
-          const item = COST_ITEMS.find(i => i.name === costType);
-          return { style: { fill: item?.color || '#1890ff' } };
-        },
       },
-    },
-    interaction: {
-      elementHighlight: { background: true },
     },
   };
 
