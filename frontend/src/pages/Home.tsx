@@ -1,18 +1,23 @@
 /**
  * 首页
  */
-import React from 'react';
-import { Card, Row, Col, Statistic, Button, Typography, Space } from 'antd';
+import React, { useRef, useState, useEffect } from 'react';
+import { Card, Row, Col, Statistic, Button, Typography, Space, Tour, Steps } from 'antd';
+import type { TourProps } from 'antd';
 import {
   CalculatorOutlined,
   CloudServerOutlined,
   DollarOutlined,
   RocketOutlined,
   ArrowRightOutlined,
+  QuestionCircleOutlined,
+  CheckCircleOutlined,
+  SettingOutlined,
+  BarChartOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
-const { Title, Paragraph } = Typography;
+const { Title, Paragraph, Text } = Typography;
 
 // 样式常量
 const styles = {
@@ -58,8 +63,66 @@ const styles = {
   }),
 };
 
+// 本地存储键
+const TOUR_COMPLETED_KEY = 'ipc_cost_evaluator_tour_completed';
+
 const Home: React.FC = () => {
   const navigate = useNavigate();
+  const [tourOpen, setTourOpen] = useState(false);
+
+  // Tour 目标元素引用
+  const startBtnRef = useRef<HTMLButtonElement>(null);
+  const historyBtnRef = useRef<HTMLButtonElement>(null);
+  const featureCardRef = useRef<HTMLDivElement>(null);
+
+  // 检查是否需要显示引导
+  useEffect(() => {
+    const tourCompleted = localStorage.getItem(TOUR_COMPLETED_KEY);
+    if (!tourCompleted) {
+      // 延迟显示，让页面先渲染完成
+      const timer = setTimeout(() => setTourOpen(true), 800);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Tour 步骤配置
+  const tourSteps: TourProps['steps'] = [
+    {
+      title: '欢迎使用 IPC 成本评估系统',
+      description: '这是一个帮助您评估 AWS S3 云存储成本的工具。让我们快速了解一下主要功能。',
+      target: null,
+      placement: 'center',
+    },
+    {
+      title: '开始成本评估',
+      description: '点击这里开始配置您的 IPC 设备参数，系统将自动计算存储成本。',
+      target: () => startBtnRef.current!,
+      placement: 'bottom',
+    },
+    {
+      title: '查看历史记录',
+      description: '您的所有评估记录都会保存在这里，方便随时查看和对比。',
+      target: () => historyBtnRef.current!,
+      placement: 'bottom',
+    },
+    {
+      title: '核心功能介绍',
+      description: '系统支持精准计算、多方案对比、成本优化建议和报告导出等功能。',
+      target: () => featureCardRef.current!,
+      placement: 'top',
+    },
+  ];
+
+  // 完成引导
+  const handleTourFinish = () => {
+    setTourOpen(false);
+    localStorage.setItem(TOUR_COMPLETED_KEY, 'true');
+  };
+
+  // 重新开始引导
+  const handleRestartTour = () => {
+    setTourOpen(true);
+  };
 
   const features = [
     {
@@ -88,8 +151,38 @@ const Home: React.FC = () => {
     },
   ];
 
+  // 快速开始步骤
+  const quickStartSteps = [
+    {
+      title: '配置参数',
+      description: '设置设备数量、视频质量等',
+      icon: <SettingOutlined />,
+    },
+    {
+      title: '选择存储',
+      description: '选择 S3 存储类型和策略',
+      icon: <CloudServerOutlined />,
+    },
+    {
+      title: '查看结果',
+      description: '获取详细成本分析报告',
+      icon: <BarChartOutlined />,
+    },
+  ];
+
   return (
     <div>
+      {/* 新用户引导 Tour */}
+      <Tour
+        open={tourOpen}
+        onClose={handleTourFinish}
+        onFinish={handleTourFinish}
+        steps={tourSteps}
+        indicatorsRender={(current, total) => (
+          <span>{current + 1} / {total}</span>
+        )}
+      />
+
       {/* Hero 区域 */}
       <Card
         style={{
@@ -112,6 +205,7 @@ const Home: React.FC = () => {
             </Paragraph>
             <Space wrap size="middle">
               <Button
+                ref={startBtnRef}
                 type="primary"
                 size="large"
                 icon={<CalculatorOutlined />}
@@ -122,11 +216,20 @@ const Home: React.FC = () => {
                 开始评估 <ArrowRightOutlined />
               </Button>
               <Button
+                ref={historyBtnRef}
                 size="large"
                 style={{ height: 48, borderRadius: 8 }}
                 onClick={() => navigate('/evaluations')}
               >
                 查看历史记录
+              </Button>
+              <Button
+                type="text"
+                icon={<QuestionCircleOutlined />}
+                onClick={handleRestartTour}
+                style={{ color: '#999' }}
+              >
+                使用引导
               </Button>
             </Space>
           </Col>
@@ -174,27 +277,72 @@ const Home: React.FC = () => {
         </Row>
       </Card>
 
-      {/* 功能卡片区 - 移动端 1 列，平板 2 列，桌面 4 列 */}
-      <Row gutter={[16, 16]}>
-        {features.map((feature, index) => (
-          <Col xs={24} sm={12} md={12} lg={6} key={index}>
-            <Card
-              hoverable
-              className="home-feature-card"
-              style={styles.featureCard}
-              styles={{ body: { padding: 24 } }}
-            >
-              <div style={styles.iconWrapper(feature.iconBg)}>
-                {feature.icon}
+      {/* 快速开始步骤 */}
+      <Card
+        style={{
+          marginBottom: 24,
+          borderRadius: 16,
+          border: 'none',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+        }}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <Title level={5} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <CheckCircleOutlined style={{ color: '#52c41a' }} />
+            快速开始
+          </Title>
+          <Text type="secondary" style={{ fontSize: 13 }}>
+            只需三步，即可获取完整的成本评估报告
+          </Text>
+        </div>
+        <Steps
+          items={quickStartSteps.map((step, index) => ({
+            title: step.title,
+            description: step.description,
+            icon: (
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  background: `linear-gradient(135deg, ${['#1890ff', '#52c41a', '#722ed1'][index]}20 0%, ${['#1890ff', '#52c41a', '#722ed1'][index]}40 100%)`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: ['#1890ff', '#52c41a', '#722ed1'][index],
+                }}
+              >
+                {step.icon}
               </div>
-              <Title level={4} style={{ marginBottom: 12 }}>{feature.title}</Title>
-              <Paragraph type="secondary" style={{ marginBottom: 0 }}>
-                {feature.description}
-              </Paragraph>
-            </Card>
-          </Col>
-        ))}
-      </Row>
+            ),
+          }))}
+          style={{ padding: '8px 0' }}
+        />
+      </Card>
+
+      {/* 功能卡片区 - 移动端 1 列，平板 2 列，桌面 4 列 */}
+      <div ref={featureCardRef}>
+        <Row gutter={[16, 16]}>
+          {features.map((feature, index) => (
+            <Col xs={24} sm={12} md={12} lg={6} key={index}>
+              <Card
+                hoverable
+                className="home-feature-card"
+                style={styles.featureCard}
+                styles={{ body: { padding: 24 } }}
+              >
+                <div style={styles.iconWrapper(feature.iconBg)}>
+                  {feature.icon}
+                </div>
+                <Title level={4} style={{ marginBottom: 12 }}>{feature.title}</Title>
+                <Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                  {feature.description}
+                </Paragraph>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      </div>
     </div>
   );
 };

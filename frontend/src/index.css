@@ -1082,3 +1082,89 @@ body {
 .home-stat-card:hover {
   transform: scale(1.02);
 }
+
+/* ============================================
+   导航菜单增强样式
+   ============================================ */
+
+/* 菜单项基础样式 */
+.ant-menu-item {
+  margin: 4px 8px !important;
+  border-radius: var(--radius-small) !important;
+  transition: all 0.2s ease !important;
+}
+
+/* 菜单项悬停 */
+.ant-menu-item:hover {
+  background: var(--color-primary-light) !important;
+}
+
+/* 菜单项选中状态 - 左边框 + 背景色 */
+.ant-menu-item-selected {
+  background: var(--color-primary-light) !important;
+  border-left: 3px solid var(--color-primary) !important;
+  font-weight: 500 !important;
+}
+
+.ant-menu-item-selected::after {
+  display: none !important;
+}
+
+/* 侧边栏 Logo 区域 */
+.sidebar-logo {
+  padding: 16px;
+  text-align: center;
+  border-bottom: 1px solid var(--color-border-light);
+  margin-bottom: 8px;
+}
+
+/* ============================================
+   页面过渡动画
+   ============================================ */
+
+/* 页面进入动画 */
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-content {
+  animation: pageEnter 0.3s ease-out;
+}
+
+/* 淡入动画 */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* ============================================
+   面包屑样式
+   ============================================ */
+
+.ant-breadcrumb {
+  font-size: 14px !important;
+}
+
+.ant-breadcrumb a {
+  color: var(--color-text-secondary) !important;
+  transition: color 0.2s;
+}
+
+.ant-breadcrumb a:hover {
+  color: var(--color-primary) !important;
+}
+
+.ant-breadcrumb-separator {
+  color: var(--color-text-tertiary) !important;
+}

@@ -2,7 +2,7 @@
  * 布局组件
  */
 import React, { useState } from 'react';
-import { Layout as AntLayout, Menu, Typography, Space } from 'antd';
+import { Layout as AntLayout, Menu, Typography, Space, Breadcrumb } from 'antd';
 import {
   CalculatorOutlined,
   HistoryOutlined,
@@ -12,10 +12,19 @@ import {
   RightOutlined,
   CloudServerOutlined,
 } from '@ant-design/icons';
-import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { useNavigate, useLocation, Outlet, Link } from 'react-router-dom';
 
 const { Header, Content, Footer, Sider } = AntLayout;
 const { Title } = Typography;
+
+// 路由到面包屑的映射
+const breadcrumbNameMap: Record<string, string> = {
+  '/': '首页',
+  '/calculator': '成本计算',
+  '/evaluations': '评估记录',
+  '/admin': '定价管理',
+  '/settings': '设置',
+};
 
 const Layout: React.FC = () => {
   const navigate = useNavigate();
@@ -129,15 +138,29 @@ const Layout: React.FC = () => {
             alignItems: 'center',
             justifyContent: 'space-between',
             boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+            height: 56,
           }}
         >
+          <Breadcrumb
+            items={
+              location.pathname === '/'
+                ? [{ title: <><HomeOutlined /> 首页</> }]
+                : [
+                    { title: <Link to="/"><HomeOutlined /></Link> },
+                    { title: breadcrumbNameMap[location.pathname] || '未知页面' },
+                  ]
+            }
+            style={{ fontSize: 14 }}
+          />
           <Space>
-            <Title level={5} style={{ margin: 0 }}>
+            <span style={{ color: '#999', fontSize: 13 }}>
               AWS S3 云存储成本评估系统
-            </Title>
+            </span>
           </Space>
         </Header>
         <Content
+          className="page-content"
+          key={location.pathname}
           style={{
             margin: '24px 16px',
             padding: 24,
