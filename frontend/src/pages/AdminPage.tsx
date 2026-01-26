@@ -32,7 +32,6 @@ import {
   SyncOutlined,
   InfoCircleOutlined,
   DollarOutlined,
-  SwapOutlined,
 } from '@ant-design/icons';
 import RegionSelector from '../components/admin/RegionSelector';
 import PricingTable from '../components/admin/PricingTable';
@@ -425,21 +424,6 @@ const AdminPage: React.FC = () => {
                 ),
                 children: <HelpContent />,
               },
-              {
-                key: 'comparison',
-                label: (
-                  <Space>
-                    <SwapOutlined />
-                    定价对比
-                  </Space>
-                ),
-                children: (
-                  <PricingComparison
-                    regions={regions}
-                    onLoadPricing={fetchRegionPricing}
-                  />
-                ),
-              },
             ]}
           />
         </Card>
@@ -502,7 +486,16 @@ const AdminPage: React.FC = () => {
 
       {/* 定价表格 */}
       <Spin spinning={loading}>
-        <PricingTable pricing={pricing} loading={loading} />
+        <PricingTable
+          pricing={pricing}
+          loading={loading}
+          comparisonSlot={
+            <PricingComparison
+              regions={regions}
+              onLoadPricing={fetchRegionPricing}
+            />
+          }
+        />
       </Spin>
     </div>
   );

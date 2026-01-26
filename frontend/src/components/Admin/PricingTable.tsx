@@ -20,30 +20,76 @@ const { Title, Text } = Typography;
 interface PricingTableProps {
   pricing: PricingDetailResponse | null;
   loading?: boolean;
+  comparisonSlot?: React.ReactNode;
 }
 
-// 存储类型显示名称映射
+// 存储类型显示名称映射（英文）
 const storageClassNames: { [key: string]: string } = {
   STANDARD: 'S3 Standard',
-  GLACIER_IR: 'S3 Glacier IR',
-  DEEP_ARCHIVE: 'S3 Deep Archive',
+  INTELLIGENT_TIERING: 'S3 Intelligent-Tiering',
+  STANDARD_IA: 'S3 Standard-IA',
+  ONEZONE_IA: 'S3 One Zone-IA',
+  GLACIER_IR: 'S3 Glacier Instant Retrieval',
+  GLACIER_FR: 'S3 Glacier Flexible Retrieval',
+  DEEP_ARCHIVE: 'S3 Glacier Deep Archive',
+};
+
+// 存储类型中文名称映射
+const storageClassChineseNames: { [key: string]: string } = {
+  STANDARD: '标准存储',
+  INTELLIGENT_TIERING: '智能分层',
+  STANDARD_IA: '标准低频访问',
+  ONEZONE_IA: '单区低频访问',
+  GLACIER_IR: '即时检索归档',
+  GLACIER_FR: '灵活检索归档',
+  DEEP_ARCHIVE: '深度归档',
 };
 
 // 存储类型描述
 const storageClassDescriptions: { [key: string]: string } = {
-  STANDARD: '适用于频繁访问的数据，毫秒级延迟',
-  GLACIER_IR: '适用于需要即时访问的归档数据，毫秒级检索',
-  DEEP_ARCHIVE: '适用于长期归档，检索时间 12-48 小时',
+  STANDARD: '频繁访问数据，毫秒级延迟',
+  INTELLIGENT_TIERING: '访问模式不确定，自动优化成本',
+  STANDARD_IA: '30+天存储，偶尔访问',
+  ONEZONE_IA: '单可用区，非关键数据',
+  GLACIER_IR: '长期归档，毫秒级检索',
+  GLACIER_FR: '归档数据，分钟到小时检索',
+  DEEP_ARCHIVE: '长期归档，12-48小时检索',
+};
+
+// 存储类型应用场景
+const storageClassUseCases: { [key: string]: string } = {
+  STANDARD: '热数据、网站内容、移动应用',
+  INTELLIGENT_TIERING: '访问模式变化的数据',
+  STANDARD_IA: '备份、灾难恢复',
+  ONEZONE_IA: '可重建数据、次要备份',
+  GLACIER_IR: '医疗影像、媒体资产',
+  GLACIER_FR: '归档、合规数据',
+  DEEP_ARCHIVE: '长期保留、合规归档',
 };
 
 // 存储类型颜色映射
 const storageClassColors: { [key: string]: string } = {
   STANDARD: 'blue',
+  INTELLIGENT_TIERING: 'geekblue',
+  STANDARD_IA: 'green',
+  ONEZONE_IA: 'lime',
   GLACIER_IR: 'cyan',
+  GLACIER_FR: 'orange',
   DEEP_ARCHIVE: 'purple',
 };
 
-const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false }) => {
+// 存储类型排序顺序
+const storageClassOrder: string[] = [
+  'STANDARD',
+  'INTELLIGENT_TIERING',
+  'STANDARD_IA',
+  'ONEZONE_IA',
+  'GLACIER_IR',
+  'GLACIER_FR',
+  'DEEP_ARCHIVE',
+];
+
+const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false, comparisonSlot }) => {
   if (!pricing) {
     return (
       <Card loading={loading}>
@@ -58,16 +104,45 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false })
       title: '存储类型',
       dataIndex: 'storageClass',
       key: 'storageClass',
+      width: 180,
+      fixed: 'left' as const,
+      render: (value: string) => (
+        <Tag color={storageClassColors[value] || 'default'}>
+          {storageClassNames[value] || value}
+        </Tag>
+      ),
+    },
+    {
+      title: '中文名称',
+      dataIndex: 'storageClass',
+      key: 'chineseName',
+      width: 120,
+      render: (value: string) => (
+        <Text strong style={{ fontSize: 14, color: '#262626' }}>
+          {storageClassChineseNames[value] || value}
+        </Text>
+      ),
+    },
+    {
+      title: '描述',
+      dataIndex: 'storageClass',
+      key: 'description',
       width: 200,
       render: (value: string) => (
-        <Space direction="vertical" size={0}>
-          <Tag color={storageClassColors[value] || 'default'}>
-            {storageClassNames[value] || value}
-          </Tag>
-          <Text type="secondary" style={{ fontSize: 11 }}>
-            {storageClassDescriptions[value]}
-          </Text>
-        </Space>
+        <Text style={{ color: '#595959', whiteSpace: 'nowrap' }}>
+          {storageClassDescriptions[value]}
+        </Text>
+      ),
+    },
+    {
+      title: '应用场景',
+      dataIndex: 'storageClass',
+      key: 'useCase',
+      width: 200,
+      render: (value: string) => (
+        <Tag color="default" style={{ margin: 0 }}>
+          {storageClassUseCases[value]}
+        </Tag>
       ),
     },
     {
@@ -136,8 +211,8 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false })
       dataIndex: 'retrieval_per_gb',
       key: 'retrieval',
       align: 'right' as const,
-      render: (value: number, record: { storageClass: string }) => {
-        if (record.storageClass === 'STANDARD') {
+      render: (value: number) => {
+        if (value === 0) {
           return <Text type="secondary">-</Text>;
         }
         return (
@@ -160,8 +235,8 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false })
       dataIndex: 'lifecycle_transition_per_1000',
       key: 'lifecycle',
       align: 'right' as const,
-      render: (value: number, record: { storageClass: string }) => {
-        if (record.storageClass === 'STANDARD') {
+      render: (value: number) => {
+        if (value === 0) {
           return <Text type="secondary">-</Text>;
         }
         return (
@@ -174,12 +249,19 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false })
     },
   ];
 
-  // 将定价数据转换为表格数据
-  const storageData = Object.entries(pricing.storage_classes).map(([key, value]) => ({
-    key,
-    storageClass: key,
-    ...value,
-  }));
+  // 将定价数据转换为表格数据，按预定义顺序排列
+  const storageData = Object.entries(pricing.storage_classes)
+    .map(([key, value]) => ({
+      key,
+      storageClass: key,
+      ...value,
+    }))
+    .sort((a, b) => {
+      const orderA = storageClassOrder.indexOf(a.storageClass);
+      const orderB = storageClassOrder.indexOf(b.storageClass);
+      // 如果不在排序列表中，放到最后
+      return (orderA === -1 ? 999 : orderA) - (orderB === -1 ? 999 : orderB);
+    });
 
   // 数据传输阶梯定价
   const transferTiers = [
@@ -281,10 +363,17 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false })
           dataSource={storageData}
           pagination={false}
           loading={loading}
-          size="middle"
-          scroll={{ x: 800 }}
+          size="large"
+          scroll={{ x: 1300 }}
+          style={{
+            '--ant-table-cell-padding-block': '16px',
+            '--ant-table-cell-padding-inline': '16px',
+          } as React.CSSProperties}
         />
       </Card>
+
+      {/* 定价对比插槽 */}
+      {comparisonSlot}
 
       {/* 数据传输定价 */}
       <Card
