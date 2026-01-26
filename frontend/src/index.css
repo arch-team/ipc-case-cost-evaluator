@@ -391,18 +391,9 @@ body {
   height: 100%;
 }
 
-.input-panel-quick-start {
-  background: var(--color-bg-page);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  padding: 16px;
-  margin-bottom: 16px;
-}
-
-.input-panel-quick-start-header {
-  display: flex;
-  align-items: center;
-  font-size: 14px;
+/* 快速开始折叠面板内容 */
+.input-panel-quick-start-content {
+  /* 内容区域无需额外边距，折叠面板已有 padding */
 }
 
 .input-panel-collapse {

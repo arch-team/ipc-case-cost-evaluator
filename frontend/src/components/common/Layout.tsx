@@ -1,13 +1,15 @@
 /**
  * 布局组件
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { Layout as AntLayout, Menu, Typography, Space } from 'antd';
 import {
   CalculatorOutlined,
   HistoryOutlined,
   SettingOutlined,
   HomeOutlined,
+  LeftOutlined,
+  RightOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 
@@ -17,6 +19,7 @@ const { Title } = Typography;
 const Layout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [collapsed, setCollapsed] = useState(false);
 
   const menuItems = [
     {
@@ -47,30 +50,71 @@ const Layout: React.FC = () => {
 
   return (
     <AntLayout style={{ minHeight: '100vh' }}>
-      <Sider
-        theme="light"
-        style={{
-          overflow: 'auto',
-          height: '100vh',
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          bottom: 0,
-        }}
-      >
-        <div style={{ padding: '16px', textAlign: 'center' }}>
-          <Title level={4} style={{ margin: 0, color: '#1890ff' }}>
-            IPC 成本评估
-          </Title>
+      {/* 侧边栏容器 */}
+      <div style={{ position: 'relative' }}>
+        <Sider
+          theme="light"
+          collapsed={collapsed}
+          trigger={null}
+          style={{
+            overflow: 'auto',
+            height: '100vh',
+            position: 'fixed',
+            left: 0,
+            top: 0,
+            bottom: 0,
+          }}
+        >
+          <div style={{ padding: collapsed ? '16px 8px' : '16px', textAlign: 'center' }}>
+            <Title level={4} style={{ margin: 0, color: '#1890ff', fontSize: collapsed ? 14 : 18 }}>
+              {collapsed ? 'IPC' : 'IPC 成本评估'}
+            </Title>
+          </div>
+          <Menu
+            mode="inline"
+            selectedKeys={[location.pathname]}
+            items={menuItems}
+            onClick={handleMenuClick}
+          />
+        </Sider>
+        {/* 折叠按钮 - 位于侧边栏边缘 */}
+        <div
+          onClick={() => setCollapsed(!collapsed)}
+          className="sidebar-collapse-btn"
+          style={{
+            position: 'fixed',
+            left: collapsed ? 64 : 184,
+            top: 72,
+            width: 32,
+            height: 32,
+            background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
+            borderRadius: '50%',
+            boxShadow: '0 2px 8px rgba(24, 144, 255, 0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            zIndex: 101,
+            transition: 'all 0.2s ease',
+            border: '2px solid #fff',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.1)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(24, 144, 255, 0.6)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.boxShadow = '0 2px 8px rgba(24, 144, 255, 0.4)';
+          }}
+        >
+          {collapsed ? (
+            <RightOutlined style={{ fontSize: 14, color: '#fff' }} />
+          ) : (
+            <LeftOutlined style={{ fontSize: 14, color: '#fff' }} />
+          )}
         </div>
-        <Menu
-          mode="inline"
-          selectedKeys={[location.pathname]}
-          items={menuItems}
-          onClick={handleMenuClick}
-        />
-      </Sider>
-      <AntLayout style={{ marginLeft: 200 }}>
+      </div>
+      <AntLayout style={{ marginLeft: collapsed ? 80 : 200, transition: 'margin-left 0.2s' }}>
         <Header
           style={{
             padding: '0 24px',

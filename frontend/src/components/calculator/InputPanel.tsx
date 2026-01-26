@@ -10,7 +10,6 @@ import {
   Space,
   Tag,
   Tooltip,
-  Typography,
   Divider,
   message,
 } from 'antd';
@@ -41,8 +40,6 @@ import FunctionalForm from './FunctionalForm';
 import TechnicalForm from './TechnicalForm';
 import PricingForm from './PricingForm';
 import MultiSchemePanel from './MultiSchemePanel';
-
-const { Text } = Typography;
 
 interface InputPanelProps {
   value: CostCalculationInput;
@@ -94,7 +91,7 @@ const InputPanel: React.FC<InputPanelProps> = ({
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
   const [isCustomized, setIsCustomized] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeKeys, setActiveKeys] = useState<string[]>(['functional']);
+  const [activeKeys, setActiveKeys] = useState<string[]>(['quick-start', 'functional']);
 
   // 加载预设场景
   useEffect(() => {
@@ -204,6 +201,42 @@ const InputPanel: React.FC<InputPanelProps> = ({
   // 折叠面板项
   const collapseItems = [
     {
+      key: 'quick-start',
+      label: (
+        <div className="input-panel-header">
+          <span className="input-panel-header-title">
+            <RocketOutlined style={{ marginRight: 8 }} />
+            快速开始
+          </span>
+          {selectedScenarioId && (
+            <Tag
+              color={isCustomized ? 'orange' : 'green'}
+              style={{ marginLeft: 'auto', marginRight: 8 }}
+            >
+              {isCustomized ? '已自定义' : '已预设'}
+            </Tag>
+          )}
+        </div>
+      ),
+      children: (
+        <div className="input-panel-quick-start-content">
+          <Select
+            placeholder="选择预设场景..."
+            style={{ width: '100%' }}
+            loading={loading}
+            value={selectedScenarioId}
+            onChange={handleScenarioSelect}
+            options={scenarioOptions}
+            allowClear
+            showSearch
+            filterOption={(input, option) =>
+              (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+            }
+          />
+        </div>
+      ),
+    },
+    {
       key: 'functional',
       label: (
         <div className="input-panel-header">
@@ -268,39 +301,7 @@ const InputPanel: React.FC<InputPanelProps> = ({
 
   return (
     <div className="input-panel">
-      {/* 顶部：快速开始 */}
-      <div className="input-panel-quick-start">
-        <div className="input-panel-quick-start-header">
-          <RocketOutlined style={{ marginRight: 8, color: 'var(--color-primary)' }} />
-          <Text strong>快速开始</Text>
-        </div>
-
-        <Select
-          placeholder="选择预设场景..."
-          style={{ width: '100%', marginTop: 12 }}
-          loading={loading}
-          value={selectedScenarioId}
-          onChange={handleScenarioSelect}
-          options={scenarioOptions}
-          allowClear
-          showSearch
-          filterOption={(input, option) =>
-            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-          }
-        />
-
-        {selectedScenarioId && (
-          <div style={{ marginTop: 8 }}>
-            <Tag color={isCustomized ? 'orange' : 'green'}>
-              {isCustomized ? '已自定义' : '已预设'}
-            </Tag>
-          </div>
-        )}
-      </div>
-
-      <Divider style={{ margin: '16px 0' }} />
-
-      {/* 三类维度折叠面板 */}
+      {/* 所有配置折叠面板 */}
       <Collapse
         className="input-panel-collapse"
         activeKey={activeKeys}
