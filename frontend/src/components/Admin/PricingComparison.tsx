@@ -376,11 +376,13 @@ const PricingComparison: React.FC<PricingComparisonProps> = ({
         }
         return `$${datum.value.toFixed(4)}`;
       },
-      position: 'top',
+      position: 'inside',
+      dy: 8,
       style: {
-        fontSize: 11,
-        fill: '#595959',
+        fontSize: 10,
+        fill: '#fff',
         fontWeight: 500,
+        textShadow: '0 1px 2px rgba(0,0,0,0.3)',
       },
     },
     legend: false,
