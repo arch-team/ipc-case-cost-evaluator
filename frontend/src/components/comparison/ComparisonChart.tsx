@@ -24,9 +24,6 @@ const COST_ITEMS = [
   { key: 'lifecycle_cost', name: '生命周期费', color: '#13c2c2' },
 ];
 
-// 创建颜色映射
-const COLOR_MAP = Object.fromEntries(COST_ITEMS.map(item => [item.name, item.color]));
-
 const ComparisonChart: React.FC<Props> = ({ comparison }) => {
   const [viewMode, setViewMode] = React.useState<'total' | 'breakdown'>('total');
 
@@ -105,20 +102,18 @@ const ComparisonChart: React.FC<Props> = ({ comparison }) => {
     },
   };
 
-  // 费用构成堆叠柱状图配置
+  // 费用构成堆叠柱状图配置 (G2 5.x API)
   const breakdownConfig = {
     data: breakdownData,
     xField: 'scheme',
     yField: 'value',
     colorField: 'costType',
     stack: true,
-    scale: {
-      color: {
-        domain: COST_ITEMS.map(item => item.name),
-        range: COST_ITEMS.map(item => item.color),
-      },
-    },
     style: {
+      fill: ({ costType }: { costType: string }) => {
+        const item = COST_ITEMS.find(i => i.name === costType);
+        return item?.color || '#1890ff';
+      },
       radiusTopLeft: 4,
       radiusTopRight: 4,
     },
@@ -154,9 +149,10 @@ const ComparisonChart: React.FC<Props> = ({ comparison }) => {
       color: {
         position: 'bottom' as const,
         layout: { justifyContent: 'center' as const },
-        itemMarker: (name: string) => ({
-          style: { fill: COLOR_MAP[name] || '#1890ff' },
-        }),
+        itemMarker: (costType: string) => {
+          const item = COST_ITEMS.find(i => i.name === costType);
+          return { style: { fill: item?.color || '#1890ff' } };
+        },
       },
     },
     interaction: {
