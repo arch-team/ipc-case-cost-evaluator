@@ -35,7 +35,7 @@ const fieldConstraints: Record<string, { min: number; max: number; default: numb
 };
 
 const FunctionalForm: React.FC<FunctionalFormProps> = ({ value, onChange }) => {
-  const handleChange = (field: keyof FunctionalDimensions, val: any) => {
+  const handleChange = (field: keyof FunctionalDimensions, val: string | number | boolean | null | undefined) => {
     // 对数值字段进行范围验证
     const constraints = fieldConstraints[field];
     if (constraints && typeof val === 'number') {

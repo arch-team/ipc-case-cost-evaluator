@@ -26,7 +26,7 @@ test.describe('结果展示', () => {
   });
 
   test.describe('Hero 区域', () => {
-    test('显示单设备月均费用', async ({ page }) => {
+    test('显示单设备月均费用', async () => {
       // 新 UI 使用 Hero 区域展示单设备月费
       await calculatorPage.resultDisplay.expectHeroVisible();
       const value = await calculatorPage.resultDisplay.getPerDeviceMonthly();
@@ -37,30 +37,30 @@ test.describe('结果展示', () => {
   });
 
   test.describe('成本统计卡片', () => {
-    test('显示月度总费用', async ({ page }) => {
+    test('显示月度总费用', async () => {
       await expect(calculatorPage.resultDisplay.monthlyTotalCard).toBeVisible();
       const value = await calculatorPage.resultDisplay.getMonthlyTotal();
       // 值应该是数字（可能不包含$符号，因为它是 prefix）
       expect(parseFloat(value.replace(/[,$]/g, ''))).toBeGreaterThan(0);
     });
 
-    test('显示年度总费用', async ({ page }) => {
+    test('显示年度总费用', async () => {
       await expect(calculatorPage.resultDisplay.yearlyTotalCard).toBeVisible();
       const value = await calculatorPage.resultDisplay.getYearlyTotal();
       expect(parseFloat(value.replace(/[,$]/g, ''))).toBeGreaterThan(0);
     });
 
-    test('显示设备数量', async ({ page }) => {
+    test('显示设备数量', async () => {
       await expect(calculatorPage.resultDisplay.deviceCountCard).toBeVisible();
       const value = await calculatorPage.resultDisplay.getDeviceCount();
       expect(parseInt(value)).toBeGreaterThan(0);
     });
 
-    test('月度总费用大于零', async ({ page }) => {
+    test('月度总费用大于零', async () => {
       await calculatorPage.resultDisplay.expectPositiveMonthlyTotal();
     });
 
-    test('年度总费用约为月度的12倍', async ({ page }) => {
+    test('年度总费用约为月度的12倍', async () => {
       const monthlyStr = await calculatorPage.resultDisplay.getMonthlyTotal();
       const yearlyStr = await calculatorPage.resultDisplay.getYearlyTotal();
 
@@ -113,7 +113,7 @@ test.describe('结果展示', () => {
   });
 
   test.describe('导出功能', () => {
-    test('导出按钮可用', async ({ page }) => {
+    test('导出按钮可用', async () => {
       await calculatorPage.resultDisplay.expectExportEnabled();
     });
 
@@ -137,7 +137,7 @@ test.describe('结果展示', () => {
       await expect(metricsCollapse).toBeVisible();
     });
 
-    test('折叠状态下显示摘要信息', async ({ page }) => {
+    test('折叠状态下显示摘要信息', async () => {
       // 验证摘要信息可见
       const summary = await calculatorPage.resultDisplay.getMetricsSummary();
       expect(summary).toMatch(/存储/);
@@ -145,7 +145,7 @@ test.describe('结果展示', () => {
       expect(summary).toMatch(/传输/);
     });
 
-    test('展开后显示详细指标', async ({ page }) => {
+    test('展开后显示详细指标', async () => {
       // 展开面板
       await calculatorPage.resultDisplay.expandMetrics();
 

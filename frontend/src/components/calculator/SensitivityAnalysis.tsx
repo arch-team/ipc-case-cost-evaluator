@@ -14,7 +14,7 @@ const { Text, Title } = Typography;
 interface SensitivityAnalysisProps {
   input: CostCalculationInput;
   baselineCost: number;
-  onApplyValue?: (field: string, value: any) => void;
+  onApplyValue?: (field: string, value: string | number) => void;
 }
 
 interface SensitivityItem {
@@ -102,7 +102,7 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
         ...inp,
         functional: {
           ...inp.functional,
-          video_quality: (['720p', '1080p', '2k', '4k'][val] as any) || '1080p',
+          video_quality: (['720p', '1080p', '2k', '4k'] as const)[val] || '1080p',
         },
       }),
     },

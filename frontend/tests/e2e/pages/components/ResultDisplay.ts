@@ -336,7 +336,7 @@ export class ResultDisplay {
    */
   verifyUnitPriceFormat(value: string): boolean {
     // 匹配 $X.XXXX/单位 格式
-    const pattern = /^\$[\d.]+\/[\w\-\/]+$/;
+    const pattern = /^\$[\d.]+\/[\w\-/]+$/;
     return pattern.test(value);
   }
 

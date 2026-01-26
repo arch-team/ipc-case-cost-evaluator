@@ -14,7 +14,7 @@ import {
   SettingOutlined,
 } from '@ant-design/icons';
 import { scenarioApi } from '../../api/client';
-import type { Scenario, CostCalculationInput, ScenarioCategory } from '../../types';
+import type { Scenario, CostCalculationInput, ScenarioCategory, RecordingMode, VideoQuality, StorageClass } from '../../types';
 
 const { Title, Text } = Typography;
 
@@ -73,15 +73,15 @@ const ScenarioSelector: React.FC<Props> = ({ onSelect, onCustom }) => {
     const input: CostCalculationInput = {
       functional: {
         device_count: scenario.functional.device_count,
-        recording_mode: scenario.functional.recording_mode as any,
-        video_quality: scenario.functional.video_quality as any,
+        recording_mode: scenario.functional.recording_mode as RecordingMode,
+        video_quality: scenario.functional.video_quality as VideoQuality,
         events_per_day: scenario.functional.events_per_day || 0,
         event_duration_sec: scenario.functional.event_duration_sec || 0,
         retention_days: scenario.functional.retention_days,
         access_pattern: scenario.functional.access_pattern,
       },
       technical: {
-        storage_class: scenario.technical.storage_class as any,
+        storage_class: scenario.technical.storage_class as StorageClass,
       },
       pricing: {
         region: scenario.pricing.region,

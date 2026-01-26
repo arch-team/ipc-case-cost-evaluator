@@ -57,7 +57,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
                 monthly_transfer_gb: result.metrics.monthly_transfer_gb,
               }
             : undefined,
-        } as any,
+        } as unknown as CostSummary,
         comparison: options.includeComparison && comparison ? comparison : undefined,
         title: reportName,
       });

@@ -193,7 +193,7 @@ test.describe('页面导航', () => {
       // 应该有某种 404 处理（重定向或显示错误）
       // 具体行为取决于应用实现
       // 这里验证页面可访问
-      const response = await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('networkidle');
     });
   });
 });

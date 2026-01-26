@@ -28,7 +28,7 @@ const regionOptions = [
 ];
 
 const PricingForm: React.FC<PricingFormProps> = ({ value, onChange }) => {
-  const handleChange = (field: keyof PricingDimensions, val: any) => {
+  const handleChange = (field: keyof PricingDimensions, val: string | number | null | undefined) => {
     onChange({ ...value, [field]: val });
   };
 

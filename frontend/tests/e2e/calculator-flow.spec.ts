@@ -3,7 +3,7 @@
  */
 import { test, expect } from '@playwright/test';
 import { CalculatorPage } from './pages';
-import { standardInput, timeouts } from './fixtures/test-data';
+import { standardInput } from './fixtures/test-data';
 
 test.describe('计算器完整流程', () => {
   let calculatorPage: CalculatorPage;
@@ -13,7 +13,7 @@ test.describe('计算器完整流程', () => {
     await calculatorPage.goto();
   });
 
-  test('选择预设场景后完成计算', async ({ page }) => {
+  test('选择预设场景后完成计算', async () => {
     // 等待场景加载
     await calculatorPage.scenarioSelector.waitForScenariosLoaded();
 
@@ -42,7 +42,7 @@ test.describe('计算器完整流程', () => {
     await calculatorPage.resultDisplay.expectPositiveMonthlyTotal();
   });
 
-  test('自定义配置后完成计算', async ({ page }) => {
+  test('自定义配置后完成计算', async () => {
     // 等待场景加载
     await calculatorPage.scenarioSelector.waitForScenariosLoaded();
 
@@ -74,7 +74,7 @@ test.describe('计算器完整流程', () => {
     await calculatorPage.resultDisplay.expectResultsVisible();
   });
 
-  test('重新计算功能', async ({ page }) => {
+  test('重新计算功能', async () => {
     // 快速完成一次计算
     await calculatorPage.scenarioSelector.waitForScenariosLoaded();
     await calculatorPage.scenarioSelector.selectFirstScenario();
@@ -94,7 +94,7 @@ test.describe('计算器完整流程', () => {
     await calculatorPage.scenarioSelector.expectCustomConfigVisible();
   });
 
-  test('步骤导航（上一步/下一步）', async ({ page }) => {
+  test('步骤导航（上一步/下一步）', async () => {
     // 点击自定义配置进入步骤 1
     await calculatorPage.scenarioSelector.waitForScenariosLoaded();
     await calculatorPage.scenarioSelector.clickCustom();

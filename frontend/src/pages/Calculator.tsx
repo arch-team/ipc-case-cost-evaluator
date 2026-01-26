@@ -2,7 +2,7 @@
  * 成本计算页面 - 双栏固定式布局
  * 左侧参数输入区 (400px) + 右侧结果展示区 (自适应)
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, Empty, Spin, Typography, Badge, message } from 'antd';
 import { DollarOutlined, SyncOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import type {
@@ -10,6 +10,7 @@ import type {
   CostSummary,
   ComparisonResult,
   MultiTechnicalConfig,
+  VideoQuality,
 } from '../types';
 import { calculatorApi } from '../api/client';
 import { createInitialMultiConfig } from '../components/calculator/MultiSchemePanel';
@@ -61,58 +62,54 @@ const Calculator: React.FC = () => {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   // 用户登录状态（简化处理）
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn] = useState(() => !!localStorage.getItem('token'));
   const [evaluationId] = useState<string | undefined>();
 
-  // 检查登录状态
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    setIsLoggedIn(!!token);
-  }, []);
-
   // 实时计算的防抖函数 - 单方案模式
-  const calculateSingleDebounced = useCallback(
-    debounce(async (inputData: CostCalculationInput) => {
-      setStatus('calculating');
-      try {
-        const [calcResult, compResult] = await Promise.all([
-          calculatorApi.calculate(inputData),
-          calculatorApi.compare(inputData),
-        ]);
-        setResult(calcResult);
-        setComparison(compResult);
-        setStatus('success');
-      } catch (error) {
-        console.error('计算失败:', error);
-        setStatus('error');
-      }
-    }, 500),
+  const calculateSingleDebounced = useMemo(
+    () =>
+      debounce(async (inputData: CostCalculationInput) => {
+        setStatus('calculating');
+        try {
+          const [calcResult, compResult] = await Promise.all([
+            calculatorApi.calculate(inputData),
+            calculatorApi.compare(inputData),
+          ]);
+          setResult(calcResult);
+          setComparison(compResult);
+          setStatus('success');
+        } catch (error) {
+          console.error('计算失败:', error);
+          setStatus('error');
+        }
+      }, 500),
     []
   );
 
   // 实时计算的防抖函数 - 多方案模式
-  const calculateMultiDebounced = useCallback(
-    debounce(async (inputData: CostCalculationInput, config: MultiTechnicalConfig) => {
-      setStatus('calculating');
-      try {
-        const { results, comparison: compResult } = await calculatorApi.batchCalculate(
-          inputData.functional,
-          inputData.pricing,
-          config.schemes
-        );
-        setComparison(compResult);
-        // 设置第一个启用方案的结果为主结果
-        if (results.length > 0) {
-          setResult(results[0].result);
-        } else {
-          setResult(null);
+  const calculateMultiDebounced = useMemo(
+    () =>
+      debounce(async (inputData: CostCalculationInput, config: MultiTechnicalConfig) => {
+        setStatus('calculating');
+        try {
+          const { results, comparison: compResult } = await calculatorApi.batchCalculate(
+            inputData.functional,
+            inputData.pricing,
+            config.schemes
+          );
+          setComparison(compResult);
+          // 设置第一个启用方案的结果为主结果
+          if (results.length > 0) {
+            setResult(results[0].result);
+          } else {
+            setResult(null);
+          }
+          setStatus('success');
+        } catch (error) {
+          console.error('批量计算失败:', error);
+          setStatus('error');
         }
-        setStatus('success');
-      } catch (error) {
-        console.error('批量计算失败:', error);
-        setStatus('error');
-      }
-    }, 500),
+      }, 500),
     []
   );
 
@@ -136,15 +133,15 @@ const Calculator: React.FC = () => {
   };
 
   // 处理敏感度分析中的值应用
-  const handleApplySensitivityValue = (field: string, value: any) => {
+  const handleApplySensitivityValue = (field: string, value: string | number) => {
     const newInput = { ...input };
-    if (field === 'access_pattern') {
+    if (field === 'access_pattern' && typeof value === 'number') {
       newInput.functional = { ...newInput.functional, access_pattern: value };
-    } else if (field === 'video_quality') {
-      newInput.functional = { ...newInput.functional, video_quality: value };
-    } else if (field === 'device_count') {
+    } else if (field === 'video_quality' && typeof value === 'string') {
+      newInput.functional = { ...newInput.functional, video_quality: value as VideoQuality };
+    } else if (field === 'device_count' && typeof value === 'number') {
       newInput.functional = { ...newInput.functional, device_count: value };
-    } else if (field === 'retention_days') {
+    } else if (field === 'retention_days' && typeof value === 'number') {
       newInput.functional = { ...newInput.functional, retention_days: value };
     }
     setInput(newInput);

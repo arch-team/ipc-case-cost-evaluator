@@ -250,7 +250,7 @@ export const tolerances = {
 export const formatPatterns = {
   monetary2: /^\$[\d,]+\.\d{2}$/, // 2位小数货币 $X.XX
   monetary4: /^\$[\d,]+\.\d{4}$/, // 4位小数货币 $X.XXXX
-  unitPrice: /^\$[\d.]+\/[\w\-\/月]+$/, // 单价格式 $X.XXXX/单位
+  unitPrice: /^\$[\d.]+\/[\w\-/月]+$/, // 单价格式 $X.XXXX/单位
   integer: /^[\d,]+$/, // 整数（可带千分位）
   percentage: /^\d+(\.\d+)?%$/, // 百分比 X.X%
 };

@@ -17,19 +17,19 @@ test.describe('表单验证', () => {
   });
 
   test.describe('设备数量输入', () => {
-    test('接受有效数值', async ({ page }) => {
+    test('接受有效数值', async () => {
       await calculatorPage.functionalForm.setDeviceCount(100);
       const value = await calculatorPage.functionalForm.getDeviceCount();
       expect(value).toBe('100');
     });
 
-    test('接受最小值', async ({ page }) => {
+    test('接受最小值', async () => {
       await calculatorPage.functionalForm.setDeviceCount(smallScaleInput.deviceCount);
       const value = await calculatorPage.functionalForm.getDeviceCount();
       expect(value).toBe(smallScaleInput.deviceCount.toString());
     });
 
-    test('接受大数值', async ({ page }) => {
+    test('接受大数值', async () => {
       await calculatorPage.functionalForm.setDeviceCount(largeScaleInput.deviceCount);
       const value = await calculatorPage.functionalForm.getDeviceCount();
       expect(value).toBe(largeScaleInput.deviceCount.toString());
@@ -37,19 +37,19 @@ test.describe('表单验证', () => {
   });
 
   test.describe('保留天数输入', () => {
-    test('接受有效天数', async ({ page }) => {
+    test('接受有效天数', async () => {
       await calculatorPage.functionalForm.setRetentionDays(30);
       const value = await calculatorPage.functionalForm.getRetentionDays();
       expect(value).toBe('30');
     });
 
-    test('接受短期保留', async ({ page }) => {
+    test('接受短期保留', async () => {
       await calculatorPage.functionalForm.setRetentionDays(7);
       const value = await calculatorPage.functionalForm.getRetentionDays();
       expect(value).toBe('7');
     });
 
-    test('接受长期保留', async ({ page }) => {
+    test('接受长期保留', async () => {
       await calculatorPage.functionalForm.setRetentionDays(90);
       const value = await calculatorPage.functionalForm.getRetentionDays();
       expect(value).toBe('90');
@@ -57,7 +57,7 @@ test.describe('表单验证', () => {
   });
 
   test.describe('录像模式切换', () => {
-    test('切换到事件触发模式显示事件字段', async ({ page }) => {
+    test('切换到事件触发模式显示事件字段', async () => {
       // 选择事件触发模式
       await calculatorPage.functionalForm.selectRecordingMode(recordingModes.eventTriggered);
 
@@ -65,7 +65,7 @@ test.describe('表单验证', () => {
       await calculatorPage.functionalForm.expectEventFieldsVisible();
     });
 
-    test('切换到全天候模式隐藏事件字段', async ({ page }) => {
+    test('切换到全天候模式隐藏事件字段', async () => {
       // 先选择事件触发模式
       await calculatorPage.functionalForm.selectRecordingMode(recordingModes.eventTriggered);
       await calculatorPage.functionalForm.expectEventFieldsVisible();
@@ -77,7 +77,7 @@ test.describe('表单验证', () => {
       await calculatorPage.functionalForm.expectEventFieldsHidden();
     });
 
-    test('切换到定时段模式隐藏事件字段', async ({ page }) => {
+    test('切换到定时段模式隐藏事件字段', async () => {
       // 先选择事件触发模式
       await calculatorPage.functionalForm.selectRecordingMode(recordingModes.eventTriggered);
 
@@ -90,7 +90,7 @@ test.describe('表单验证', () => {
   });
 
   test.describe('视频质量选择', () => {
-    test('可以选择不同视频质量', async ({ page }) => {
+    test('可以选择不同视频质量', async () => {
       // 测试数据：value -> 显示文本的关键部分
       const qualities: Array<{ value: string; expectedText: RegExp }> = [
         { value: '720p', expectedText: /720P/i },
@@ -109,19 +109,19 @@ test.describe('表单验证', () => {
   });
 
   test.describe('事件参数输入', () => {
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async () => {
       // 确保选择事件触发模式
       await calculatorPage.functionalForm.selectRecordingMode(recordingModes.eventTriggered);
     });
 
-    test('设置每日事件数', async ({ page }) => {
+    test('设置每日事件数', async () => {
       await calculatorPage.functionalForm.setEventsPerDay(400);
       // 验证输入成功（值被接受）
       const input = calculatorPage.functionalForm.eventsPerDayInput;
       await expect(input).toHaveValue('400');
     });
 
-    test('设置事件时长', async ({ page }) => {
+    test('设置事件时长', async () => {
       await calculatorPage.functionalForm.setEventDuration(15);
       // 验证输入成功
       const input = calculatorPage.functionalForm.eventDurationInput;
@@ -130,14 +130,14 @@ test.describe('表单验证', () => {
   });
 
   test.describe('回看比例滑块', () => {
-    test('滑块可见且可交互', async ({ page }) => {
+    test('滑块可见且可交互', async () => {
       const slider = calculatorPage.functionalForm.accessPatternSlider;
       await expect(slider).toBeVisible();
     });
   });
 
   test.describe('表单数据持久化', () => {
-    test('步骤切换后保持表单数据', async ({ page }) => {
+    test('步骤切换后保持表单数据', async () => {
       // 设置一些值
       await calculatorPage.functionalForm.setDeviceCount(200);
       await calculatorPage.functionalForm.setRetentionDays(60);

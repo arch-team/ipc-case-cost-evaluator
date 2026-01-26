@@ -32,6 +32,9 @@ import type {
   Scenario,
   ScenarioCategory,
   MultiTechnicalConfig,
+  RecordingMode,
+  VideoQuality,
+  StorageClass,
 } from '../../types';
 import { scenarioApi } from '../../api/client';
 import FunctionalForm from './FunctionalForm';
@@ -118,15 +121,15 @@ const InputPanel: React.FC<InputPanelProps> = ({
     const input: CostCalculationInput = {
       functional: {
         device_count: scenario.functional.device_count,
-        recording_mode: scenario.functional.recording_mode as any,
-        video_quality: scenario.functional.video_quality as any,
+        recording_mode: scenario.functional.recording_mode as RecordingMode,
+        video_quality: scenario.functional.video_quality as VideoQuality,
         events_per_day: scenario.functional.events_per_day || 400,
         event_duration_sec: scenario.functional.event_duration_sec || 15,
         retention_days: scenario.functional.retention_days,
         access_pattern: scenario.functional.access_pattern,
       },
       technical: {
-        storage_class: scenario.technical.storage_class as any,
+        storage_class: scenario.technical.storage_class as StorageClass,
       },
       pricing: {
         region: scenario.pricing.region,

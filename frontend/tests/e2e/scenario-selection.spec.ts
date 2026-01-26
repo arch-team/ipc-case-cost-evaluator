@@ -3,7 +3,6 @@
  */
 import { test, expect } from '@playwright/test';
 import { CalculatorPage } from './pages';
-import { timeouts } from './fixtures/test-data';
 
 test.describe('场景选择', () => {
   let calculatorPage: CalculatorPage;
@@ -44,7 +43,7 @@ test.describe('场景选择', () => {
     await expect(categoryTitle).toBeVisible();
   });
 
-  test('点击场景卡片自动填充参数', async ({ page }) => {
+  test('点击场景卡片自动填充参数', async () => {
     await calculatorPage.scenarioSelector.waitForScenariosLoaded();
 
     // 获取第一个场景卡片的信息
@@ -79,7 +78,7 @@ test.describe('场景选择', () => {
     expect(line1).toMatch(/\d+\s*天/);
   });
 
-  test('点击自定义配置进入表单', async ({ page }) => {
+  test('点击自定义配置进入表单', async () => {
     await calculatorPage.scenarioSelector.waitForScenariosLoaded();
 
     // 点击自定义配置
@@ -111,7 +110,7 @@ test.describe('场景选择', () => {
     await calculatorPage.scenarioSelector.expectCustomConfigVisible();
   });
 
-  test.skip('场景加载中显示 loading 状态', async ({ page }) => {
+  test.skip('场景加载中显示 loading 状态', async () => {
     // 跳过此测试 - API 响应太快，难以可靠地捕捉 loading 状态
   });
 });

@@ -30,6 +30,15 @@ interface CostRow {
   unitPrices: Record<string, number>;
 }
 
+// 表格行类型（包含费用行和汇总行）
+interface TableRow extends Partial<CostRow> {
+  key: string;
+  name: string;
+  unit: string;
+  isTotal?: boolean;
+  isSummary?: boolean;
+}
+
 // 费用项定义
 const costRows: CostRow[] = [
   {
@@ -131,7 +140,7 @@ const DetailedComparisonTable: React.FC<DetailedComparisonTableProps> = ({
       key: 'name',
       width: 120,
       fixed: 'left' as const,
-      render: (text: string, record: any) => (
+      render: (text: string, record: TableRow) => (
         <Text strong={record.isTotal}>{text}</Text>
       ),
     },
@@ -163,15 +172,15 @@ const DetailedComparisonTable: React.FC<DetailedComparisonTableProps> = ({
           key: `${item.name}_quantity`,
           width: 100,
           align: 'right' as const,
-          render: (_: any, record: any) => {
+          render: (_: unknown, record: TableRow) => {
             if (record.isTotal || record.isSummary) return null;
             const quantity = record.getQuantity?.(metrics);
             if (quantity === null || quantity === undefined) return '-';
             return (
               <div>
-                <div>{record.formatQuantity(quantity)}</div>
+                <div>{record.formatQuantity?.(quantity)}</div>
                 <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>
-                  {formatUnitPrice(record.unitPrices[item.name] || 0)}
+                  {formatUnitPrice(record.unitPrices?.[item.name] || 0)}
                 </div>
               </div>
             );
@@ -183,7 +192,7 @@ const DetailedComparisonTable: React.FC<DetailedComparisonTableProps> = ({
           key: `${item.name}_amount`,
           width: 100,
           align: 'right' as const,
-          render: (_: any, record: any) => {
+          render: (_: unknown, record: TableRow) => {
             if (record.isTotal) {
               return (
                 <Text strong style={{ fontSize: 16 }}>
@@ -259,7 +268,7 @@ const DetailedComparisonTable: React.FC<DetailedComparisonTableProps> = ({
         bordered
         size="middle"
         scroll={{ x: 'max-content' }}
-        rowClassName={(record: any) => {
+        rowClassName={(record: TableRow) => {
           if (record.isTotal) return 'comparison-row-total';
           if (record.isSummary) return 'comparison-row-summary';
           return '';

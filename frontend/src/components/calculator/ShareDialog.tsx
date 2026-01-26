@@ -50,8 +50,9 @@ const ShareDialog: React.FC<ShareDialogProps> = ({
       });
       setShareResult(result);
       message.success('分享链接已生成');
-    } catch (error: any) {
-      if (error.response?.status === 401) {
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { status?: number } };
+      if (axiosError.response?.status === 401) {
         message.error('请先登录');
       } else {
         message.error('生成分享链接失败');
@@ -70,7 +71,7 @@ const ShareDialog: React.FC<ShareDialogProps> = ({
       setCopied(true);
       message.success('链接已复制');
       setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
+    } catch {
       message.error('复制失败');
     }
   };

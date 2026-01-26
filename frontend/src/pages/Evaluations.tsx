@@ -41,8 +41,9 @@ const Evaluations: React.FC = () => {
     try {
       const data = await evaluationApi.list();
       setEvaluations(data);
-    } catch (error: any) {
-      if (error.response?.status === 401) {
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { status?: number } };
+      if (axiosError.response?.status === 401) {
         message.warning('请先登录');
       } else {
         message.error('获取评估记录失败');
@@ -61,7 +62,7 @@ const Evaluations: React.FC = () => {
       await evaluationApi.delete(id);
       message.success('删除成功');
       fetchEvaluations();
-    } catch (error) {
+    } catch {
       message.error('删除失败');
     }
   };
@@ -83,7 +84,7 @@ const Evaluations: React.FC = () => {
       message.success('更新成功');
       setEditModalVisible(false);
       fetchEvaluations();
-    } catch (error) {
+    } catch {
       message.error('更新失败');
     }
   };
@@ -109,14 +110,14 @@ const Evaluations: React.FC = () => {
     {
       title: '设备数量',
       key: 'device_count',
-      render: (_: any, record: Evaluation) => (
+      render: (_: unknown, record: Evaluation) => (
         <span>{record.input_data.functional.device_count} 台</span>
       ),
     },
     {
       title: '存储类型',
       key: 'storage_class',
-      render: (_: any, record: Evaluation) => (
+      render: (_: unknown, record: Evaluation) => (
         <Tag color={record.input_data.technical.storage_class === 'STANDARD' ? 'blue' : 'purple'}>
           {record.input_data.technical.storage_class}
         </Tag>
@@ -125,7 +126,7 @@ const Evaluations: React.FC = () => {
     {
       title: '月度费用',
       key: 'monthly_cost',
-      render: (_: any, record: Evaluation) => (
+      render: (_: unknown, record: Evaluation) => (
         <Text strong>${record.result.monthly_total.toFixed(2)}</Text>
       ),
     },
@@ -138,7 +139,7 @@ const Evaluations: React.FC = () => {
     {
       title: '操作',
       key: 'actions',
-      render: (_: any, record: Evaluation) => (
+      render: (_: unknown, record: Evaluation) => (
         <Space>
           <Button
             type="link"

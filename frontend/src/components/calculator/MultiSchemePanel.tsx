@@ -278,6 +278,7 @@ const MultiSchemePanel: React.FC<MultiSchemePanelProps> = ({
 export default MultiSchemePanel;
 
 // 创建初始配置的辅助函数
+// eslint-disable-next-line react-refresh/only-export-components
 export const createInitialMultiConfig = (): MultiTechnicalConfig => {
   const scheme = createDefaultScheme(0);
   return {
@@ -287,6 +288,7 @@ export const createInitialMultiConfig = (): MultiTechnicalConfig => {
 };
 
 // 从单一技术配置创建多方案配置
+// eslint-disable-next-line react-refresh/only-export-components
 export const createMultiConfigFromSingle = (
   technical: TechnicalDimensions
 ): MultiTechnicalConfig => {

@@ -95,7 +95,7 @@ const ShareDialog: React.FC<Props> = ({
       setCopied(true);
       message.success('链接已复制到剪贴板');
       setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
+    } catch {
       message.error('复制失败');
     }
   };
@@ -105,7 +105,7 @@ const ShareDialog: React.FC<Props> = ({
       await shareApi.delete(evaluationId, token);
       loadShares();
       message.success('分享已删除');
-    } catch (error) {
+    } catch {
       message.error('删除失败');
     }
   };

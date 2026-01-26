@@ -58,7 +58,6 @@ export class CalculatorPage {
    * 获取当前步骤索引（从 0 开始）
    */
   async getCurrentStep(): Promise<number> {
-    const activeStep = this.page.locator('.ant-steps-item-active');
     const allSteps = this.page.locator('.ant-steps-item');
     const count = await allSteps.count();
 
