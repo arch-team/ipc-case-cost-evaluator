@@ -5,7 +5,7 @@
  */
 import React from 'react';
 import { Select, Tag, Space, Typography } from 'antd';
-import { GlobalOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { GlobalOutlined } from '@ant-design/icons';
 import type { RegionInfo, CacheStatusItem } from '../../types';
 
 const { Text } = Typography;
@@ -32,18 +32,20 @@ const RegionSelector: React.FC<RegionSelectorProps> = ({
     const isFallback = cache?.is_fallback;
 
     return (
-      <Space>
-        <GlobalOutlined />
-        <span>{region.name}</span>
-        <Text type="secondary" style={{ fontSize: 12 }}>
-          ({region.region})
-        </Text>
+      <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+        <Space>
+          <GlobalOutlined style={{ color: '#1677ff' }} />
+          <span>{region.name}</span>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            ({region.region})
+          </Text>
+        </Space>
         {isCached && (
           <Tag
             color={isFallback ? 'orange' : 'green'}
-            style={{ marginLeft: 8, fontSize: 10 }}
+            style={{ fontSize: 10 }}
           >
-            {isFallback ? '本地缓存' : '已缓存'}
+            {isFallback ? '本地' : '已缓存'}
           </Tag>
         )}
       </Space>
@@ -51,54 +53,40 @@ const RegionSelector: React.FC<RegionSelectorProps> = ({
   };
 
   return (
-    <div style={{ marginBottom: 16 }}>
-      <Space direction="vertical" style={{ width: '100%' }}>
-        <Text strong>选择 AWS 区域</Text>
-        <Select
-          value={selectedRegion}
-          onChange={onRegionChange}
-          style={{ width: 400 }}
-          loading={loading}
-          showSearch
-          filterOption={(input, option) => {
-            const region = regions.find(r => r.region === option?.value);
-            if (!region) return false;
-            return (
-              region.name.toLowerCase().includes(input.toLowerCase()) ||
-              region.region.toLowerCase().includes(input.toLowerCase())
-            );
-          }}
-          placeholder="请选择区域"
-          optionLabelProp="label"
-        >
-          {regions.map((region) => (
-              <Select.Option
-                key={region.region}
-                value={region.region}
-                label={`${region.name} (${region.region})`}
-              >
-                {renderOption(region)}
-              </Select.Option>
-          ))}
-        </Select>
-        {cacheStatus?.[selectedRegion] && (
-          <Space style={{ marginTop: 4 }}>
-            {cacheStatus[selectedRegion].is_fallback ? (
-              <Tag icon={<ExclamationCircleOutlined />} color="warning">
-                使用本地缓存数据
-              </Tag>
-            ) : (
-              <Tag icon={<CheckCircleOutlined />} color="success">
-                数据来源: {cacheStatus[selectedRegion].source}
-              </Tag>
-            )}
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              更新于: {new Date(cacheStatus[selectedRegion].updated_at).toLocaleString()}
-            </Text>
-          </Space>
-        )}
-      </Space>
-    </div>
+    <Space direction="vertical" style={{ width: '100%' }}>
+      <Text strong>
+        <GlobalOutlined style={{ marginRight: 8 }} />
+        选择 AWS 区域
+      </Text>
+      <Select
+        value={selectedRegion}
+        onChange={onRegionChange}
+        style={{ width: '100%', maxWidth: 450 }}
+        loading={loading}
+        showSearch
+        filterOption={(input, option) => {
+          const region = regions.find(r => r.region === option?.value);
+          if (!region) return false;
+          return (
+            region.name.toLowerCase().includes(input.toLowerCase()) ||
+            region.region.toLowerCase().includes(input.toLowerCase())
+          );
+        }}
+        placeholder="请选择区域"
+        optionLabelProp="label"
+        size="large"
+      >
+        {regions.map((region) => (
+          <Select.Option
+            key={region.region}
+            value={region.region}
+            label={`${region.name} (${region.region})`}
+          >
+            {renderOption(region)}
+          </Select.Option>
+        ))}
+      </Select>
+    </Space>
   );
 };
 

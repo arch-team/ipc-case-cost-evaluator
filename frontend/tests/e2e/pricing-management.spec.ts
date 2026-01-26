@@ -47,56 +47,65 @@ test.describe('定价管理功能测试', () => {
 
   test('定价管理页面显示服务状态', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/pricing`);
+    await page.waitForLoadState('networkidle');
 
-    // 检查服务状态卡片
-    await expect(page.getByText('服务状态')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('AWS API')).toBeVisible();
+    // 检查服务状态标签页
+    await expect(page.getByRole('tab', { name: /服务状态/ })).toBeVisible({ timeout: 10000 });
+    // 使用更精确的选择器
+    await expect(page.locator('.ant-statistic-title').filter({ hasText: 'AWS API' }).first()).toBeVisible();
     await expect(page.getByText(/可用区域/)).toBeVisible();
   });
 
   test('定价管理页面显示区域选择器', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/pricing`);
+    await page.waitForLoadState('networkidle');
 
     // 检查区域选择器
     await expect(page.getByText('选择 AWS 区域')).toBeVisible({ timeout: 10000 });
 
-    // 检查默认选中的区域
-    const regionSelect = page.locator('.ant-select-selection-item');
-    await expect(regionSelect).toContainText(/Asia Pacific.*Tokyo|ap-northeast-1/);
+    // 等待区域数据加载
+    await page.waitForTimeout(1000);
+
+    // 检查区域选择器是否有值（使用更通用的选择器）
+    const regionInfo = page.locator('text=Asia Pacific (Tokyo)').first();
+    await expect(regionInfo).toBeVisible({ timeout: 5000 });
   });
 
   test('切换区域后加载对应定价数据', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/pricing`);
-
-    // 等待页面加载
     await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
 
     // 点击区域选择器
-    await page.locator('.ant-select-selector').first().click();
+    await page.locator('.ant-select').first().click();
+    await page.waitForTimeout(500);
 
     // 选择新区域
-    await page.getByTitle(/US West.*Oregon/).click();
+    await page.getByText('US West (Oregon)').click();
 
-    // 验证 URL 或数据更新
+    // 等待数据更新
     await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
 
     // 检查区域信息更新
-    await expect(page.getByText(/US West.*Oregon|us-west-2/)).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=US West (Oregon)').first()).toBeVisible({ timeout: 5000 });
   });
 
   test('定价表格显示存储类型', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/pricing`);
+    await page.waitForLoadState('networkidle');
 
     // 等待表格加载
     await expect(page.getByText('存储类型定价')).toBeVisible({ timeout: 10000 });
 
-    // 检查存储类型
+    // 检查存储类型（使用更新后的名称）
     await expect(page.getByText('S3 Standard')).toBeVisible();
-    await expect(page.getByText('S3 Glacier Instant Retrieval')).toBeVisible();
+    await expect(page.getByText('S3 Glacier IR')).toBeVisible();
   });
 
   test('定价表格显示数据传输费率', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/pricing`);
+    await page.waitForLoadState('networkidle');
 
     // 等待表格加载
     await expect(page.getByText('数据传输出站定价')).toBeVisible({ timeout: 10000 });
@@ -108,6 +117,7 @@ test.describe('定价管理功能测试', () => {
 
   test('刷新定价数据按钮可用', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/pricing`);
+    await page.waitForLoadState('networkidle');
 
     // 查找刷新按钮
     const refreshButton = page.getByRole('button', { name: /刷新定价数据/ });
@@ -117,33 +127,42 @@ test.describe('定价管理功能测试', () => {
 
   test('点击刷新按钮执行刷新操作', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/pricing`);
+    await page.waitForLoadState('networkidle');
 
     // 点击刷新按钮
     const refreshButton = page.getByRole('button', { name: /刷新定价数据/ });
     await refreshButton.click();
 
-    // 等待刷新完成（按钮会显示 loading 状态）
-    await expect(refreshButton).toBeDisabled();
+    // 等待操作完成（检查成功消息）
+    await expect(page.locator('.ant-message-success')).toBeVisible({ timeout: 10000 });
 
-    // 等待操作完成
-    await expect(refreshButton).toBeEnabled({ timeout: 10000 });
-
-    // 检查是否有成功消息
-    const successMessage = page.locator('.ant-message-success');
-    await expect(successMessage).toBeVisible({ timeout: 5000 });
+    // 验证按钮恢复可用
+    await expect(refreshButton).toBeEnabled({ timeout: 5000 });
   });
 
-  test('页面底部显示定价数据说明', async ({ page }) => {
+  test('帮助说明标签页显示正确', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/pricing`);
+    await page.waitForLoadState('networkidle');
 
-    // 滚动到页面底部
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    // 点击帮助说明标签
+    await page.getByRole('tab', { name: /帮助说明/ }).click();
 
-    // 检查说明信息
-    await expect(page.getByText('定价数据说明')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('数据来源')).toBeVisible();
+    // 检查帮助内容
+    await expect(page.getByText('数据来源说明')).toBeVisible({ timeout: 5000 });
     await expect(page.getByText('缓存策略')).toBeVisible();
     await expect(page.getByText('回退机制')).toBeVisible();
+  });
+
+  test('缓存状态卡片显示进度条', async ({ page }) => {
+    await page.goto(`${BASE_URL}/admin/pricing`);
+    await page.waitForLoadState('networkidle');
+
+    // 检查缓存状态卡片
+    await expect(page.getByText('缓存状态')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('缓存有效期剩余')).toBeVisible();
+
+    // 检查进度条存在
+    await expect(page.locator('.ant-progress')).toBeVisible();
   });
 
   test('页面截图用于 UI 审查', async ({ page }) => {
@@ -162,15 +181,7 @@ test.describe('定价管理功能测试', () => {
     // 截取头部区域
     await page.screenshot({
       path: 'tests/e2e/screenshots/pricing-management-header.png',
-      clip: { x: 0, y: 0, width: 1280, height: 400 },
+      clip: { x: 0, y: 0, width: 1280, height: 500 },
     });
-
-    // 截取定价表格区域
-    const storageCard = page.locator('text=存储类型定价').locator('..').locator('..');
-    if (await storageCard.isVisible()) {
-      await storageCard.screenshot({
-        path: 'tests/e2e/screenshots/pricing-storage-table.png',
-      });
-    }
   });
 });

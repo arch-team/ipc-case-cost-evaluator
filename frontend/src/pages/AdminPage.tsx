@@ -13,10 +13,13 @@ import {
   Spin,
   message,
   Tag,
-  Descriptions,
   Row,
   Col,
   Statistic,
+  Tabs,
+  Tooltip,
+  Progress,
+  Collapse,
 } from 'antd';
 import {
   ReloadOutlined,
@@ -25,6 +28,10 @@ import {
   CloudServerOutlined,
   DatabaseOutlined,
   ClockCircleOutlined,
+  QuestionCircleOutlined,
+  SyncOutlined,
+  InfoCircleOutlined,
+  DollarOutlined,
 } from '@ant-design/icons';
 import RegionSelector from '../components/admin/RegionSelector';
 import PricingTable from '../components/admin/PricingTable';
@@ -35,7 +42,7 @@ import type {
   PricingRefreshResponse,
 } from '../types';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 // API 基础地址
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
@@ -49,6 +56,7 @@ const AdminPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
 
   // 加载区域列表
   const loadRegions = useCallback(async () => {
@@ -115,11 +123,13 @@ const AdminPage: React.FC = () => {
       const result: PricingRefreshResponse = await response.json();
 
       if (result.success) {
-        message.success(
-          result.is_fallback
-            ? `定价数据已更新（使用本地缓存数据）`
-            : `定价数据已从 AWS API 更新`
-        );
+        setLastRefreshTime(new Date());
+        message.success({
+          content: result.is_fallback
+            ? '定价数据已更新（使用本地缓存数据）'
+            : '定价数据已从 AWS API 成功更新',
+          icon: <CheckCircleOutlined style={{ color: '#52c41a' }} />,
+        });
         // 重新加载定价和状态
         await Promise.all([loadPricing(selectedRegion), loadServiceStatus()]);
       } else {
@@ -150,125 +160,302 @@ const AdminPage: React.FC = () => {
     setSelectedRegion(region);
   };
 
+  // 计算缓存过期进度
+  const getCacheProgress = () => {
+    const cache = serviceStatus?.cache?.[selectedRegion];
+    if (!cache?.cached) return 0;
+    const total = cache.age_seconds + cache.expires_in_seconds;
+    return Math.round((cache.expires_in_seconds / total) * 100);
+  };
+
+  // 格式化剩余时间
+  const formatTimeRemaining = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) {
+      return `${hours} 小时 ${minutes} 分钟`;
+    }
+    return `${minutes} 分钟`;
+  };
+
+  // 服务状态标签页内容
+  const ServiceStatusContent = () => (
+    <Row gutter={[16, 16]}>
+      <Col xs={24} sm={12} md={6}>
+        <Card size="small" bordered={false} style={{ background: '#f6ffed', borderRadius: 8 }}>
+          <Statistic
+            title={
+              <Space>
+                <span>AWS API</span>
+                <Tooltip title="是否启用 AWS Pricing API 实时获取定价">
+                  <QuestionCircleOutlined style={{ color: '#8c8c8c' }} />
+                </Tooltip>
+              </Space>
+            }
+            value={serviceStatus?.api_enabled ? '已启用' : '已禁用'}
+            valueStyle={{
+              color: serviceStatus?.api_enabled ? '#52c41a' : '#faad14',
+              fontSize: 18,
+            }}
+            prefix={
+              serviceStatus?.api_enabled ? (
+                <CheckCircleOutlined />
+              ) : (
+                <ExclamationCircleOutlined />
+              )
+            }
+          />
+        </Card>
+      </Col>
+      <Col xs={24} sm={12} md={6}>
+        <Card size="small" bordered={false} style={{ background: serviceStatus?.api_available ? '#f6ffed' : '#fff2e8', borderRadius: 8 }}>
+          <Statistic
+            title={
+              <Space>
+                <span>API 可用性</span>
+                <Tooltip title="当前 AWS Pricing API 是否可正常访问">
+                  <QuestionCircleOutlined style={{ color: '#8c8c8c' }} />
+                </Tooltip>
+              </Space>
+            }
+            value={
+              serviceStatus?.api_available === null
+                ? '未检测'
+                : serviceStatus?.api_available
+                ? '可用'
+                : '不可用'
+            }
+            valueStyle={{
+              color:
+                serviceStatus?.api_available === null
+                  ? '#8c8c8c'
+                  : serviceStatus?.api_available
+                  ? '#52c41a'
+                  : '#ff4d4f',
+              fontSize: 18,
+            }}
+            prefix={
+              serviceStatus?.api_available ? (
+                <CheckCircleOutlined />
+              ) : (
+                <ExclamationCircleOutlined />
+              )
+            }
+          />
+        </Card>
+      </Col>
+      <Col xs={24} sm={12} md={6}>
+        <Card size="small" bordered={false} style={{ background: '#f6ffed', borderRadius: 8 }}>
+          <Statistic
+            title={
+              <Space>
+                <span>本地回退</span>
+                <Tooltip title="API 不可用时自动使用本地缓存数据">
+                  <QuestionCircleOutlined style={{ color: '#8c8c8c' }} />
+                </Tooltip>
+              </Space>
+            }
+            value={serviceStatus?.fallback_enabled ? '已启用' : '已禁用'}
+            valueStyle={{
+              color: serviceStatus?.fallback_enabled ? '#52c41a' : '#faad14',
+              fontSize: 18,
+            }}
+            prefix={<CheckCircleOutlined />}
+          />
+        </Card>
+      </Col>
+      <Col xs={24} sm={12} md={6}>
+        <Card size="small" bordered={false} style={{ background: '#e6f4ff', borderRadius: 8 }}>
+          <Statistic
+            title="可用区域"
+            value={serviceStatus?.available_regions.length || 0}
+            suffix="个"
+            valueStyle={{ color: '#1677ff', fontSize: 18 }}
+            prefix={<CloudServerOutlined />}
+          />
+        </Card>
+      </Col>
+      {!serviceStatus?.api_available && serviceStatus?.fallback_enabled && (
+        <Col span={24}>
+          <Alert
+            message="AWS Pricing API 当前不可用"
+            description="系统正在使用本地缓存的定价数据。本地数据可能不是最新的，建议稍后点击「刷新定价数据」重试。"
+            type="warning"
+            showIcon
+          />
+        </Col>
+      )}
+    </Row>
+  );
+
+  // 帮助信息内容
+  const HelpContent = () => (
+    <Collapse
+      ghost
+      items={[
+        {
+          key: '1',
+          label: (
+            <Space>
+              <InfoCircleOutlined />
+              <span>数据来源说明</span>
+            </Space>
+          ),
+          children: (
+            <div style={{ paddingLeft: 24 }}>
+              <Space direction="vertical" size="small">
+                <div>
+                  <Tag color="green">AWS_API</Tag>
+                  <Text>从 AWS Pricing API 实时获取的最新定价数据</Text>
+                </div>
+                <div>
+                  <Tag color="orange">LOCAL_FALLBACK</Tag>
+                  <Text>API 不可用时使用的本地缓存定价数据</Text>
+                </div>
+              </Space>
+            </div>
+          ),
+        },
+        {
+          key: '2',
+          label: (
+            <Space>
+              <ClockCircleOutlined />
+              <span>缓存策略</span>
+            </Space>
+          ),
+          children: (
+            <div style={{ paddingLeft: 24 }}>
+              <Text>定价数据缓存 24 小时，过期后首次访问时自动重新获取。手动点击「刷新定价数据」可强制更新。</Text>
+            </div>
+          ),
+        },
+        {
+          key: '3',
+          label: (
+            <Space>
+              <SyncOutlined />
+              <span>回退机制</span>
+            </Space>
+          ),
+          children: (
+            <div style={{ paddingLeft: 24 }}>
+              <Text>当 AWS Pricing API 不可用时（网络问题、服务故障等），系统自动使用本地 JSON 文件中预置的定价数据，确保服务不中断。</Text>
+            </div>
+          ),
+        },
+      ]}
+    />
+  );
+
   return (
     <div>
       {/* 页面标题 */}
       <Card style={{ marginBottom: 16 }}>
         <Row gutter={24} align="middle">
           <Col flex="auto">
-            <Title level={4} style={{ margin: 0 }}>
-              <CloudServerOutlined style={{ marginRight: 8 }} />
-              定价数据管理
-            </Title>
-            <Paragraph type="secondary" style={{ marginBottom: 0, marginTop: 8 }}>
-              查看和刷新 AWS S3 各区域的定价数据，确保成本计算的准确性
-            </Paragraph>
+            <Space direction="vertical" size={4}>
+              <Title level={4} style={{ margin: 0 }}>
+                <DollarOutlined style={{ marginRight: 8 }} />
+                定价数据管理
+              </Title>
+              <Text type="secondary">
+                查看和刷新 AWS S3 各区域的定价数据，确保成本计算的准确性
+              </Text>
+            </Space>
           </Col>
           <Col>
-            <Button
-              type="primary"
-              icon={<ReloadOutlined spin={refreshing} />}
-              onClick={refreshPricing}
-              loading={refreshing}
-              size="large"
-            >
-              刷新定价数据
-            </Button>
+            <Space direction="vertical" size={4} align="end">
+              <Button
+                type="primary"
+                icon={<ReloadOutlined spin={refreshing} />}
+                onClick={refreshPricing}
+                loading={refreshing}
+                size="large"
+              >
+                刷新定价数据
+              </Button>
+              {lastRefreshTime && (
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  上次刷新: {lastRefreshTime.toLocaleTimeString()}
+                </Text>
+              )}
+            </Space>
           </Col>
         </Row>
       </Card>
 
-      {/* 服务状态 */}
+      {/* 服务状态 - 使用 Tabs 组织 */}
       {serviceStatus && (
         <Card style={{ marginBottom: 16 }}>
-          <Title level={5}>
-            <DatabaseOutlined style={{ marginRight: 8 }} />
-            服务状态
-          </Title>
-          <Row gutter={24}>
-            <Col span={6}>
-              <Statistic
-                title="AWS API"
-                value={serviceStatus.api_enabled ? '已启用' : '已禁用'}
-                valueStyle={{
-                  color: serviceStatus.api_enabled ? '#52c41a' : '#faad14',
-                }}
-                prefix={
-                  serviceStatus.api_enabled ? (
-                    <CheckCircleOutlined />
-                  ) : (
-                    <ExclamationCircleOutlined />
-                  )
-                }
-              />
-            </Col>
-            <Col span={6}>
-              <Statistic
-                title="API 可用性"
-                value={
-                  serviceStatus.api_available === null
-                    ? '未检测'
-                    : serviceStatus.api_available
-                    ? '可用'
-                    : '不可用'
-                }
-                valueStyle={{
-                  color:
-                    serviceStatus.api_available === null
-                      ? '#8c8c8c'
-                      : serviceStatus.api_available
-                      ? '#52c41a'
-                      : '#ff4d4f',
-                }}
-                prefix={
-                  serviceStatus.api_available ? (
-                    <CheckCircleOutlined />
-                  ) : (
-                    <ExclamationCircleOutlined />
-                  )
-                }
-              />
-            </Col>
-            <Col span={6}>
-              <Statistic
-                title="本地回退"
-                value={serviceStatus.fallback_enabled ? '已启用' : '已禁用'}
-                valueStyle={{
-                  color: serviceStatus.fallback_enabled ? '#52c41a' : '#faad14',
-                }}
-                prefix={<CheckCircleOutlined />}
-              />
-            </Col>
-            <Col span={6}>
-              <Statistic
-                title="可用区域"
-                value={serviceStatus.available_regions.length}
-                suffix="个"
-                prefix={<CloudServerOutlined />}
-              />
-            </Col>
-          </Row>
-          {!serviceStatus.api_available && serviceStatus.fallback_enabled && (
-            <Alert
-              message="AWS Pricing API 不可用"
-              description="系统将使用本地缓存的定价数据。本地数据可能不是最新的，建议稍后重试刷新。"
-              type="warning"
-              showIcon
-              style={{ marginTop: 16 }}
-            />
-          )}
+          <Tabs
+            defaultActiveKey="status"
+            items={[
+              {
+                key: 'status',
+                label: (
+                  <Space>
+                    <DatabaseOutlined />
+                    服务状态
+                  </Space>
+                ),
+                children: <ServiceStatusContent />,
+              },
+              {
+                key: 'help',
+                label: (
+                  <Space>
+                    <QuestionCircleOutlined />
+                    帮助说明
+                  </Space>
+                ),
+                children: <HelpContent />,
+              },
+            ]}
+          />
         </Card>
       )}
 
-      {/* 区域选择器 */}
+      {/* 区域选择器与缓存状态 */}
       <Card style={{ marginBottom: 16 }}>
-        <RegionSelector
-          regions={regions}
-          selectedRegion={selectedRegion}
-          onRegionChange={handleRegionChange}
-          cacheStatus={serviceStatus?.cache}
-          loading={loading}
-        />
+        <Row gutter={24} align="middle">
+          <Col xs={24} md={12}>
+            <RegionSelector
+              regions={regions}
+              selectedRegion={selectedRegion}
+              onRegionChange={handleRegionChange}
+              cacheStatus={serviceStatus?.cache}
+              loading={loading}
+            />
+          </Col>
+          <Col xs={24} md={12}>
+            {serviceStatus?.cache?.[selectedRegion] && (
+              <Card size="small" bordered style={{ borderRadius: 8 }}>
+                <Space direction="vertical" style={{ width: '100%' }} size="small">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text strong>缓存状态</Text>
+                    {serviceStatus.cache[selectedRegion].is_fallback ? (
+                      <Tag color="warning">本地数据</Tag>
+                    ) : (
+                      <Tag color="success">AWS API</Tag>
+                    )}
+                  </div>
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      缓存有效期剩余
+                    </Text>
+                    <Progress
+                      percent={getCacheProgress()}
+                      size="small"
+                      format={() => formatTimeRemaining(serviceStatus.cache[selectedRegion].expires_in_seconds)}
+                      strokeColor={getCacheProgress() > 20 ? '#52c41a' : '#faad14'}
+                    />
+                  </div>
+                </Space>
+              </Card>
+            )}
+          </Col>
+        </Row>
       </Card>
 
       {/* 错误提示 */}
@@ -288,33 +475,6 @@ const AdminPage: React.FC = () => {
       <Spin spinning={loading}>
         <PricingTable pricing={pricing} loading={loading} />
       </Spin>
-
-      {/* 说明信息 */}
-      <Card style={{ marginTop: 16 }}>
-        <Title level={5}>
-          <ClockCircleOutlined style={{ marginRight: 8 }} />
-          定价数据说明
-        </Title>
-        <Descriptions column={1} size="small">
-          <Descriptions.Item label="数据来源">
-            <Space>
-              <Tag color="green">AWS_API</Tag>
-              <Text>从 AWS Pricing API 实时获取</Text>
-              <Tag color="orange">LOCAL_FALLBACK</Tag>
-              <Text>使用本地缓存的定价数据</Text>
-            </Space>
-          </Descriptions.Item>
-          <Descriptions.Item label="缓存策略">
-            定价数据缓存 24 小时，过期后自动重新获取
-          </Descriptions.Item>
-          <Descriptions.Item label="回退机制">
-            当 AWS Pricing API 不可用时，自动使用本地 JSON 文件中的定价数据
-          </Descriptions.Item>
-          <Descriptions.Item label="更新建议">
-            建议定期点击「刷新定价数据」按钮，确保使用最新的 AWS 官方价格
-          </Descriptions.Item>
-        </Descriptions>
-      </Card>
     </div>
   );
 };

@@ -4,13 +4,14 @@
  * 显示指定区域的 S3 各存储类型定价详情
  */
 import React from 'react';
-import { Table, Card, Typography, Tag, Descriptions, Divider, Space, Tooltip } from 'antd';
+import { Table, Card, Typography, Tag, Row, Col, Divider, Space, Tooltip, Empty } from 'antd';
 import {
   DatabaseOutlined,
   CloudUploadOutlined,
   CloudDownloadOutlined,
   SwapOutlined,
-  InfoCircleOutlined,
+  GlobalOutlined,
+  DollarOutlined,
 } from '@ant-design/icons';
 import type { PricingDetailResponse } from '../../types';
 
@@ -24,8 +25,15 @@ interface PricingTableProps {
 // 存储类型显示名称映射
 const storageClassNames: { [key: string]: string } = {
   STANDARD: 'S3 Standard',
-  GLACIER_IR: 'S3 Glacier Instant Retrieval',
-  DEEP_ARCHIVE: 'S3 Glacier Deep Archive',
+  GLACIER_IR: 'S3 Glacier IR',
+  DEEP_ARCHIVE: 'S3 Deep Archive',
+};
+
+// 存储类型描述
+const storageClassDescriptions: { [key: string]: string } = {
+  STANDARD: '适用于频繁访问的数据，毫秒级延迟',
+  GLACIER_IR: '适用于需要即时访问的归档数据，毫秒级检索',
+  DEEP_ARCHIVE: '适用于长期归档，检索时间 12-48 小时',
 };
 
 // 存储类型颜色映射
@@ -39,7 +47,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false })
   if (!pricing) {
     return (
       <Card loading={loading}>
-        <Text type="secondary">请选择区域查看定价信息</Text>
+        <Empty description="请选择区域查看定价信息" />
       </Card>
     );
   }
@@ -50,89 +58,118 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false })
       title: '存储类型',
       dataIndex: 'storageClass',
       key: 'storageClass',
+      width: 200,
       render: (value: string) => (
-        <Tag color={storageClassColors[value] || 'default'}>
-          {storageClassNames[value] || value}
-        </Tag>
+        <Space direction="vertical" size={0}>
+          <Tag color={storageClassColors[value] || 'default'}>
+            {storageClassNames[value] || value}
+          </Tag>
+          <Text type="secondary" style={{ fontSize: 11 }}>
+            {storageClassDescriptions[value]}
+          </Text>
+        </Space>
       ),
     },
     {
       title: (
         <Tooltip title="每 GB 每月存储费用">
-          <Space>
+          <Space size={4}>
             <DatabaseOutlined />
-            存储费用
-            <InfoCircleOutlined style={{ fontSize: 12 }} />
+            存储
           </Space>
         </Tooltip>
       ),
       dataIndex: 'storage_per_gb_month',
       key: 'storage',
-      render: (value: number) => `$${value.toFixed(4)}/GB-月`,
+      align: 'right' as const,
+      render: (value: number) => (
+        <Text strong style={{ color: '#1677ff' }}>
+          ${value.toFixed(4)}
+          <Text type="secondary" style={{ fontSize: 11 }}>/GB-月</Text>
+        </Text>
+      ),
     },
     {
       title: (
         <Tooltip title="每千次 PUT/POST/LIST 请求费用">
-          <Space>
+          <Space size={4}>
             <CloudUploadOutlined />
-            PUT 请求
-            <InfoCircleOutlined style={{ fontSize: 12 }} />
+            PUT
           </Space>
         </Tooltip>
       ),
       dataIndex: 'put_per_1000',
       key: 'put',
-      render: (value: number) => `$${value.toFixed(4)}/千次`,
+      align: 'right' as const,
+      render: (value: number) => (
+        <Text>
+          ${value.toFixed(4)}
+          <Text type="secondary" style={{ fontSize: 11 }}>/千次</Text>
+        </Text>
+      ),
     },
     {
       title: (
         <Tooltip title="每千次 GET/SELECT 请求费用">
-          <Space>
+          <Space size={4}>
             <CloudDownloadOutlined />
-            GET 请求
-            <InfoCircleOutlined style={{ fontSize: 12 }} />
+            GET
           </Space>
         </Tooltip>
       ),
       dataIndex: 'get_per_1000',
       key: 'get',
-      render: (value: number) => `$${value.toFixed(4)}/千次`,
+      align: 'right' as const,
+      render: (value: number) => (
+        <Text>
+          ${value.toFixed(4)}
+          <Text type="secondary" style={{ fontSize: 11 }}>/千次</Text>
+        </Text>
+      ),
     },
     {
       title: (
         <Tooltip title="每 GB 数据检索费用（仅适用于 Glacier 类型）">
-          <Space>
-            检索费用
-            <InfoCircleOutlined style={{ fontSize: 12 }} />
-          </Space>
+          检索
         </Tooltip>
       ),
       dataIndex: 'retrieval_per_gb',
       key: 'retrieval',
+      align: 'right' as const,
       render: (value: number, record: { storageClass: string }) => {
         if (record.storageClass === 'STANDARD') {
           return <Text type="secondary">-</Text>;
         }
-        return `$${value.toFixed(4)}/GB`;
+        return (
+          <Text>
+            ${value.toFixed(4)}
+            <Text type="secondary" style={{ fontSize: 11 }}>/GB</Text>
+          </Text>
+        );
       },
     },
     {
       title: (
         <Tooltip title="每千次生命周期转换费用">
-          <Space>
+          <Space size={4}>
             <SwapOutlined />
-            转换费用
-            <InfoCircleOutlined style={{ fontSize: 12 }} />
+            转换
           </Space>
         </Tooltip>
       ),
       dataIndex: 'lifecycle_transition_per_1000',
       key: 'lifecycle',
+      align: 'right' as const,
       render: (value: number, record: { storageClass: string }) => {
         if (record.storageClass === 'STANDARD') {
           return <Text type="secondary">-</Text>;
         }
-        return `$${value.toFixed(4)}/千次`;
+        return (
+          <Text>
+            ${value.toFixed(4)}
+            <Text type="secondary" style={{ fontSize: 11 }}>/千次</Text>
+          </Text>
+        );
       },
     },
   ];
@@ -177,6 +214,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false })
       title: '流量阶梯',
       dataIndex: 'tier',
       key: 'tier',
+      width: 120,
     },
     {
       title: '范围',
@@ -187,7 +225,13 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false })
       title: '单价',
       dataIndex: 'price',
       key: 'price',
-      render: (value: number) => `$${value.toFixed(4)}/GB`,
+      align: 'right' as const,
+      render: (value: number) => (
+        <Text strong style={{ color: '#1677ff' }}>
+          ${value.toFixed(4)}
+          <Text type="secondary" style={{ fontSize: 11 }}>/GB</Text>
+        </Text>
+      ),
     },
   ];
 
@@ -195,20 +239,30 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false })
     <div>
       {/* 区域信息 */}
       <Card style={{ marginBottom: 16 }}>
-        <Descriptions
-          title={
+        <Row gutter={24} align="middle">
+          <Col flex="auto">
             <Space>
+              <GlobalOutlined style={{ fontSize: 20, color: '#1677ff' }} />
               <Title level={5} style={{ margin: 0 }}>
                 {pricing.region_name}
               </Title>
               <Tag color="blue">{pricing.region}</Tag>
             </Space>
-          }
-          column={3}
-        >
-          <Descriptions.Item label="货币">{pricing.currency}</Descriptions.Item>
-          <Descriptions.Item label="最后更新">{pricing.last_updated}</Descriptions.Item>
-        </Descriptions>
+          </Col>
+          <Col>
+            <Space split={<Divider type="vertical" />}>
+              <Space>
+                <DollarOutlined />
+                <Text type="secondary">货币: </Text>
+                <Text strong>{pricing.currency}</Text>
+              </Space>
+              <Space>
+                <Text type="secondary">最后更新: </Text>
+                <Text strong>{pricing.last_updated}</Text>
+              </Space>
+            </Space>
+          </Col>
+        </Row>
       </Card>
 
       {/* 存储类型定价 */}
@@ -220,6 +274,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false })
           </Space>
         }
         style={{ marginBottom: 16 }}
+        styles={{ body: { padding: 0 } }}
       >
         <Table
           columns={storageColumns}
@@ -227,6 +282,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false })
           pagination={false}
           loading={loading}
           size="middle"
+          scroll={{ x: 800 }}
         />
       </Card>
 
@@ -238,6 +294,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false })
             数据传输出站定价（阶梯定价）
           </Space>
         }
+        styles={{ body: { paddingBottom: 8 } }}
       >
         <Table
           columns={transferColumns}
@@ -245,9 +302,9 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false })
           pagination={false}
           size="middle"
         />
-        <Divider />
+        <Divider style={{ margin: '12px 0' }} />
         <Text type="secondary" style={{ fontSize: 12 }}>
-          注：数据传输入站免费，同区域内传输免费。以上价格为传输至互联网的出站费用。
+          数据传输入站免费，同区域内传输免费。以上价格为传输至互联网的出站费用。
         </Text>
       </Card>
     </div>

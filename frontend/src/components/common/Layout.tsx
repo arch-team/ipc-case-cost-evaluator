@@ -1,7 +1,7 @@
 /**
  * 布局组件
  */
-import React, { useState } from 'react';
+import React, { useState, useMemo, useContext } from 'react';
 import { Layout as AntLayout, Menu, Typography, Space, Breadcrumb } from 'antd';
 import {
   CalculatorOutlined,
@@ -11,8 +11,11 @@ import {
   LeftOutlined,
   RightOutlined,
   CloudServerOutlined,
+  TeamOutlined,
+  DollarOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet, Link } from 'react-router-dom';
+import { AuthContext } from '../../contexts/AuthContext';
 
 const { Header, Content, Footer, Sider } = AntLayout;
 const { Title } = Typography;
@@ -22,7 +25,8 @@ const breadcrumbNameMap: Record<string, string> = {
   '/': '首页',
   '/calculator': '成本计算',
   '/evaluations': '评估记录',
-  '/admin': '定价管理',
+  '/admin': '用户管理',
+  '/admin/pricing': '定价管理',
   '/settings': '设置',
 };
 
@@ -30,34 +34,73 @@ const Layout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  const authContext = useContext(AuthContext);
+  const user = authContext?.user;
 
-  const menuItems = [
-    {
-      key: '/',
-      icon: <HomeOutlined />,
-      label: '首页',
-    },
-    {
-      key: '/calculator',
-      icon: <CalculatorOutlined />,
-      label: '成本计算',
-    },
-    {
-      key: '/evaluations',
-      icon: <HistoryOutlined />,
-      label: '评估记录',
-    },
-    {
-      key: '/admin',
-      icon: <CloudServerOutlined />,
-      label: '定价管理',
-    },
-    {
+  // 判断是否为管理员
+  const isAdmin = user?.role === 'admin';
+
+  // 根据用户角色动态生成菜单
+  const menuItems = useMemo(() => {
+    const items = [
+      {
+        key: '/',
+        icon: <HomeOutlined />,
+        label: '首页',
+      },
+      {
+        key: '/calculator',
+        icon: <CalculatorOutlined />,
+        label: '成本计算',
+      },
+      {
+        key: '/evaluations',
+        icon: <HistoryOutlined />,
+        label: '评估记录',
+      },
+    ];
+
+    // 管理员菜单
+    if (isAdmin) {
+      items.push({
+        key: 'admin-group',
+        icon: <CloudServerOutlined />,
+        label: '管理中心',
+        children: [
+          {
+            key: '/admin',
+            icon: <TeamOutlined />,
+            label: '用户管理',
+          },
+          {
+            key: '/admin/pricing',
+            icon: <DollarOutlined />,
+            label: '定价管理',
+          },
+        ],
+      } as any);
+    }
+
+    items.push({
       key: '/settings',
       icon: <SettingOutlined />,
       label: '设置',
-    },
-  ];
+    });
+
+    return items;
+  }, [isAdmin]);
+
+  // 计算当前选中的菜单项和展开的子菜单
+  const selectedKeys = useMemo(() => {
+    return [location.pathname];
+  }, [location.pathname]);
+
+  const openKeys = useMemo(() => {
+    if (location.pathname.startsWith('/admin')) {
+      return ['admin-group'];
+    }
+    return [];
+  }, [location.pathname]);
 
   const handleMenuClick = (e: { key: string }) => {
     navigate(e.key);
@@ -87,7 +130,8 @@ const Layout: React.FC = () => {
           </div>
           <Menu
             mode="inline"
-            selectedKeys={[location.pathname]}
+            selectedKeys={selectedKeys}
+            defaultOpenKeys={openKeys}
             items={menuItems}
             onClick={handleMenuClick}
           />
