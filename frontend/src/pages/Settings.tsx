@@ -5,14 +5,52 @@
  */
 import React, { useState } from 'react';
 import { Card, Typography, Descriptions, Tag, Row, Col, Tabs, Button, Divider, message, Modal, Form, Input } from 'antd';
-import { UserOutlined, LogoutOutlined, SettingOutlined, EditOutlined } from '@ant-design/icons';
+import { UserOutlined, LogoutOutlined, SettingOutlined, EditOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useAuth } from '../hooks/useAuth';
 import { authApi } from '../api/client';
 import { LoginForm, RegisterForm } from '../components/auth';
 import { ROLE_LABELS } from '../types/auth';
 import type { UserUpdateRequest } from '../types/auth';
 
-const { Title, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
+
+// 样式常量
+const styles = {
+  // 页面标题样式
+  pageTitle: {
+    fontSize: 28,
+    fontWeight: 700,
+    marginBottom: 8,
+    background: 'linear-gradient(135deg, #1890ff 0%, #722ed1 100%)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+  } as React.CSSProperties,
+  // 卡片样式
+  card: {
+    borderRadius: 16,
+    border: 'none',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+    height: '100%',
+  } as React.CSSProperties,
+  // 卡片标题图标容器
+  titleIcon: (color: string) => ({
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    background: `linear-gradient(135deg, ${color}15 0%, ${color}30 100%)`,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  } as React.CSSProperties),
+  // 卡片标题样式
+  cardTitle: {
+    display: 'flex',
+    alignItems: 'center',
+    marginBottom: 20,
+  } as React.CSSProperties,
+};
 
 const Settings: React.FC = () => {
   const { user, isAuthenticated, logout, updateUser } = useAuth();
@@ -59,11 +97,16 @@ const Settings: React.FC = () => {
   const renderUserCard = () => {
     if (!isAuthenticated || !user) {
       return (
-        <Card>
-          <Title level={4}>
-            <UserOutlined style={{ marginRight: 8 }} />
-            账号登录
-          </Title>
+        <Card style={styles.card}>
+          <div style={styles.cardTitle}>
+            <div style={styles.titleIcon('#1890ff')}>
+              <UserOutlined style={{ fontSize: 20, color: '#1890ff' }} />
+            </div>
+            <div>
+              <Title level={4} style={{ margin: 0 }}>账号登录</Title>
+              <Text type="secondary" style={{ fontSize: 13 }}>登录后可保存评估记录</Text>
+            </div>
+          </div>
           <Tabs
             activeKey={authTab}
             onChange={(key) => setAuthTab(key as 'login' | 'register')}
@@ -95,12 +138,23 @@ const Settings: React.FC = () => {
     }
 
     return (
-      <Card>
-        <Title level={4}>
-          <UserOutlined style={{ marginRight: 8 }} />
-          个人信息
-        </Title>
-        <Descriptions bordered column={1}>
+      <Card style={styles.card}>
+        <div style={styles.cardTitle}>
+          <div style={styles.titleIcon('#52c41a')}>
+            <UserOutlined style={{ fontSize: 20, color: '#52c41a' }} />
+          </div>
+          <div>
+            <Title level={4} style={{ margin: 0 }}>个人信息</Title>
+            <Text type="secondary" style={{ fontSize: 13 }}>管理您的账号设置</Text>
+          </div>
+        </div>
+        <Descriptions
+          bordered
+          column={1}
+          size="small"
+          labelStyle={{ background: '#fafafa', fontWeight: 500 }}
+          contentStyle={{ background: '#fff' }}
+        >
           <Descriptions.Item label="用户名">{user.name}</Descriptions.Item>
           <Descriptions.Item label="邮箱">{user.email}</Descriptions.Item>
           <Descriptions.Item label="角色">
@@ -114,12 +168,21 @@ const Settings: React.FC = () => {
             </Descriptions.Item>
           )}
         </Descriptions>
-        <Divider />
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Button icon={<EditOutlined />} onClick={() => setEditModalOpen(true)}>
+        <Divider style={{ margin: '20px 0' }} />
+        <div style={{ display: 'flex', gap: 12 }}>
+          <Button
+            icon={<EditOutlined />}
+            onClick={() => setEditModalOpen(true)}
+            style={{ borderRadius: 8 }}
+          >
             编辑信息
           </Button>
-          <Button icon={<LogoutOutlined />} onClick={handleLogout} danger>
+          <Button
+            icon={<LogoutOutlined />}
+            onClick={handleLogout}
+            danger
+            style={{ borderRadius: 8 }}
+          >
             退出登录
           </Button>
         </div>
@@ -129,6 +192,14 @@ const Settings: React.FC = () => {
 
   return (
     <div>
+      {/* 页面标题 */}
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={styles.pageTitle}>设置</h1>
+        <Paragraph type="secondary" style={{ margin: 0 }}>
+          管理您的账号和查看系统信息
+        </Paragraph>
+      </div>
+
       <Row gutter={[24, 24]}>
         {/* 用户认证/信息 */}
         <Col xs={24} lg={12}>
@@ -137,14 +208,25 @@ const Settings: React.FC = () => {
 
         {/* 系统设置 */}
         <Col xs={24} lg={12}>
-          <Card>
-            <Title level={4}>
-              <SettingOutlined style={{ marginRight: 8 }} />
-              系统信息
-            </Title>
-            <Descriptions bordered column={1}>
+          <Card style={styles.card}>
+            <div style={styles.cardTitle}>
+              <div style={styles.titleIcon('#722ed1')}>
+                <InfoCircleOutlined style={{ fontSize: 20, color: '#722ed1' }} />
+              </div>
+              <div>
+                <Title level={4} style={{ margin: 0 }}>系统信息</Title>
+                <Text type="secondary" style={{ fontSize: 13 }}>查看系统配置和版本</Text>
+              </div>
+            </div>
+            <Descriptions
+              bordered
+              column={1}
+              size="small"
+              labelStyle={{ background: '#fafafa', fontWeight: 500 }}
+              contentStyle={{ background: '#fff' }}
+            >
               <Descriptions.Item label="API 地址">
-                <Text copyable>
+                <Text copyable style={{ fontSize: 13 }}>
                   {import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'}
                 </Text>
               </Descriptions.Item>

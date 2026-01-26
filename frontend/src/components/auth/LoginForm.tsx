@@ -3,11 +3,28 @@
  */
 import React, { useState } from 'react';
 import { Form, Input, Button, Alert, Typography } from 'antd';
-import { MailOutlined, LockOutlined } from '@ant-design/icons';
+import { MailOutlined, LockOutlined, LoginOutlined } from '@ant-design/icons';
 import { authApi } from '../../api/client';
 import { useAuth } from '../../hooks/useAuth';
 
 const { Text } = Typography;
+
+// 样式常量
+const styles = {
+  primaryButton: {
+    height: 44,
+    fontSize: 15,
+    fontWeight: 600,
+    borderRadius: 8,
+    background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
+    border: 'none',
+    boxShadow: '0 4px 12px rgba(24, 144, 255, 0.35)',
+  } as React.CSSProperties,
+  input: {
+    borderRadius: 8,
+    height: 44,
+  } as React.CSSProperties,
+};
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -55,54 +72,58 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister }) 
           showIcon
           closable
           onClose={() => setError(null)}
-          style={{ marginBottom: 16 }}
+          style={{ marginBottom: 16, borderRadius: 8 }}
         />
       )}
 
       <Form.Item
         name="email"
-        label="邮箱"
+        label={<span style={{ fontWeight: 500 }}>邮箱</span>}
         rules={[
           { required: true, message: '请输入邮箱' },
           { type: 'email', message: '请输入有效的邮箱地址' },
         ]}
       >
         <Input
-          prefix={<MailOutlined />}
+          prefix={<MailOutlined style={{ color: '#bfbfbf' }} />}
           placeholder="请输入邮箱"
           size="large"
+          style={styles.input}
         />
       </Form.Item>
 
       <Form.Item
         name="password"
-        label="密码"
+        label={<span style={{ fontWeight: 500 }}>密码</span>}
         rules={[{ required: true, message: '请输入密码' }]}
       >
         <Input.Password
-          prefix={<LockOutlined />}
+          prefix={<LockOutlined style={{ color: '#bfbfbf' }} />}
           placeholder="请输入密码"
           size="large"
+          style={styles.input}
         />
       </Form.Item>
 
-      <Form.Item>
+      <Form.Item style={{ marginBottom: 16, marginTop: 24 }}>
         <Button
           type="primary"
           htmlType="submit"
           loading={loading}
+          icon={!loading && <LoginOutlined />}
           block
           size="large"
+          style={styles.primaryButton}
         >
-          登录
+          {loading ? '登录中...' : '登录'}
         </Button>
       </Form.Item>
 
       {onSwitchToRegister && (
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ textAlign: 'center', paddingTop: 8 }}>
           <Text type="secondary">
             还没有账号？{' '}
-            <a onClick={onSwitchToRegister}>立即注册</a>
+            <a onClick={onSwitchToRegister} style={{ fontWeight: 500 }}>立即注册</a>
           </Text>
         </div>
       )}

@@ -765,6 +765,33 @@ body {
   font-size: 13px;
 }
 
+/* InputNumber 增减按钮优化 - 更大的触摸区域 */
+.dimension-form .ant-input-number-handler-wrap {
+  width: 32px;
+  opacity: 1;
+}
+
+.dimension-form .ant-input-number-handler {
+  height: 50% !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dimension-form .ant-input-number-handler .ant-input-number-handler-up-inner,
+.dimension-form .ant-input-number-handler .ant-input-number-handler-down-inner {
+  font-size: 14px;
+}
+
+.dimension-form .ant-input-number-handler:hover {
+  background: var(--color-primary-light);
+}
+
+.dimension-form .ant-input-number-handler:active {
+  background: var(--color-primary);
+  color: #fff;
+}
+
 /* ============================================
    存储策略选择器 - 紧凑版
    ============================================ */
