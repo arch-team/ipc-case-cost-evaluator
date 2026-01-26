@@ -14,14 +14,14 @@ interface Props {
   comparison: ComparisonResult;
 }
 
-// 费用项配置：键名、中文名、颜色
+// 费用项配置：键名、中文名、颜色（使用协调的配色方案）
 const COST_ITEMS = [
-  { key: 'storage_cost', name: '存储费用', color: '#1890ff' },
-  { key: 'put_request_cost', name: 'PUT请求费', color: '#52c41a' },
-  { key: 'get_request_cost', name: 'GET请求费', color: '#faad14' },
-  { key: 'retrieval_cost', name: '数据检索费', color: '#eb2f96' },
-  { key: 'data_transfer_cost', name: '数据传输费', color: '#722ed1' },
-  { key: 'lifecycle_cost', name: '生命周期费', color: '#13c2c2' },
+  { key: 'storage_cost', name: '存储费用', color: '#5B8FF9' },      // 蓝色
+  { key: 'put_request_cost', name: 'PUT请求费', color: '#5AD8A6' }, // 绿色
+  { key: 'get_request_cost', name: 'GET请求费', color: '#F6BD16' }, // 黄色
+  { key: 'retrieval_cost', name: '数据检索费', color: '#E86452' },  // 红色
+  { key: 'data_transfer_cost', name: '数据传输费', color: '#6DC8EC' }, // 青色
+  { key: 'lifecycle_cost', name: '生命周期费', color: '#945FB9' },  // 紫色
 ];
 
 const ComparisonChart: React.FC<Props> = ({ comparison }) => {
@@ -64,6 +64,7 @@ const ComparisonChart: React.FC<Props> = ({ comparison }) => {
     data: totalCostData,
     xField: 'scheme',
     yField: 'value',
+    maxWidth: 60,
     label: {
       text: (d: { value: number }) => `$${d.value.toLocaleString()}`,
       textBaseline: 'bottom' as const,
@@ -75,7 +76,7 @@ const ComparisonChart: React.FC<Props> = ({ comparison }) => {
     style: {
       radiusTopLeft: 4,
       radiusTopRight: 4,
-      fill: (d: { isRecommended: boolean }) => (d.isRecommended ? '#52c41a' : '#1890ff'),
+      fill: (d: { isRecommended: boolean }) => (d.isRecommended ? '#52c41a' : '#5B8FF9'),
     },
     axis: {
       x: {
@@ -113,6 +114,7 @@ const ComparisonChart: React.FC<Props> = ({ comparison }) => {
     yField: 'value',
     colorField: 'costType',
     stack: true,
+    maxWidth: 60,
     scale: {
       color: {
         range: COST_ITEMS.map(item => item.color),
@@ -130,6 +132,9 @@ const ComparisonChart: React.FC<Props> = ({ comparison }) => {
     legend: {
       color: {
         position: 'bottom' as const,
+        layout: {
+          justifyContent: 'center' as const,
+        },
       },
     },
   };
