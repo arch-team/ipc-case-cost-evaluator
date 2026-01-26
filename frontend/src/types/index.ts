@@ -166,6 +166,8 @@ export interface ComparisonItem {
   vs_baseline: number;
   breakdown?: CostBreakdown;
   is_recommended: boolean;
+  // 完整的技术配置信息
+  technical?: TechnicalDimensions;
 }
 
 // 推荐

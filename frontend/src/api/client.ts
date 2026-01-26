@@ -137,6 +137,7 @@ export const calculatorApi = {
         vs_baseline: vsBaseline,
         breakdown: r.result.breakdown,
         is_recommended: isRecommended,
+        technical: r.technical,
       };
     });
 
