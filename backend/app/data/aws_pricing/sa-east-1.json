@@ -1,0 +1,35 @@
+{
+  "region": "sa-east-1",
+  "region_name": "South America (São Paulo)",
+  "currency": "USD",
+  "last_updated": "2025-01-27",
+  "storage_classes": {
+    "STANDARD": {
+      "storage_per_gb_month": 0.0405,
+      "put_per_1000": 0.007,
+      "get_per_1000": 0.00056,
+      "retrieval_per_gb": 0,
+      "lifecycle_transition_per_1000": 0
+    },
+    "GLACIER_IR": {
+      "storage_per_gb_month": 0.0068,
+      "put_per_1000": 0.028,
+      "get_per_1000": 0.014,
+      "retrieval_per_gb": 0.042,
+      "lifecycle_transition_per_1000": 0.028
+    },
+    "DEEP_ARCHIVE": {
+      "storage_per_gb_month": 0.0014,
+      "put_per_1000": 0.07,
+      "get_per_1000": 0.00056,
+      "retrieval_per_gb": 0.028,
+      "lifecycle_transition_per_1000": 0.07
+    }
+  },
+  "data_transfer": {
+    "out_first_10tb_per_gb": 0.15,
+    "out_next_40tb_per_gb": 0.138,
+    "out_next_100tb_per_gb": 0.137,
+    "out_over_150tb_per_gb": 0.137
+  }
+}

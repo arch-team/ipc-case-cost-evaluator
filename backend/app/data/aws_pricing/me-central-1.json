@@ -1,0 +1,35 @@
+{
+  "region": "me-central-1",
+  "region_name": "Middle East (UAE)",
+  "currency": "USD",
+  "last_updated": "2025-01-27",
+  "storage_classes": {
+    "STANDARD": {
+      "storage_per_gb_month": 0.028,
+      "put_per_1000": 0.006,
+      "get_per_1000": 0.00048,
+      "retrieval_per_gb": 0,
+      "lifecycle_transition_per_1000": 0
+    },
+    "GLACIER_IR": {
+      "storage_per_gb_month": 0.0047,
+      "put_per_1000": 0.024,
+      "get_per_1000": 0.012,
+      "retrieval_per_gb": 0.036,
+      "lifecycle_transition_per_1000": 0.024
+    },
+    "DEEP_ARCHIVE": {
+      "storage_per_gb_month": 0.0012,
+      "put_per_1000": 0.06,
+      "get_per_1000": 0.00048,
+      "retrieval_per_gb": 0.024,
+      "lifecycle_transition_per_1000": 0.06
+    }
+  },
+  "data_transfer": {
+    "out_first_10tb_per_gb": 0.117,
+    "out_next_40tb_per_gb": 0.107,
+    "out_next_100tb_per_gb": 0.09,
+    "out_over_150tb_per_gb": 0.085
+  }
+}

@@ -1,13 +1,13 @@
 {
-  "region": "eu-west-1",
-  "region_name": "Europe (Ireland)",
+  "region": "ca-central-1",
+  "region_name": "Canada (Montreal)",
   "currency": "USD",
-  "last_updated": "2025-01-24",
+  "last_updated": "2025-01-27",
   "storage_classes": {
     "STANDARD": {
-      "storage_per_gb_month": 0.024,
+      "storage_per_gb_month": 0.025,
       "put_per_1000": 0.005,
-      "get_per_1000": 0.00044,
+      "get_per_1000": 0.0004,
       "retrieval_per_gb": 0,
       "lifecycle_transition_per_1000": 0
     },
@@ -19,7 +19,7 @@
       "lifecycle_transition_per_1000": 0.02
     },
     "DEEP_ARCHIVE": {
-      "storage_per_gb_month": 0.0018,
+      "storage_per_gb_month": 0.00099,
       "put_per_1000": 0.05,
       "get_per_1000": 0.0004,
       "retrieval_per_gb": 0.02,

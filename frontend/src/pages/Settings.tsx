@@ -9,7 +9,7 @@
  * - 无障碍性支持
  */
 import React, { useState, useMemo, useEffect } from 'react';
-import { Card, Typography, Descriptions, Tag, Row, Col, Tabs, Button, Divider, message, Modal, Form, Input, Progress, Collapse, Switch, Select } from 'antd';
+import { Card, Typography, Tag, Row, Col, Tabs, Button, message, Modal, Form, Input, Progress, Collapse, Switch, Select } from 'antd';
 import { UserOutlined, LogoutOutlined, EditOutlined, InfoCircleOutlined, SaveOutlined, CheckCircleFilled, CloseCircleFilled, LockOutlined, SettingOutlined, BellOutlined, GlobalOutlined, ExclamationCircleOutlined, ApiOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { useAuth } from '../hooks/useAuth';
 import { authApi } from '../api/client';
@@ -17,7 +17,7 @@ import { LoginForm, RegisterForm } from '../components/auth';
 import { ROLE_LABELS } from '../types/auth';
 import type { UserUpdateRequest } from '../types/auth';
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 
 // 样式常量
 const styles = {
@@ -317,68 +317,70 @@ const Settings: React.FC = () => {
 
   // 已登录状态：个人信息 + 偏好设置
   return (
-    <div className="settings-page">
+    <div className="settings-page settings-page-v2">
       {/* 开发环境徽章 */}
       <EnvBadge />
 
       {/* 页面标题 */}
       <div className="settings-page-header">
-        <h1 className="settings-page-title">设置</h1>
-        <Paragraph type="secondary" style={{ margin: 0 }}>
-          管理您的账号和偏好设置
-        </Paragraph>
+        <h1 className="settings-page-title-v2">设置</h1>
+        <Text type="secondary">管理您的账号和偏好设置</Text>
       </div>
 
-      <Row gutter={[24, 24]}>
+      <Row gutter={[24, 24]} align="stretch">
         {/* 个人信息 */}
         <Col xs={24} lg={12}>
-          <Card className="settings-card">
-            <div className="settings-card-title">
-              <div
-                className="settings-card-icon"
-                style={{ background: 'linear-gradient(135deg, #52c41a15 0%, #52c41a30 100%)' }}
-              >
-                <UserOutlined style={{ fontSize: 20, color: '#52c41a' }} />
+          <Card className="settings-card-v2" style={{ height: '100%' }}>
+            <div className="settings-card-header-v2">
+              <div className="settings-card-icon-v2">
+                <UserOutlined />
               </div>
               <div>
-                <Title level={4} style={{ margin: 0 }}>个人信息</Title>
+                <div className="settings-card-title-v2">个人信息</div>
                 <Text type="secondary" style={{ fontSize: 13 }}>管理您的账号信息</Text>
               </div>
             </div>
-            <Descriptions
-              bordered
-              column={1}
-              size="small"
-              labelStyle={{ background: '#fafafa', fontWeight: 500 }}
-              contentStyle={{ background: '#fff' }}
-            >
-              <Descriptions.Item label="用户名">{user.name}</Descriptions.Item>
-              <Descriptions.Item label="邮箱">{user.email}</Descriptions.Item>
-              <Descriptions.Item label="角色">
-                <Tag color={user.role === 'admin' ? 'red' : 'blue'}>
-                  {ROLE_LABELS[user.role]}
-                </Tag>
-              </Descriptions.Item>
+
+            <div className="settings-info-list">
+              <div className="settings-info-item">
+                <span className="settings-info-label">用户名</span>
+                <span className="settings-info-value">{user.name}</span>
+              </div>
+              <div className="settings-info-item">
+                <span className="settings-info-label">邮箱</span>
+                <span className="settings-info-value">{user.email}</span>
+              </div>
+              <div className="settings-info-item">
+                <span className="settings-info-label">角色</span>
+                <span className="settings-info-value">
+                  <Tag color={user.role === 'admin' ? 'blue' : 'default'} style={{ margin: 0 }}>
+                    {ROLE_LABELS[user.role]}
+                  </Tag>
+                </span>
+              </div>
               {user.created_at && (
-                <Descriptions.Item label="注册时间">
-                  {new Date(user.created_at).toLocaleString('zh-CN')}
-                </Descriptions.Item>
+                <div className="settings-info-item">
+                  <span className="settings-info-label">注册时间</span>
+                  <span className="settings-info-value">
+                    {new Date(user.created_at).toLocaleString('zh-CN')}
+                  </span>
+                </div>
               )}
-            </Descriptions>
-            <Divider style={{ margin: '20px 0' }} />
-            <div className="settings-actions" style={{ display: 'flex', gap: 12 }}>
+            </div>
+
+            <div className="settings-actions-v2">
               <Button
+                type="primary"
                 icon={<EditOutlined />}
                 onClick={() => setEditModalOpen(true)}
-                style={{ borderRadius: 8, flex: 1 }}
               >
                 编辑信息
               </Button>
               <Button
+                type="text"
                 icon={<LogoutOutlined />}
                 onClick={handleLogout}
-                danger
-                style={{ borderRadius: 8, flex: 1 }}
+                className="logout-btn"
               >
                 退出登录
               </Button>
@@ -388,34 +390,30 @@ const Settings: React.FC = () => {
 
         {/* 偏好设置 */}
         <Col xs={24} lg={12}>
-          <Card className="settings-card">
-            <div className="settings-card-title">
-              <div
-                className="settings-card-icon"
-                style={{ background: 'linear-gradient(135deg, #1890ff15 0%, #1890ff30 100%)' }}
-              >
-                <SettingOutlined style={{ fontSize: 20, color: '#1890ff' }} />
+          <Card className="settings-card-v2" style={{ height: '100%' }}>
+            <div className="settings-card-header-v2">
+              <div className="settings-card-icon-v2">
+                <SettingOutlined />
               </div>
               <div>
-                <Title level={4} style={{ margin: 0 }}>偏好设置</Title>
+                <div className="settings-card-title-v2">偏好设置</div>
                 <Text type="secondary" style={{ fontSize: 13 }}>自定义您的使用体验</Text>
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div className="settings-pref-list">
               {/* 默认区域 */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <GlobalOutlined style={{ color: '#1890ff' }} />
+              <div className="settings-pref-item">
+                <div className="settings-pref-left">
+                  <GlobalOutlined className="settings-pref-icon" />
                   <div>
-                    <div style={{ fontWeight: 500 }}>默认 AWS 区域</div>
+                    <div className="settings-pref-title">默认 AWS 区域</div>
                     <Text type="secondary" style={{ fontSize: 12 }}>计算时使用的默认区域</Text>
                   </div>
                 </div>
                 <Select
                   defaultValue="ap-northeast-1"
-                  style={{ width: 160 }}
-                  size="small"
+                  style={{ width: 180 }}
                   options={[
                     { value: 'ap-northeast-1', label: '东京 (ap-northeast-1)' },
                     { value: 'ap-southeast-1', label: '新加坡 (ap-southeast-1)' },
@@ -425,28 +423,24 @@ const Settings: React.FC = () => {
                 />
               </div>
 
-              <Divider style={{ margin: 0 }} />
-
               {/* 自动计算 */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <SettingOutlined style={{ color: '#52c41a' }} />
+              <div className="settings-pref-item">
+                <div className="settings-pref-left">
+                  <SettingOutlined className="settings-pref-icon" />
                   <div>
-                    <div style={{ fontWeight: 500 }}>自动计算</div>
+                    <div className="settings-pref-title">自动计算</div>
                     <Text type="secondary" style={{ fontSize: 12 }}>修改参数时自动重新计算</Text>
                   </div>
                 </div>
                 <Switch defaultChecked />
               </div>
 
-              <Divider style={{ margin: 0 }} />
-
               {/* 消息通知 */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <BellOutlined style={{ color: '#faad14' }} />
+              <div className="settings-pref-item">
+                <div className="settings-pref-left">
+                  <BellOutlined className="settings-pref-icon" />
                   <div>
-                    <div style={{ fontWeight: 500 }}>消息通知</div>
+                    <div className="settings-pref-title">消息通知</div>
                     <Text type="secondary" style={{ fontSize: 12 }}>接收系统和更新通知</Text>
                   </div>
                 </div>
@@ -457,29 +451,19 @@ const Settings: React.FC = () => {
         </Col>
       </Row>
 
-      {/* 底部系统信息 - 折叠 */}
-      <div style={{ marginTop: 24 }}>
-        <Collapse
-          ghost
-          defaultActiveKey={import.meta.env.DEV ? ['system'] : []}
-          items={[
-            {
-              key: 'system',
-              label: (
-                <span style={{ color: '#999', fontSize: 13 }}>
-                  <InfoCircleOutlined style={{ marginRight: 6 }} />
-                  系统信息
-                </span>
-              ),
-              children: (
-                <Card size="small" style={{ background: '#fafafa' }}>
-                  <SystemInfoPanel expanded={true} />
-                </Card>
-              ),
-            },
-          ]}
-        />
-      </div>
+      {/* 系统信息卡片 */}
+      <Card className="settings-card-v2 settings-system-card" style={{ marginTop: 24 }}>
+        <div className="settings-card-header-v2">
+          <div className="settings-card-icon-v2">
+            <InfoCircleOutlined />
+          </div>
+          <div>
+            <div className="settings-card-title-v2">系统信息</div>
+            <Text type="secondary" style={{ fontSize: 13 }}>应用运行状态和版本信息</Text>
+          </div>
+        </div>
+        <SystemInfoPanel expanded={true} />
+      </Card>
 
       {/* 编辑用户信息对话框 */}
       <Modal
@@ -498,10 +482,7 @@ const Settings: React.FC = () => {
           form.resetFields();
         }}
         footer={null}
-        styles={{
-          content: { borderRadius: 16, padding: '24px' },
-          header: { borderBottom: 'none', paddingBottom: 16 },
-        }}
+        style={{ borderRadius: 16 }}
         width={420}
       >
         <Form

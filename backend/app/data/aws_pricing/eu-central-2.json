@@ -1,0 +1,35 @@
+{
+  "region": "eu-central-2",
+  "region_name": "Europe (Zurich)",
+  "currency": "USD",
+  "last_updated": "2025-01-27",
+  "storage_classes": {
+    "STANDARD": {
+      "storage_per_gb_month": 0.027,
+      "put_per_1000": 0.0058,
+      "get_per_1000": 0.00046,
+      "retrieval_per_gb": 0,
+      "lifecycle_transition_per_1000": 0
+    },
+    "GLACIER_IR": {
+      "storage_per_gb_month": 0.0045,
+      "put_per_1000": 0.022,
+      "get_per_1000": 0.011,
+      "retrieval_per_gb": 0.033,
+      "lifecycle_transition_per_1000": 0.022
+    },
+    "DEEP_ARCHIVE": {
+      "storage_per_gb_month": 0.0011,
+      "put_per_1000": 0.055,
+      "get_per_1000": 0.00046,
+      "retrieval_per_gb": 0.022,
+      "lifecycle_transition_per_1000": 0.055
+    }
+  },
+  "data_transfer": {
+    "out_first_10tb_per_gb": 0.09,
+    "out_next_40tb_per_gb": 0.085,
+    "out_next_100tb_per_gb": 0.07,
+    "out_over_150tb_per_gb": 0.05
+  }
+}
