@@ -449,110 +449,228 @@ body {
 }
 
 /* ============================================
-   敏感度分析样式
+   敏感度分析样式 V2 - 优化版
    ============================================ */
 
-.sensitivity-analysis {
-  padding: 8px 0;
+.sensitivity-analysis-v2 {
+  padding: 0;
 }
 
-.sensitivity-analysis-header {
+/* 头部样式 */
+.sensitivity-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-}
-
-.sensitivity-analysis-content {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.sensitivity-item {
-  padding-bottom: 20px;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
   border-bottom: 1px solid var(--color-border-light);
 }
 
-.sensitivity-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.sensitivity-item-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.sensitivity-item-slider {
-  margin: 0 8px;
-}
-
-.sensitivity-item-slider .ant-slider-mark-text {
-  font-size: 11px;
-  color: var(--color-text-tertiary);
-}
-
-.sensitivity-item-costs {
-  margin-top: 12px;
-}
-
-.sensitivity-cost-range {
+.sensitivity-title {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  background: var(--color-bg-page);
-  border-radius: var(--radius-small);
-  padding: 12px 16px;
+  gap: 8px;
 }
 
-.sensitivity-cost-item {
-  text-align: center;
-  flex: 1;
-}
-
-.sensitivity-cost-value {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text-primary);
-}
-
-.sensitivity-cost-percent {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-  margin-top: 2px;
-}
-
-.sensitivity-cost-min .sensitivity-cost-value {
-  color: var(--color-success);
-}
-
-.sensitivity-cost-max .sensitivity-cost-value {
-  color: var(--color-error);
-}
-
-.sensitivity-cost-current .sensitivity-cost-value {
+.sensitivity-title .anticon {
   color: var(--color-primary);
 }
 
-.sensitivity-cost-arrow {
-  color: var(--color-text-tertiary);
-  padding: 0 8px;
+.sensitivity-baseline {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
 }
 
-.sensitivity-item-actions {
-  margin-top: 8px;
-  text-align: right;
+.sensitivity-baseline-cost {
+  font-size: 18px;
+  color: var(--color-primary);
+  margin: 0 4px;
 }
 
-.sensitivity-analysis-summary {
-  margin-top: 16px;
-  padding: 12px 16px;
-  background: rgba(217, 119, 6, 0.1);
-  border-radius: var(--radius-small);
+/* 参数列表 */
+.sensitivity-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 单行布局：左侧滑块 + 右侧条形图 */
+.sensitivity-row {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 24px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border-light);
+  align-items: start;
+}
+
+.sensitivity-row:last-child {
+  border-bottom: none;
+}
+
+/* 左侧：参数名和滑块 */
+.sensitivity-row-left {
+  min-width: 180px;
+}
+
+.sensitivity-row-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.sensitivity-row-value {
   font-size: 13px;
+  font-weight: 500;
+}
+
+.sensitivity-row-slider {
+  padding: 0 4px;
+}
+
+.sensitivity-row-slider .ant-slider {
+  margin: 8px 0 0 0;
+}
+
+.sensitivity-slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  margin-top: 2px;
+}
+
+/* 右侧：成本影响可视化 */
+.sensitivity-row-right {
+  flex: 1;
+  min-height: 80px;
+}
+
+.sensitivity-impact {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.sensitivity-impact-placeholder {
+  color: var(--color-text-tertiary);
+  font-size: 13px;
+  padding: 8px 0;
+}
+
+/* 条形图可视化 */
+.sensitivity-bars {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sensitivity-bar-row {
+  display: flex;
+  align-items: center;
+  height: 22px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+.sensitivity-bar-row:hover {
+  background: var(--color-bg-page);
+}
+
+.sensitivity-bar-row-baseline {
+  cursor: default;
+}
+
+.sensitivity-bar-row-baseline:hover {
+  background: transparent;
+}
+
+.sensitivity-bar {
+  height: 16px;
+  border-radius: 3px;
+  min-width: 4px;
+  transition: width 0.3s ease;
+}
+
+.sensitivity-bar-min {
+  background: linear-gradient(90deg, #52c41a 0%, #95de64 100%);
+}
+
+.sensitivity-bar-baseline {
+  background: linear-gradient(90deg, #1890ff 0%, #69c0ff 100%);
+}
+
+.sensitivity-bar-max {
+  background: linear-gradient(90deg, #ff4d4f 0%, #ff7875 100%);
+}
+
+.sensitivity-bar-label {
+  margin-left: 12px;
+  font-size: 12px;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sensitivity-bar-label-baseline {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.sensitivity-bar-percent {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--color-bg-page);
+}
+
+.sensitivity-bar-row:first-child .sensitivity-bar-percent {
+  color: var(--color-success);
+  background: rgba(82, 196, 26, 0.1);
+}
+
+.sensitivity-bar-row:last-child .sensitivity-bar-percent {
+  color: var(--color-error);
+  background: rgba(255, 77, 79, 0.1);
+}
+
+.sensitivity-bar-row-baseline .sensitivity-bar-percent {
+  color: var(--color-primary);
+  background: rgba(24, 144, 255, 0.1);
+}
+
+/* 应用按钮 */
+.sensitivity-apply-btn {
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* 底部总结 */
+.sensitivity-summary {
+  margin-top: 16px;
+  padding: 10px 16px;
+  background: linear-gradient(90deg, rgba(250, 173, 20, 0.08) 0%, rgba(250, 173, 20, 0.02) 100%);
+  border-radius: var(--radius-small);
+  border-left: 3px solid var(--color-warning);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sensitivity-summary .anticon {
+  color: var(--color-warning);
+}
+
+/* 旧版样式兼容 (可删除) */
+.sensitivity-analysis {
+  padding: 8px 0;
 }
 
 .sensitivity-card {

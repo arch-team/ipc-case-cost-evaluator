@@ -1,10 +1,10 @@
 /**
- * 敏感度分析面板
- * 显示各参数对成本的影响，支持滑块交互
+ * 敏感度分析面板 - 优化版
+ * 改进：紧凑布局、条形图可视化、统一交互
  */
-import React, { useState, useEffect, useCallback } from 'react';
-import { Slider, Typography, Button, Spin } from 'antd';
-import { SlidersOutlined, BulbOutlined } from '@ant-design/icons';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Slider, Typography, Button, Spin, Tooltip } from 'antd';
+import { SlidersOutlined, BulbOutlined, CheckOutlined } from '@ant-design/icons';
 import type { CostCalculationInput } from '../../types';
 import { calculatorApi } from '../../api/client';
 import debounce from 'lodash/debounce';
@@ -48,7 +48,7 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
   const [sliderValues, setSliderValues] = useState<Record<string, number>>({});
 
   // 定义敏感度分析项
-  const sensitivityItems: SensitivityItem[] = [
+  const sensitivityItems: SensitivityItem[] = useMemo(() => [
     {
       key: 'device_count',
       label: '设备数量',
@@ -106,7 +106,7 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
         },
       }),
     },
-  ];
+  ], [input]);
 
   // 初始化滑块值
   useEffect(() => {
@@ -115,7 +115,7 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
       initialValues[item.key] = item.currentValue;
     });
     setSliderValues(initialValues);
-  }, [input]);
+  }, [sensitivityItems]);
 
   // 计算成本的防抖函数
   const calculateCostDebounced = useCallback(
@@ -161,7 +161,7 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
     sensitivityItems.forEach((item) => {
       calculateCostDebounced(item.key, item.currentValue, item);
     });
-  }, [input, baselineCost]);
+  }, [sensitivityItems, baselineCost]);
 
   // 处理滑块变化
   const handleSliderChange = (key: string, value: number, item: SensitivityItem) => {
@@ -170,7 +170,7 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
   };
 
   // 计算影响排序
-  const getImpactRanking = () => {
+  const impactRanking = useMemo(() => {
     const items = sensitivityItems
       .filter((item) => impacts[item.key])
       .map((item) => ({
@@ -180,11 +180,11 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
       .sort((a, b) => b.impact - a.impact);
 
     return items.map((item) => item.label).join(' > ');
-  };
+  }, [impacts, sensitivityItems]);
 
   // 格式化百分比
   const formatPercent = (percent: number) => {
-    if (percent === 0) return '基准';
+    if (Math.abs(percent) < 0.5) return '0%';
     const sign = percent > 0 ? '+' : '';
     return `${sign}${percent.toFixed(0)}%`;
   };
@@ -194,108 +194,182 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
     return `$${cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
+  // 计算条形图宽度（基于成本范围）
+  const getBarWidth = (cost: number, minCost: number, maxCost: number) => {
+    if (maxCost === minCost) return 50;
+    const range = maxCost - minCost;
+    const position = ((cost - minCost) / range) * 100;
+    return Math.max(5, Math.min(100, position));
+  };
+
+  // 应用值到输入
+  const handleApplyValue = (item: SensitivityItem, value: number) => {
+    if (!onApplyValue) return;
+
+    if (item.key === 'access_pattern') {
+      onApplyValue(item.key, value / 100);
+    } else if (item.key === 'video_quality') {
+      onApplyValue(item.key, ['720p', '1080p', '2k', '4k'][value]);
+    } else {
+      onApplyValue(item.key, value);
+    }
+  };
+
+  // 计算所有成本中的最大最小值（用于统一的条形图比例）
+  const globalCostRange = useMemo(() => {
+    let globalMin = baselineCost;
+    let globalMax = baselineCost;
+
+    Object.values(impacts).forEach(impact => {
+      globalMin = Math.min(globalMin, impact.minCost);
+      globalMax = Math.max(globalMax, impact.maxCost);
+    });
+
+    return { min: globalMin, max: globalMax };
+  }, [impacts, baselineCost]);
+
   return (
-    <div className="sensitivity-analysis">
-      <div className="sensitivity-analysis-header">
-        <Title level={5} style={{ margin: 0 }}>
-          <SlidersOutlined style={{ marginRight: 8 }} />
-          敏感度分析
-        </Title>
-        <Text type="secondary">基准成本: {formatCost(baselineCost)}/月</Text>
+    <div className="sensitivity-analysis-v2">
+      {/* 头部：标题和基准成本 */}
+      <div className="sensitivity-header">
+        <div className="sensitivity-title">
+          <SlidersOutlined />
+          <Title level={5} style={{ margin: 0 }}>敏感度分析</Title>
+        </div>
+        <div className="sensitivity-baseline">
+          <Text type="secondary">基准</Text>
+          <Text strong className="sensitivity-baseline-cost">{formatCost(baselineCost)}</Text>
+          <Text type="secondary">/月</Text>
+        </div>
       </div>
 
-      <div className="sensitivity-analysis-content">
+      {/* 参数列表 */}
+      <div className="sensitivity-items">
         {sensitivityItems.map((item) => {
           const impact = impacts[item.key];
           const currentSliderValue = sliderValues[item.key] ?? item.currentValue;
           const isLoading = loading[item.key];
+          const hasChanged = currentSliderValue !== item.currentValue;
+          const displayValue = item.formatValue
+            ? item.formatValue(currentSliderValue)
+            : `${currentSliderValue} ${item.unit}`;
 
           return (
-            <div key={item.key} className="sensitivity-item">
-              <div className="sensitivity-item-header">
-                <Text strong>{item.label}</Text>
-                <Text type="secondary">
-                  当前: {item.formatValue ? item.formatValue(item.currentValue) : `${item.currentValue} ${item.unit}`}
-                </Text>
-              </div>
-
-              <div className="sensitivity-item-slider">
-                <Slider
-                  min={item.min}
-                  max={item.max}
-                  step={item.step}
-                  value={currentSliderValue}
-                  onChange={(val) => handleSliderChange(item.key, val, item)}
-                  tooltip={{
-                    formatter: (val) =>
-                      item.formatValue ? item.formatValue(val || 0) : `${val} ${item.unit}`,
-                  }}
-                  marks={{
-                    [item.min]: item.formatValue ? item.formatValue(item.min) : `${item.min}`,
-                    [item.currentValue]: '当前',
-                    [item.max]: item.formatValue ? item.formatValue(item.max) : `${item.max}`,
-                  }}
-                />
-              </div>
-
-              {impact && (
-                <div className="sensitivity-item-costs">
-                  <Spin spinning={isLoading} size="small">
-                    <div className="sensitivity-cost-range">
-                      <div className="sensitivity-cost-item sensitivity-cost-min">
-                        <div className="sensitivity-cost-value">{formatCost(impact.minCost)}</div>
-                        <div className="sensitivity-cost-percent">
-                          {formatPercent(impact.minPercent)}
-                        </div>
-                      </div>
-                      <div className="sensitivity-cost-arrow">→</div>
-                      <div className="sensitivity-cost-item sensitivity-cost-current">
-                        <div className="sensitivity-cost-value">{formatCost(baselineCost)}</div>
-                        <div className="sensitivity-cost-percent">基准</div>
-                      </div>
-                      <div className="sensitivity-cost-arrow">→</div>
-                      <div className="sensitivity-cost-item sensitivity-cost-max">
-                        <div className="sensitivity-cost-value">{formatCost(impact.maxCost)}</div>
-                        <div className="sensitivity-cost-percent">
-                          {formatPercent(impact.maxPercent)}
-                        </div>
-                      </div>
-                    </div>
-                  </Spin>
+            <div key={item.key} className="sensitivity-row">
+              {/* 左侧：参数名和滑块 */}
+              <div className="sensitivity-row-left">
+                <div className="sensitivity-row-label">
+                  <Text strong>{item.label}</Text>
+                  <Text className="sensitivity-row-value" type={hasChanged ? 'warning' : 'secondary'}>
+                    {displayValue}
+                  </Text>
                 </div>
-              )}
-
-              {onApplyValue && currentSliderValue !== item.currentValue && (
-                <div className="sensitivity-item-actions">
-                  <Button
-                    size="small"
-                    type="link"
-                    onClick={() => {
-                      if (item.key === 'access_pattern') {
-                        onApplyValue(item.key, currentSliderValue / 100);
-                      } else if (item.key === 'video_quality') {
-                        onApplyValue(
-                          item.key,
-                          ['720p', '1080p', '2k', '4k'][currentSliderValue]
-                        );
-                      } else {
-                        onApplyValue(item.key, currentSliderValue);
-                      }
+                <div className="sensitivity-row-slider">
+                  <Slider
+                    min={item.min}
+                    max={item.max}
+                    step={item.step}
+                    value={currentSliderValue}
+                    onChange={(val) => handleSliderChange(item.key, val, item)}
+                    tooltip={{
+                      formatter: (val) =>
+                        item.formatValue ? item.formatValue(val || 0) : `${val} ${item.unit}`,
                     }}
-                  >
-                    应用此值
-                  </Button>
+                  />
+                  <div className="sensitivity-slider-labels">
+                    <span>{item.formatValue ? item.formatValue(item.min) : item.min}</span>
+                    <span>{item.formatValue ? item.formatValue(item.max) : item.max}</span>
+                  </div>
                 </div>
-              )}
+              </div>
+
+              {/* 右侧：成本影响可视化 */}
+              <div className="sensitivity-row-right">
+                <Spin spinning={isLoading} size="small">
+                  {impact ? (
+                    <div className="sensitivity-impact">
+                      {/* 条形图可视化 */}
+                      <div className="sensitivity-bars">
+                        {/* 最小值条 */}
+                        <Tooltip title={`${item.formatValue ? item.formatValue(item.min) : item.min + item.unit}: ${formatCost(impact.minCost)}`}>
+                          <div className="sensitivity-bar-row">
+                            <div
+                              className="sensitivity-bar sensitivity-bar-min"
+                              style={{
+                                width: `${getBarWidth(impact.minCost, globalCostRange.min, globalCostRange.max)}%`
+                              }}
+                            />
+                            <span className="sensitivity-bar-label">
+                              {formatCost(impact.minCost)}
+                              <span className="sensitivity-bar-percent">{formatPercent(impact.minPercent)}</span>
+                            </span>
+                          </div>
+                        </Tooltip>
+
+                        {/* 基准值条 */}
+                        <div className="sensitivity-bar-row sensitivity-bar-row-baseline">
+                          <div
+                            className="sensitivity-bar sensitivity-bar-baseline"
+                            style={{
+                              width: `${getBarWidth(baselineCost, globalCostRange.min, globalCostRange.max)}%`
+                            }}
+                          />
+                          <span className="sensitivity-bar-label sensitivity-bar-label-baseline">
+                            {formatCost(baselineCost)}
+                            <span className="sensitivity-bar-percent">基准</span>
+                          </span>
+                        </div>
+
+                        {/* 最大值条 */}
+                        <Tooltip title={`${item.formatValue ? item.formatValue(item.max) : item.max + item.unit}: ${formatCost(impact.maxCost)}`}>
+                          <div className="sensitivity-bar-row">
+                            <div
+                              className="sensitivity-bar sensitivity-bar-max"
+                              style={{
+                                width: `${getBarWidth(impact.maxCost, globalCostRange.min, globalCostRange.max)}%`
+                              }}
+                            />
+                            <span className="sensitivity-bar-label">
+                              {formatCost(impact.maxCost)}
+                              <span className="sensitivity-bar-percent">{formatPercent(impact.maxPercent)}</span>
+                            </span>
+                          </div>
+                        </Tooltip>
+                      </div>
+
+                      {/* 应用按钮 */}
+                      {onApplyValue && hasChanged && (
+                        <Button
+                          size="small"
+                          type="primary"
+                          ghost
+                          icon={<CheckOutlined />}
+                          className="sensitivity-apply-btn"
+                          onClick={() => handleApplyValue(item, currentSliderValue)}
+                        >
+                          应用
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="sensitivity-impact-placeholder">
+                      计算中...
+                    </div>
+                  )}
+                </Spin>
+              </div>
             </div>
           );
         })}
       </div>
 
-      {Object.keys(impacts).length > 0 && (
-        <div className="sensitivity-analysis-summary">
-          <BulbOutlined style={{ marginRight: 8, color: 'var(--color-warning)' }} />
-          <Text type="secondary">成本影响排序：{getImpactRanking()}</Text>
+      {/* 底部：影响排序提示 */}
+      {impactRanking && (
+        <div className="sensitivity-summary">
+          <BulbOutlined />
+          <Text type="secondary">
+            <strong>成本敏感度：</strong>{impactRanking}
+          </Text>
         </div>
       )}
     </div>
