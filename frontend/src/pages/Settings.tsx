@@ -247,9 +247,12 @@ const Settings: React.FC = () => {
 
         {/* 系统设置 */}
         <Col xs={24} lg={12}>
-          <Card style={styles.card}>
-            <div style={styles.cardTitle}>
-              <div style={styles.titleIcon('#722ed1')}>
+          <Card className="settings-card">
+            <div className="settings-card-title">
+              <div
+                className="settings-card-icon"
+                style={{ background: 'linear-gradient(135deg, #722ed115 0%, #722ed130 100%)' }}
+              >
                 <InfoCircleOutlined style={{ fontSize: 20, color: '#722ed1' }} />
               </div>
               <div>

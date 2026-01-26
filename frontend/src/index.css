@@ -262,34 +262,25 @@ body {
 
 /* 费用表格展开按钮优化 */
 .result-breakdown-section .ant-table-row-expand-icon {
-  width: 24px;
-  height: 24px;
-  line-height: 22px;
-  border: 1px solid var(--color-primary);
   border-radius: 4px;
-  color: var(--color-primary);
-  background: var(--color-primary-light);
+  border-color: var(--color-primary) !important;
+  color: var(--color-primary) !important;
   transition: all 0.2s ease;
 }
 
 .result-breakdown-section .ant-table-row-expand-icon:hover {
-  background: var(--color-primary);
-  color: #fff;
-  transform: scale(1.1);
+  background: var(--color-primary-light);
+  border-color: var(--color-primary) !important;
 }
 
-.result-breakdown-section .ant-table-row-expand-icon::before,
-.result-breakdown-section .ant-table-row-expand-icon::after {
-  background: currentColor;
+.result-breakdown-section .ant-table-row-expand-icon:focus {
+  outline: none;
 }
 
-/* 有子行的行添加视觉提示 */
-.result-breakdown-section tr.ant-table-row-level-0:has(.ant-table-row-expand-icon) td:first-child {
-  position: relative;
-}
-
-.result-breakdown-section .ant-table-row-expand-icon-cell {
-  padding-right: 8px !important;
+/* 可展开行的名称添加下划线提示 */
+.result-breakdown-section tr:has(.ant-table-row-expand-icon:not(.ant-table-row-expand-icon-spaced)) .ant-table-cell:nth-child(2) {
+  color: var(--color-primary);
+  cursor: pointer;
 }
 
 .result-metrics-collapse {
