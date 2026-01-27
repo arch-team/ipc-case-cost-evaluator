@@ -62,46 +62,83 @@ npm run deploy:dev
 npx cdk deploy --all --context environment=dev
 ```
 
-### Step 5: 验证部署
+### Step 5: 部署前端到 S3
+
+部署 CDK 栈后，需要将前端构建产物上传到 S3：
+
+```bash
+# 获取 S3 存储桶名称和 CloudFront 分发 ID
+BUCKET_NAME=$(aws cloudformation describe-stacks \
+  --stack-name IPCCostEvaluator-Dev-Frontend \
+  --query 'Stacks[0].Outputs[?OutputKey==`BucketName`].OutputValue' \
+  --output text)
+
+DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+  --stack-name IPCCostEvaluator-Dev-Frontend \
+  --query 'Stacks[0].Outputs[?OutputKey==`DistributionId`].OutputValue' \
+  --output text)
+
+# 上传前端文件
+aws s3 sync ../frontend/dist/ s3://$BUCKET_NAME/ --delete
+
+# 刷新 CloudFront 缓存
+aws cloudfront create-invalidation \
+  --distribution-id $DISTRIBUTION_ID \
+  --paths "/*"
+```
+
+### Step 6: 验证部署
 
 部署完成后，控制台会输出：
 
 ```
 Outputs:
-IPCCostEvaluator-Frontend-dev.FrontendUrl = https://d1234.cloudfront.net
-IPCCostEvaluator-Backend-dev.ApiUrl = https://abc123.execute-api.us-east-1.amazonaws.com
+IPCCostEvaluator-Dev-Frontend.WebsiteUrl = https://d1234.cloudfront.net
+IPCCostEvaluator-Dev-Backend.ApiUrl = https://abc123.execute-api.us-east-1.amazonaws.com
 ```
 
-访问 `FrontendUrl` 验证应用是否正常运行。
+访问 `WebsiteUrl` 验证应用是否正常运行。
 
 ## 常用命令
 
 | 命令 | 描述 |
 |------|------|
 | `npm run deploy:dev` | 部署到开发环境 |
+| `npm run deploy:staging` | 部署到预发布环境 |
 | `npm run deploy:prod` | 部署到生产环境（需审批） |
 | `npm run destroy:dev` | 销毁开发环境 |
 | `npm run diff:dev` | 查看待部署变更 |
-| `npx cdk list` | 列出所有栈 |
-| `npx cdk synth` | 生成 CloudFormation 模板 |
+| `npm run synth:dev` | 生成 CloudFormation 模板 |
+| `npm run list:dev` | 列出开发环境所有栈 |
 
 ## 多环境部署
 
-### 开发环境
+### 开发环境 (dev)
 ```bash
-npx cdk deploy --all --context environment=dev
+npm run deploy:dev
+# 或: npx cdk deploy --all -c environment=dev
 ```
-- DynamoDB: 销毁时删除
+- DynamoDB: 销毁时删除，无 PITR
 - Lambda: 512MB 内存
-- 无告警
+- CORS: 允许所有源
 
-### 生产环境
+### 预发布环境 (staging)
 ```bash
-npx cdk deploy --all --context environment=prod --require-approval broadening
+npm run deploy:staging
+# 或: npx cdk deploy --all -c environment=staging --require-approval broadening
 ```
-- DynamoDB: 销毁时保留
-- Lambda: 1024MB 内存
-- 启用 PITR
+- DynamoDB: 销毁时删除，无 PITR
+- Lambda: 1024MB 内存，50 预留并发
+- CORS: 限制为 CloudFront 域名
+
+### 生产环境 (prod)
+```bash
+npm run deploy:prod
+# 或: npx cdk deploy --all -c environment=prod
+```
+- DynamoDB: 销毁时保留，启用 PITR
+- Lambda: 1024MB 内存，100 预留并发
+- CORS: 限制为 CloudFront 域名
 
 ## 故障排查
 

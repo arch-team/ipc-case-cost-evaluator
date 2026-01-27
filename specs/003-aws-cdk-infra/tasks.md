@@ -150,8 +150,8 @@
 
 ### Implementation for User Story 5
 
-- [ ] T038 [US5] 验证 CDK 增量更新行为（内置功能）`infra/`
-- [ ] T039 [US5] 配置 synth npm script 生成 CloudFormation 模板 `infra/package.json`
+- [X] T038 [US5] 验证 CDK 增量更新行为（内置功能）`infra/`
+- [X] T039 [US5] 配置 synth npm script 生成 CloudFormation 模板 `infra/package.json`
 
 **Checkpoint**: User Story 5 完成，支持增量更新
 
@@ -161,12 +161,12 @@
 
 **Purpose**: 完善文档和最终验证
 
-- [ ] T040 [P] 更新 quickstart.md 确保步骤准确 `specs/003-aws-cdk-infra/quickstart.md`
-- [ ] T041 [P] 添加 infra/README.md 使用说明 `infra/README.md`
-- [ ] T042 验证完整部署流程（端到端测试）
-- [ ] T043 验证多环境部署隔离性
-- [ ] T044 验证销毁流程和数据保留策略
-- [ ] T045 代码清理和中文注释完善
+- [X] T040 [P] 更新 quickstart.md 确保步骤准确 `specs/003-aws-cdk-infra/quickstart.md`
+- [X] T041 [P] 添加 infra/README.md 使用说明 `infra/README.md`
+- [X] T042 验证完整部署流程（端到端测试）
+- [X] T043 验证多环境部署隔离性
+- [X] T044 验证销毁流程和数据保留策略
+- [X] T045 代码清理和中文注释完善
 
 ---
 
