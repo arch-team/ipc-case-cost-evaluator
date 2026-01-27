@@ -25,11 +25,11 @@
 
 **Purpose**: 创建 CDK 项目基础结构
 
-- [ ] T001 创建 CDK 项目目录结构 `infra/`
-- [ ] T002 初始化 CDK TypeScript 项目，配置 `infra/package.json`
-- [ ] T003 [P] 配置 TypeScript 编译选项 `infra/tsconfig.json`
-- [ ] T004 [P] 配置 CDK 应用设置 `infra/cdk.json`
-- [ ] T005 [P] 添加 `.gitignore` 规则忽略 CDK 构建产物 `infra/.gitignore`
+- [X] T001 创建 CDK 项目目录结构 `infra/`
+- [X] T002 初始化 CDK TypeScript 项目，配置 `infra/package.json`
+- [X] T003 [P] 配置 TypeScript 编译选项 `infra/tsconfig.json`
+- [X] T004 [P] 配置 CDK 应用设置 `infra/cdk.json`
+- [X] T005 [P] 添加 `.gitignore` 规则忽略 CDK 构建产物 `infra/.gitignore`
 
 ---
 
@@ -41,29 +41,29 @@
 
 ### 环境配置
 
-- [ ] T006 创建环境配置接口和默认值 `infra/lib/config/environments.ts`
+- [X] T006 创建环境配置接口和默认值 `infra/lib/config/environments.ts`
 
 ### Lambda 适配器
 
-- [ ] T007 创建 Lambda Dockerfile `backend/Dockerfile.lambda`
-- [ ] T008 创建 Mangum 适配器入口 `backend/lambda_handler.py`
-- [ ] T009 更新 backend requirements，添加 mangum 依赖 `backend/requirements.txt`
+- [X] T007 创建 Lambda Dockerfile `backend/Dockerfile.lambda`
+- [X] T008 创建 Mangum 适配器入口 `backend/lambda_handler.py`
+- [X] T009 更新 backend requirements，添加 mangum 依赖 `backend/requirements.txt`
 
 ### CDK 构造组件
 
-- [ ] T010 [P] 创建 DynamoDB 表构造 `infra/lib/constructs/dynamodb-tables.ts`
-- [ ] T011 [P] 创建 FastAPI Lambda 构造 `infra/lib/constructs/fastapi-lambda.ts`
-- [ ] T012 [P] 创建静态网站构造 `infra/lib/constructs/static-website.ts`
+- [X] T010 [P] 创建 DynamoDB 表构造 `infra/lib/constructs/dynamodb-tables.ts`
+- [X] T011 [P] 创建 FastAPI Lambda 构造 `infra/lib/constructs/fastapi-lambda.ts`
+- [X] T012 [P] 创建静态网站构造 `infra/lib/constructs/static-website.ts`
 
 ### CDK 栈定义
 
-- [ ] T013 创建 DatabaseStack `infra/lib/stacks/database-stack.ts`
-- [ ] T014 创建 BackendStack `infra/lib/stacks/backend-stack.ts`（依赖 T013）
-- [ ] T015 创建 FrontendStack `infra/lib/stacks/frontend-stack.ts`（依赖 T014）
+- [X] T013 创建 DatabaseStack `infra/lib/stacks/database-stack.ts`
+- [X] T014 创建 BackendStack `infra/lib/stacks/backend-stack.ts`（依赖 T013）
+- [X] T015 创建 FrontendStack `infra/lib/stacks/frontend-stack.ts`（依赖 T014）
 
 ### CDK 应用入口
 
-- [ ] T016 创建 CDK 应用入口 `infra/bin/app.ts`
+- [X] T016 创建 CDK 应用入口 `infra/bin/app.ts`
 
 **Checkpoint**: 基础设施组件就绪，可开始用户故事实现
 
@@ -77,15 +77,15 @@
 
 ### Implementation for User Story 1
 
-- [ ] T017 [US1] 配置 DynamoDB 表（users, evaluations, shares）按需计费模式 `infra/lib/constructs/dynamodb-tables.ts`
-- [ ] T018 [US1] 配置 Lambda 容器镜像构建（ARM64, 1024MB, 30s 超时）`infra/lib/constructs/fastapi-lambda.ts`
-- [ ] T019 [US1] 配置 API Gateway HTTP API 与 Lambda 集成 `infra/lib/constructs/fastapi-lambda.ts`
-- [ ] T020 [US1] 配置 S3 存储桶私有访问策略 `infra/lib/constructs/static-website.ts`
-- [ ] T021 [US1] 配置 CloudFront 分发与 SPA 路由函数 `infra/lib/constructs/static-website.ts`
-- [ ] T022 [US1] 配置 CloudFront 多源站（S3 + API Gateway）路径行为 `infra/lib/stacks/frontend-stack.ts`
-- [ ] T023 [US1] 配置 Lambda 执行角色和 DynamoDB 访问权限 `infra/lib/stacks/backend-stack.ts`
-- [ ] T024 [US1] 配置 CDK Stack Outputs（FrontendUrl, ApiUrl, TableNames）`infra/lib/stacks/*.ts`
-- [ ] T025 [US1] 添加 npm scripts 快捷命令 `infra/package.json`
+- [X] T017 [US1] 配置 DynamoDB 表（users, evaluations, shares）按需计费模式 `infra/lib/constructs/dynamodb-tables.ts`
+- [X] T018 [US1] 配置 Lambda 容器镜像构建（ARM64, 1024MB, 30s 超时）`infra/lib/constructs/fastapi-lambda.ts`
+- [X] T019 [US1] 配置 API Gateway HTTP API 与 Lambda 集成 `infra/lib/constructs/fastapi-lambda.ts`
+- [X] T020 [US1] 配置 S3 存储桶私有访问策略 `infra/lib/constructs/static-website.ts`
+- [X] T021 [US1] 配置 CloudFront 分发与 SPA 路由函数 `infra/lib/constructs/static-website.ts`
+- [X] T022 [US1] 配置 CloudFront 多源站（S3 + API Gateway）路径行为 `infra/lib/stacks/frontend-stack.ts`
+- [X] T023 [US1] 配置 Lambda 执行角色和 DynamoDB 访问权限 `infra/lib/stacks/backend-stack.ts`
+- [X] T024 [US1] 配置 CDK Stack Outputs（FrontendUrl, ApiUrl, TableNames）`infra/lib/stacks/*.ts`
+- [X] T025 [US1] 添加 npm scripts 快捷命令 `infra/package.json`
 
 **Checkpoint**: User Story 1 完成，可执行 `npm run deploy:dev` 完整部署
 
@@ -99,12 +99,12 @@
 
 ### Implementation for User Story 2
 
-- [ ] T026 [US2] 实现环境配置切换逻辑（dev/staging/prod）`infra/lib/config/environments.ts`
-- [ ] T027 [US2] 配置环境感知的资源命名前缀 `infra/lib/constructs/*.ts`
-- [ ] T028 [US2] 配置 CDK Context 读取环境参数 `infra/bin/app.ts`
-- [ ] T029 [US2] 配置栈命名规范 IPCCostEvaluator-{Stack}-{Env} `infra/bin/app.ts`
-- [ ] T030 [US2] 配置环境特定的 CORS 允许源 `infra/lib/config/environments.ts`
-- [ ] T031 [US2] 添加环境特定的 npm scripts `infra/package.json`
+- [X] T026 [US2] 实现环境配置切换逻辑（dev/staging/prod）`infra/lib/config/environments.ts`
+- [X] T027 [US2] 配置环境感知的资源命名前缀 `infra/lib/constructs/*.ts`
+- [X] T028 [US2] 配置 CDK Context 读取环境参数 `infra/bin/app.ts`
+- [X] T029 [US2] 配置栈命名规范 IPCCostEvaluator-{Stack}-{Env} `infra/bin/app.ts`
+- [X] T030 [US2] 配置环境特定的 CORS 允许源 `infra/lib/config/environments.ts`
+- [X] T031 [US2] 添加环境特定的 npm scripts `infra/package.json`
 
 **Checkpoint**: User Story 2 完成，可部署多个独立环境
 
@@ -118,10 +118,10 @@
 
 ### Implementation for User Story 3
 
-- [ ] T032 [US3] 配置 DynamoDB RemovalPolicy 按环境区分 `infra/lib/constructs/dynamodb-tables.ts`
-- [ ] T033 [US3] 配置 S3 存储桶 autoDeleteObjects 按环境区分 `infra/lib/constructs/static-website.ts`
-- [ ] T034 [US3] 配置 prod 环境 DynamoDB PITR（时间点恢复）`infra/lib/constructs/dynamodb-tables.ts`
-- [ ] T035 [US3] 添加 destroy npm scripts `infra/package.json`
+- [X] T032 [US3] 配置 DynamoDB RemovalPolicy 按环境区分 `infra/lib/constructs/dynamodb-tables.ts`
+- [X] T033 [US3] 配置 S3 存储桶 autoDeleteObjects 按环境区分 `infra/lib/constructs/static-website.ts`
+- [X] T034 [US3] 配置 prod 环境 DynamoDB PITR（时间点恢复）`infra/lib/constructs/dynamodb-tables.ts`
+- [X] T035 [US3] 添加 destroy npm scripts `infra/package.json`
 
 **Checkpoint**: User Story 3 完成，可安全销毁资源栈
 
@@ -135,8 +135,8 @@
 
 ### Implementation for User Story 4
 
-- [ ] T036 [US4] 添加 diff npm scripts 查看变更 `infra/package.json`
-- [ ] T037 [US4] 配置 CfnOutput 导出关键信息 `infra/lib/stacks/*.ts`
+- [X] T036 [US4] 添加 diff npm scripts 查看变更 `infra/package.json`
+- [X] T037 [US4] 配置 CfnOutput 导出关键信息 `infra/lib/stacks/*.ts`
 
 **Checkpoint**: User Story 4 完成，可查看部署状态
 
@@ -240,11 +240,11 @@ Task T041: "添加 infra/README.md"
 
 ### MVP First (User Story 1 Only)
 
-1. Complete Phase 1: Setup ✅
-2. Complete Phase 2: Foundational ✅
-3. Complete Phase 3: User Story 1 ✅
-4. **STOP and VALIDATE**: 执行 `npm run deploy:dev` 验证完整部署
-5. Deploy/demo if ready
+1. Complete Phase 1: Setup ✅ **DONE**
+2. Complete Phase 2: Foundational ✅ **DONE**
+3. Complete Phase 3: User Story 1 ✅ **DONE**
+4. **STOP and VALIDATE**: 执行 `npm run deploy:dev` 验证完整部署 ✅ **DONE**
+5. Deploy/demo if ready ✅ **DEPLOYED**
 
 ### Incremental Delivery
 

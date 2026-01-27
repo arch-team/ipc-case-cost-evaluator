@@ -115,10 +115,10 @@ export class FastApiLambda extends Construct {
 
     this.httpApi = new apigatewayv2.HttpApi(this, 'HttpApi', {
       apiName: `${config.appPrefix}-http-api`,
-      description: 'IPC Case Cost Evaluator API',
-      // CORS 配置
+      description: `IPC Case Cost Evaluator API (${config.envName})`,
+      // CORS 配置 - 根据环境使用不同的允许源
       corsPreflight: {
-        allowOrigins: ['*'], // 生产环境应该限制域名
+        allowOrigins: config.apiGateway.corsAllowOrigins,
         allowMethods: [
           apigatewayv2.CorsHttpMethod.GET,
           apigatewayv2.CorsHttpMethod.POST,
