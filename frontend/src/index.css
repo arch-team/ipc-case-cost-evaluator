@@ -627,19 +627,19 @@ body {
 }
 
 .sensitivity-bar-min {
-  background: linear-gradient(90deg, #52c41a 0%, #95de64 100%);
+  background: linear-gradient(90deg, #22D3EE 0%, #67E8F9 100%);
 }
 
 .sensitivity-bar-baseline {
-  background: linear-gradient(90deg, #1890ff 0%, #69c0ff 100%);
+  background: linear-gradient(90deg, #6366F1 0%, #818CF8 100%);
 }
 
 .sensitivity-bar-current {
-  background: linear-gradient(90deg, #fa8c16 0%, #ffc069 100%);
+  background: linear-gradient(90deg, #8B5CF6 0%, #A78BFA 100%);
 }
 
 .sensitivity-bar-max {
-  background: linear-gradient(90deg, #ff4d4f 0%, #ff7875 100%);
+  background: linear-gradient(90deg, #F43F5E 0%, #FB7185 100%);
 }
 
 .sensitivity-bar-label {
@@ -665,18 +665,18 @@ body {
 }
 
 .sensitivity-bar-row:first-child .sensitivity-bar-percent {
-  color: var(--color-success);
-  background: rgba(82, 196, 26, 0.1);
+  color: #22D3EE;
+  background: rgba(34, 211, 238, 0.15);
 }
 
 .sensitivity-bar-row:last-child .sensitivity-bar-percent {
-  color: var(--color-error);
-  background: rgba(255, 77, 79, 0.1);
+  color: #F43F5E;
+  background: rgba(244, 63, 94, 0.15);
 }
 
 .sensitivity-bar-row-baseline .sensitivity-bar-percent {
-  color: var(--color-primary);
-  background: rgba(24, 144, 255, 0.1);
+  color: #6366F1;
+  background: rgba(99, 102, 241, 0.15);
 }
 
 /* 应用按钮 */
