@@ -11,7 +11,7 @@ import {
   TableOutlined,
   DownOutlined,
 } from '@ant-design/icons';
-import type { CostSummary, TechnicalDimensions } from '../../types';
+import type { CostSummary, TechnicalDimensions, StorageClass } from '../../types';
 import { formatNumber } from '../../utils/formatters';
 import CostPieChart from './CostPieChart';
 import CostBreakdownTable from './CostBreakdownTable';
@@ -28,12 +28,13 @@ interface SchemeInfo {
 interface ResultDisplayProps {
   result: CostSummary;
   schemeInfo?: SchemeInfo;  // 当前显示结果对应的方案信息
+  region: string;  // AWS 区域（用于获取定价）
   onExport?: () => void;
 }
 
 type BreakdownViewType = 'chart' | 'table';
 
-const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, schemeInfo, onExport }) => {
+const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, schemeInfo, region, onExport }) => {
   const [breakdownView, setBreakdownView] = useState<BreakdownViewType>('table');
 
   // 使用共用格式化函数 formatNumber
@@ -164,6 +165,8 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, schemeInfo, onExp
             metrics={result.metrics}
             monthlyTotal={result.monthly_total}
             pricingMetadata={result.pricing_metadata}
+            region={region}
+            storageClass={(schemeInfo?.technical.storage_class || 'STANDARD') as StorageClass}
             detailedBreakdown={result.detailed_breakdown ? {
               storageCosts: result.detailed_breakdown.storage_costs?.map(c => ({
                 name: c.name,

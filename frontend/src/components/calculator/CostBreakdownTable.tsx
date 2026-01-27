@@ -1,15 +1,18 @@
 /**
  * 增强版费用明细表格
  * 支持单价、用量、阶梯明细展示
+ * 定价数据从后端 API 动态获取
  */
 import React, { useState } from 'react';
-import { Table, Typography, Tag } from 'antd';
+import { Table, Typography, Tag, Spin } from 'antd';
 import { CloudServerOutlined } from '@ant-design/icons';
 import type {
   CostBreakdown,
   UsageMetrics,
   PricingMetadata as APIPricingMetadata,
+  StorageClass,
 } from '../../types';
+import { usePricing } from '../../hooks/usePricing';
 
 const { Text } = Typography;
 
@@ -42,6 +45,9 @@ interface CostBreakdownTableProps {
   metrics?: UsageMetrics;
   monthlyTotal: number;
   pricingMetadata?: APIPricingMetadata;
+  // 区域和存储类型（用于动态获取定价）
+  region: string;
+  storageClass: StorageClass;
   // 可选的详细明细数据（来自后端增强 API）
   detailedBreakdown?: {
     storageCosts?: Array<{
@@ -56,40 +62,37 @@ interface CostBreakdownTableProps {
   };
 }
 
-/**
- * 回退单价配置
- *
- * 仅当后端不返回 detailedBreakdown 时使用。
- * 注意：这些是近似参考值，实际定价以后端 API 返回的数据为准。
- * 定价数据统一从后端 /api/v1/pricing/{region} 获取。
- */
-const DEFAULT_PRICING = {
-  STANDARD: {
-    storage: 0.025,
-    put: 0.005,
-    get: 0.0004,
-  },
-  GLACIER_IR: {
-    storage: 0.004,
-    put: 0.02,
-    get: 0.01,
-    retrieval: 0.03,
-    lifecycle: 0.02,
-  },
-};
-
 const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
   breakdown,
   metrics,
   monthlyTotal,
   pricingMetadata,
+  region,
+  storageClass,
   detailedBreakdown,
 }) => {
   const [expandedRowKeys, setExpandedRowKeys] = useState<string[]>([]);
 
+  // 从 API 动态获取定价数据
+  const { data: pricing, isLoading: pricingLoading } = usePricing(region);
+
+  // 获取当前存储类型的定价
+  const getStoragePricing = () => {
+    if (!pricing) return null;
+    return pricing.storage_classes[storageClass];
+  };
+
+  // 获取数据传输定价
+  const getTransferPrice = () => {
+    if (!pricing) return 0;
+    return pricing.data_transfer.out_first_10tb_per_gb;
+  };
+
   // 构建费用明细数据
   const buildBreakdownData = (): EnhancedCostItem[] => {
     const items: EnhancedCostItem[] = [];
+    const storagePricing = getStoragePricing();
+    const transferPrice = getTransferPrice();
 
     // 存储费用
     if (detailedBreakdown?.storageCosts && detailedBreakdown.storageCosts.length > 0) {
@@ -116,11 +119,11 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
         children: storageChildren,
       });
     } else {
-      // 使用简单的存储费用数据
+      // 使用简单的存储费用数据（从 API 获取单价）
       items.push({
         key: 'storage',
         name: '存储费用',
-        unitPrice: DEFAULT_PRICING.STANDARD.storage,
+        unitPrice: storagePricing?.storage_per_gb_month,
         unitPriceUnit: 'USD/GB-月',
         quantity: metrics?.avg_storage_gb,
         quantityUnit: 'GB',
@@ -134,7 +137,7 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
     items.push({
       key: 'put',
       name: 'PUT 请求费用',
-      unitPrice: DEFAULT_PRICING.STANDARD.put,
+      unitPrice: storagePricing?.put_per_1000,
       unitPriceUnit: 'USD/千次',
       quantity: metrics ? metrics.monthly_puts / 1000 : undefined,
       quantityUnit: '千次',
@@ -147,7 +150,7 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
     items.push({
       key: 'get',
       name: 'GET 请求费用',
-      unitPrice: DEFAULT_PRICING.STANDARD.get,
+      unitPrice: storagePricing?.get_per_1000,
       unitPriceUnit: 'USD/千次',
       quantity: metrics ? metrics.monthly_gets / 1000 : undefined,
       quantityUnit: '千次',
@@ -161,7 +164,7 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
       items.push({
         key: 'retrieval',
         name: '检索费用',
-        unitPrice: DEFAULT_PRICING.GLACIER_IR.retrieval,
+        unitPrice: storagePricing?.retrieval_per_gb,
         unitPriceUnit: 'USD/GB',
         quantity: metrics?.monthly_retrieval_gb,
         quantityUnit: 'GB',
@@ -180,9 +183,9 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
           tierName: '前 10TB',
           rangeStartGb: 0,
           rangeEndGb: 10240,
-          unitPrice: 0.114,
+          unitPrice: transferPrice,
           quantityGb: Math.min(metrics.monthly_transfer_gb, 10240),
-          amount: Math.min(metrics.monthly_transfer_gb, 10240) * 0.114,
+          amount: Math.min(metrics.monthly_transfer_gb, 10240) * transferPrice,
         },
       ] : undefined);
 
@@ -203,7 +206,7 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
       items.push({
         key: 'transfer',
         name: '数据传输费用',
-        unitPrice: 0.114,
+        unitPrice: transferPrice,
         unitPriceUnit: 'USD/GB',
         quantity: metrics?.monthly_transfer_gb,
         quantityUnit: 'GB',
@@ -219,7 +222,7 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
       items.push({
         key: 'lifecycle',
         name: '生命周期转换费用',
-        unitPrice: DEFAULT_PRICING.GLACIER_IR.lifecycle,
+        unitPrice: storagePricing?.lifecycle_transition_per_1000,
         unitPriceUnit: 'USD/千次',
         quantity: metrics ? metrics.monthly_puts / 1000 : undefined,
         quantityUnit: '千次',
@@ -326,32 +329,34 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
         </div>
       )}
 
-      <Table
-        dataSource={data}
-        columns={columns}
-        pagination={false}
-        expandable={{
-          expandedRowKeys,
-          onExpandedRowsChange: (keys) => setExpandedRowKeys(keys as string[]),
-          childrenColumnName: 'children',
-        }}
-        summary={() => (
-          <Table.Summary.Row style={{ background: '#fafafa' }}>
-            <Table.Summary.Cell index={0} colSpan={3}>
-              <Text strong>合计</Text>
-            </Table.Summary.Cell>
-            <Table.Summary.Cell index={3} align="right">
-              <Text strong>${monthlyTotal.toFixed(2)}</Text>
-            </Table.Summary.Cell>
-            <Table.Summary.Cell index={4} align="right">
-              <Text strong>${(monthlyTotal * 12).toFixed(2)}</Text>
-            </Table.Summary.Cell>
-            <Table.Summary.Cell index={5} align="right">
-              <Text strong>100%</Text>
-            </Table.Summary.Cell>
-          </Table.Summary.Row>
-        )}
-      />
+      <Spin spinning={pricingLoading} tip="加载定价数据...">
+        <Table
+          dataSource={data}
+          columns={columns}
+          pagination={false}
+          expandable={{
+            expandedRowKeys,
+            onExpandedRowsChange: (keys) => setExpandedRowKeys(keys as string[]),
+            childrenColumnName: 'children',
+          }}
+          summary={() => (
+            <Table.Summary.Row style={{ background: '#fafafa' }}>
+              <Table.Summary.Cell index={0} colSpan={3}>
+                <Text strong>合计</Text>
+              </Table.Summary.Cell>
+              <Table.Summary.Cell index={3} align="right">
+                <Text strong>${monthlyTotal.toFixed(2)}</Text>
+              </Table.Summary.Cell>
+              <Table.Summary.Cell index={4} align="right">
+                <Text strong>${(monthlyTotal * 12).toFixed(2)}</Text>
+              </Table.Summary.Cell>
+              <Table.Summary.Cell index={5} align="right">
+                <Text strong>100%</Text>
+              </Table.Summary.Cell>
+            </Table.Summary.Row>
+          )}
+        />
+      </Spin>
     </div>
   );
 };

@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.models.pricing import PricingLoader
+from app.models.regions import REGION_NAMES_EN
 from app.services.pricing_service import get_pricing_service
 
 router = APIRouter(prefix="/pricing", tags=["定价"])
@@ -99,47 +100,8 @@ class PricingRefreshResponse(BaseModel):
     is_fallback: bool = Field(..., description="是否为回退数据")
 
 
-# 区域名称映射
-REGION_NAMES = {
-    # 美国区域
-    "us-east-1": "US East (N. Virginia)",
-    "us-east-2": "US East (Ohio)",
-    "us-west-1": "US West (N. California)",
-    "us-west-2": "US West (Oregon)",
-    # 亚太区域
-    "ap-northeast-1": "Asia Pacific (Tokyo)",
-    "ap-northeast-2": "Asia Pacific (Seoul)",
-    "ap-northeast-3": "Asia Pacific (Osaka)",
-    "ap-southeast-1": "Asia Pacific (Singapore)",
-    "ap-southeast-2": "Asia Pacific (Sydney)",
-    "ap-southeast-3": "Asia Pacific (Jakarta)",
-    "ap-southeast-4": "Asia Pacific (Melbourne)",
-    "ap-southeast-5": "Asia Pacific (Malaysia)",
-    "ap-south-1": "Asia Pacific (Mumbai)",
-    "ap-south-2": "Asia Pacific (Hyderabad)",
-    "ap-east-1": "Asia Pacific (Hong Kong)",
-    # 欧洲区域
-    "eu-west-1": "Europe (Ireland)",
-    "eu-west-2": "Europe (London)",
-    "eu-west-3": "Europe (Paris)",
-    "eu-central-1": "Europe (Frankfurt)",
-    "eu-central-2": "Europe (Zurich)",
-    "eu-north-1": "Europe (Stockholm)",
-    "eu-south-1": "Europe (Milan)",
-    "eu-south-2": "Europe (Spain)",
-    # 南美区域
-    "sa-east-1": "South America (São Paulo)",
-    # 加拿大区域
-    "ca-central-1": "Canada (Montreal)",
-    "ca-west-1": "Canada (Calgary)",
-    # 中东区域
-    "me-south-1": "Middle East (Bahrain)",
-    "me-central-1": "Middle East (UAE)",
-    # 非洲区域
-    "af-south-1": "Africa (Cape Town)",
-    # 以色列区域
-    "il-central-1": "Israel (Tel Aviv)",
-}
+# 区域名称映射 - 使用统一数据源
+REGION_NAMES = REGION_NAMES_EN
 
 
 # ============================================

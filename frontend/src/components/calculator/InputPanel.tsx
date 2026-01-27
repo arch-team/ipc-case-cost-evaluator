@@ -42,6 +42,7 @@ import FunctionalForm from './FunctionalForm';
 import TechnicalForm from './TechnicalForm';
 import PricingForm from './PricingForm';
 import MultiSchemePanel from './MultiSchemePanel';
+import { REGION_NAMES_ZH_SHORT } from '../../constants/regions';
 
 interface InputPanelProps {
   value: CostCalculationInput;
@@ -68,20 +69,8 @@ const storageClassLabels: Record<string, string> = {
   DEEP_ARCHIVE: 'Deep Archive',
 };
 
-// 区域显示名称
-const regionLabels: Record<string, string> = {
-  'ap-northeast-1': '东京',
-  'us-east-1': '弗吉尼亚',
-  'us-west-2': '俄勒冈',
-  'eu-west-1': '爱尔兰',
-  'eu-central-1': '法兰克福',
-  'ap-northeast-2': '首尔',
-  'ap-southeast-1': '新加坡',
-  'ap-southeast-2': '悉尼',
-  'ap-south-1': '孟买',
-  'cn-north-1': '北京',
-  'cn-northwest-1': '宁夏',
-};
+// 区域显示名称 - 使用统一数据源
+const regionLabels = REGION_NAMES_ZH_SHORT;
 
 const InputPanel: React.FC<InputPanelProps> = ({
   value,

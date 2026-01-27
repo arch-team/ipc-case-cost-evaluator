@@ -295,6 +295,7 @@ const Calculator: React.FC = () => {
                 name: currentSchemeResult.schemeName,
                 technical: currentSchemeResult.technical,
               } : undefined}
+              region={input.pricing.region}
               onExport={handleExport}
             />
 

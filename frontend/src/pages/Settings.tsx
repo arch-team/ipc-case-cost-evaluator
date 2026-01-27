@@ -16,6 +16,7 @@ import { authApi } from '../api/client';
 import { LoginForm, RegisterForm } from '../components/auth';
 import { ROLE_LABELS } from '../types/auth';
 import type { UserUpdateRequest } from '../types/auth';
+import { REGION_SELECT_OPTIONS } from '../constants/regions';
 
 const { Text, Paragraph } = Typography;
 
@@ -413,13 +414,12 @@ const Settings: React.FC = () => {
                 </div>
                 <Select
                   defaultValue="ap-northeast-1"
-                  style={{ width: 180 }}
-                  options={[
-                    { value: 'ap-northeast-1', label: '东京 (ap-northeast-1)' },
-                    { value: 'ap-southeast-1', label: '新加坡 (ap-southeast-1)' },
-                    { value: 'us-east-1', label: '弗吉尼亚 (us-east-1)' },
-                    { value: 'eu-west-1', label: '爱尔兰 (eu-west-1)' },
-                  ]}
+                  style={{ width: 220 }}
+                  options={REGION_SELECT_OPTIONS}
+                  showSearch
+                  filterOption={(input, option) =>
+                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                  }
                 />
               </div>
 

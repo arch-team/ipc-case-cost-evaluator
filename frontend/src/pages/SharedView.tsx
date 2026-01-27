@@ -27,7 +27,7 @@ import {
   EyeOutlined,
   HomeOutlined,
 } from '@ant-design/icons';
-import type { SharedEvaluation } from '../types';
+import type { SharedEvaluation, StorageClass } from '../types';
 import { shareApi } from '../api/client';
 import CostBreakdownTable from '../components/calculator/CostBreakdownTable';
 
@@ -231,7 +231,12 @@ const SharedView: React.FC = () => {
         {/* 费用明细 */}
         <Card className="shared-view-breakdown-card" style={{ marginTop: 24 }}>
           <Title level={4}>费用明细</Title>
-          <CostBreakdownTable breakdown={result.breakdown} monthlyTotal={result.monthly_total} />
+          <CostBreakdownTable
+            breakdown={result.breakdown}
+            monthlyTotal={result.monthly_total}
+            region={pricing.region}
+            storageClass={technical.storage_class as StorageClass}
+          />
         </Card>
 
         {/* 参数配置 */}

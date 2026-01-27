@@ -165,6 +165,142 @@ class TestPricingLoader:
         assert pricing1 is not pricing2  # 清除缓存后应该是不同对象
 
 
+class TestPricingLoaderSave:
+    """定价保存功能测试"""
+
+    @pytest.fixture
+    def sample_pricing(self):
+        """创建测试用的定价数据"""
+        from app.models.pricing import S3Pricing, DataTransferPricing
+
+        return S3Pricing(
+            region="test-save-region",
+            region_name="Test Save Region",
+            currency="USD",
+            last_updated="2025-01-28",
+            storage_classes={
+                StorageClass.STANDARD: StorageClassPricing(
+                    storage_per_gb_month=0.023,
+                    put_per_1000=0.005,
+                    get_per_1000=0.0004,
+                    retrieval_per_gb=0,
+                    lifecycle_transition_per_1000=0,
+                ),
+                StorageClass.GLACIER_IR: StorageClassPricing(
+                    storage_per_gb_month=0.004,
+                    put_per_1000=0.02,
+                    get_per_1000=0.01,
+                    retrieval_per_gb=0.03,
+                    lifecycle_transition_per_1000=0.02,
+                ),
+            },
+            data_transfer=DataTransferPricing(
+                out_first_10tb_per_gb=0.114,
+                out_next_40tb_per_gb=0.089,
+                out_next_100tb_per_gb=0.086,
+                out_over_150tb_per_gb=0.084,
+            ),
+        )
+
+    @pytest.fixture
+    def cleanup_test_file(self):
+        """清理测试文件"""
+        yield
+        # 测试后清理
+        test_file = PricingLoader._pricing_dir / "test-save-region.json"
+        if test_file.exists():
+            test_file.unlink()
+        # 清除缓存
+        PricingLoader.clear_cache()
+
+    def test_save_creates_file(self, sample_pricing, cleanup_test_file):
+        """测试 save 方法创建 JSON 文件"""
+        PricingLoader.save(sample_pricing)
+
+        pricing_file = PricingLoader._pricing_dir / "test-save-region.json"
+        assert pricing_file.exists(), "定价文件未创建"
+
+    def test_save_file_content_correct(self, sample_pricing, cleanup_test_file):
+        """测试保存的文件内容正确"""
+        import json
+
+        PricingLoader.save(sample_pricing)
+
+        pricing_file = PricingLoader._pricing_dir / "test-save-region.json"
+        with open(pricing_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        assert data["region"] == "test-save-region"
+        assert data["region_name"] == "Test Save Region"
+        assert data["currency"] == "USD"
+        assert data["last_updated"] == "2025-01-28"
+        assert "STANDARD" in data["storage_classes"]
+        assert "GLACIER_IR" in data["storage_classes"]
+        assert data["storage_classes"]["STANDARD"]["storage_per_gb_month"] == 0.023
+        assert data["data_transfer"]["out_first_10tb_per_gb"] == 0.114
+
+    def test_save_updates_memory_cache(self, sample_pricing, cleanup_test_file):
+        """测试 save 方法更新内存缓存"""
+        PricingLoader.clear_cache()
+        PricingLoader.save(sample_pricing)
+
+        # 从缓存获取应该返回相同对象
+        cached = PricingLoader._cache.get("test-save-region")
+        assert cached is not None
+        assert cached.region == "test-save-region"
+
+    def test_save_file_can_be_loaded(self, sample_pricing, cleanup_test_file):
+        """测试保存的文件可以被正确加载"""
+        PricingLoader.save(sample_pricing)
+        PricingLoader.clear_cache()  # 清除缓存强制从文件加载
+
+        loaded = PricingLoader.load("test-save-region")
+
+        assert loaded.region == "test-save-region"
+        assert loaded.region_name == "Test Save Region"
+        assert StorageClass.STANDARD in loaded.storage_classes
+        assert StorageClass.GLACIER_IR in loaded.storage_classes
+        assert loaded.get_storage_price(StorageClass.STANDARD) == 0.023
+
+    def test_save_overwrites_existing_file(self, sample_pricing, cleanup_test_file):
+        """测试 save 方法覆盖已存在的文件"""
+        from app.models.pricing import S3Pricing, DataTransferPricing
+
+        # 先保存一次
+        PricingLoader.save(sample_pricing)
+
+        # 修改数据再保存
+        updated_pricing = S3Pricing(
+            region="test-save-region",
+            region_name="Updated Test Region",
+            currency="USD",
+            last_updated="2025-01-29",
+            storage_classes={
+                StorageClass.STANDARD: StorageClassPricing(
+                    storage_per_gb_month=0.025,  # 更新价格
+                    put_per_1000=0.006,
+                    get_per_1000=0.0005,
+                    retrieval_per_gb=0,
+                    lifecycle_transition_per_1000=0,
+                ),
+            },
+            data_transfer=DataTransferPricing(
+                out_first_10tb_per_gb=0.12,
+                out_next_40tb_per_gb=0.09,
+                out_next_100tb_per_gb=0.087,
+                out_over_150tb_per_gb=0.085,
+            ),
+        )
+        PricingLoader.save(updated_pricing)
+        PricingLoader.clear_cache()
+
+        # 加载并验证是新数据
+        loaded = PricingLoader.load("test-save-region")
+        assert loaded.region_name == "Updated Test Region"
+        assert loaded.last_updated == "2025-01-29"
+        assert loaded.get_storage_price(StorageClass.STANDARD) == 0.025
+
+
 class TestPricingComparison:
     """定价对比测试"""
 
