@@ -106,7 +106,10 @@
       "Bash(__NEW_LINE_775be1421bf59066__ echo \"=== 刷新定价数据 ===\")",
       "Bash(.specify/scripts/bash/create-new-feature.sh:*)",
       "Bash(.specify/scripts/bash/setup-plan.sh:*)",
-      "Bash(.specify/scripts/bash/update-agent-context.sh:*)"
+      "Bash(.specify/scripts/bash/update-agent-context.sh:*)",
+      "Bash(BASE_URL=http://localhost:5173 npx playwright test:*)",
+      "Bash(.venv/bin/pytest tests/ -v --tb=no -q)",
+      "Bash(open:*)"
     ],
     "deny": []
   },

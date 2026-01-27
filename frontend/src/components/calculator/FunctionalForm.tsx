@@ -2,11 +2,12 @@
  * 功能维度配置表单
  */
 import React from 'react';
-import { Form, InputNumber, Select, Slider, Row, Col, Typography } from 'antd';
-import type { FunctionalDimensions, RecordingMode, VideoQuality } from '../../types';
+import { Form, InputNumber, Select, Row, Col, Typography } from 'antd';
+import type { FunctionalDimensions, RecordingMode, VideoQuality, AccessPatternConfig } from '../../types';
 import { validateNumericField } from '../../utils/validation';
 import { FormLabel } from '../common/FormLabel';
 import { RECORDING_MODE_OPTIONS, VIDEO_QUALITY_OPTIONS, FORM_TOOLTIPS } from '../../constants/forms';
+import AccessPatternSelector from './AccessPatternSelector';
 
 const { Text } = Typography;
 
@@ -25,6 +26,15 @@ const FunctionalForm: React.FC<FunctionalFormProps> = ({ value, onChange }) => {
       // 非数值字段直接更新
       onChange({ ...value, [field]: val });
     }
+  };
+
+  // 处理访问模式变化
+  const handleAccessPatternChange = (accessPattern: number, config?: AccessPatternConfig) => {
+    onChange({
+      ...value,
+      access_pattern: accessPattern,
+      access_pattern_config: config,
+    });
   };
 
   return (
@@ -120,26 +130,12 @@ const FunctionalForm: React.FC<FunctionalFormProps> = ({ value, onChange }) => {
           )}
 
           <Col span={24}>
-            <Form.Item
-              label={
-                <FormLabel
-                  label={`回看比例 (${Math.round(value.access_pattern * 100)}%)`}
-                  tooltip={FORM_TOOLTIPS.accessPattern}
-                />
-              }
-            >
-              <Slider
-                min={0}
-                max={100}
-                value={value.access_pattern * 100}
-                onChange={(val) => handleChange('access_pattern', val / 100)}
-                marks={{
-                  0: '0%',
-                  10: '10%',
-                  25: '25%',
-                  50: '50%',
-                  100: '100%',
-                }}
+            <Form.Item>
+              <AccessPatternSelector
+                accessPattern={value.access_pattern}
+                accessPatternConfig={value.access_pattern_config}
+                retentionDays={value.retention_days}
+                onChange={handleAccessPatternChange}
               />
             </Form.Item>
           </Col>

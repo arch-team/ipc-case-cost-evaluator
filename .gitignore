@@ -10,8 +10,10 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+/lib/
+/lib64/
+# 允许 CDK 项目的 lib 目录
+!infra/lib/
 parts/
 sdist/
 var/

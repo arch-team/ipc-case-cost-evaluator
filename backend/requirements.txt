@@ -5,6 +5,7 @@
 # Web 框架
 fastapi>=0.109.0
 uvicorn>=0.27.0
+mangum>=0.17.0  # AWS Lambda 适配器
 
 # Excel 导出
 openpyxl>=3.1.2

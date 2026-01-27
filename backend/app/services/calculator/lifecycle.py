@@ -21,6 +21,7 @@ from app.models.results import (
 from app.services.calculator.base import BaseCalculator
 
 if TYPE_CHECKING:
+    from app.models.dimensions import FunctionalDimensions
     from app.services.pricing_service import PricingService
 
 
@@ -150,6 +151,7 @@ class LifecycleCalculator(BaseCalculator):
                 monthly_retrieval_gb=monthly_retrieval_gb,
                 total_days=total_days,
                 is_first_stage=(i == 0),
+                functional=functional,  # 传递 functional 以支持分阶段访问比例
             )
             stage_breakdowns.append(stage_breakdown)
 
@@ -164,9 +166,10 @@ class LifecycleCalculator(BaseCalculator):
             # 添加存储费用明细
             storage_cost_items.append(stage_breakdown.storage_cost)
 
-        # 计算 GET 请求费用（分配到各阶段）
+        # 计算 GET 请求费用（分配到各阶段，支持分阶段访问比例）
         get_cost_item = self._calculate_get_cost_item(
-            stages, monthly_gets, total_days
+            stages, monthly_gets, total_days,
+            functional=functional, monthly_puts=monthly_puts
         )
         total_get_cost = get_cost_item.amount
 
@@ -179,7 +182,8 @@ class LifecycleCalculator(BaseCalculator):
             put_request_cost=self._create_put_cost_item(monthly_puts),
             get_request_cost=get_cost_item,
             retrieval_cost=self._create_retrieval_cost_item(
-                monthly_retrieval_gb, stages, total_days
+                monthly_retrieval_gb, stages, total_days,
+                functional=functional, daily_data_gb=daily_data_gb
             ),
             data_transfer_cost=transfer_cost_item,
             lifecycle_cost=self._create_lifecycle_cost_item(
@@ -233,24 +237,43 @@ class LifecycleCalculator(BaseCalculator):
         monthly_retrieval_gb: float,
         total_days: int,
         is_first_stage: bool,
+        functional: Optional["FunctionalDimensions"] = None,
     ) -> StageCostBreakdown:
         """计算单个阶段的成本
+
+        支持时间衰减访问模式。如果提供 functional 参数，则使用分阶段访问比例；
+        否则使用传统的按天数比例分配方式（向后兼容）。
 
         Args:
             stage: 生命周期阶段
             daily_data_gb: 每日数据量
             monthly_puts: 月度 PUT 请求数
-            monthly_gets: 月度 GET 请求数
-            monthly_retrieval_gb: 月度检索量
+            monthly_gets: 月度 GET 请求数（向后兼容）
+            monthly_retrieval_gb: 月度检索量（向后兼容）
             total_days: 总保留天数
             is_first_stage: 是否为第一阶段
+            functional: 功能维度配置（用于获取阶段访问比例）
 
         Returns:
             StageCostBreakdown: 阶段成本明细
         """
         storage_class = stage.storage_class
         duration_days = stage.duration_days
-        day_ratio = duration_days / total_days
+        day_ratio = duration_days / total_days if total_days > 0 else 0
+
+        # 计算该阶段的 GET 请求数和检索量
+        if functional is not None:
+            # 使用分阶段访问比例
+            stage_gets = BaseCalculator.calculate_monthly_gets_for_period(
+                functional, monthly_puts, stage.start_day, stage.end_day, total_days
+            )
+            stage_retrieval_gb = BaseCalculator.calculate_monthly_retrieval_for_period(
+                daily_data_gb, functional, stage.start_day, stage.end_day
+            )
+        else:
+            # 向后兼容：使用传统的按天数比例分配
+            stage_gets = monthly_gets * day_ratio
+            stage_retrieval_gb = monthly_retrieval_gb * day_ratio
 
         # 计算各项费用
         storage_cost = self._calculate_stage_storage_cost(
@@ -261,8 +284,8 @@ class LifecycleCalculator(BaseCalculator):
             storage_class, monthly_puts, is_first_stage
         )
 
-        retrieval_cost = self._calculate_stage_retrieval_cost(
-            storage_class, monthly_retrieval_gb, day_ratio
+        retrieval_cost = self._calculate_stage_retrieval_cost_v2(
+            storage_class, stage_retrieval_gb
         )
 
         # 生命周期转换费用（非第一阶段）
@@ -286,14 +309,39 @@ class LifecycleCalculator(BaseCalculator):
         stages: List[LifecycleStage],
         monthly_gets: float,
         total_days: int,
+        functional: Optional["FunctionalDimensions"] = None,
+        monthly_puts: float = 0,
     ) -> CostItem:
-        """计算 GET 请求费用（按阶段比例分配）"""
+        """计算 GET 请求费用（按阶段比例分配）
+
+        支持时间衰减访问模式。如果提供 functional 参数，则使用分阶段访问比例。
+
+        Args:
+            stages: 生命周期阶段列表
+            monthly_gets: 月度 GET 请求数（向后兼容）
+            total_days: 总保留天数
+            functional: 功能维度配置（用于获取阶段访问比例）
+            monthly_puts: 月度 PUT 请求数（分阶段计算需要）
+
+        Returns:
+            CostItem 实例
+        """
         total_get_cost = 0.0
+        total_stage_gets = 0.0
         weighted_price = 0.0
 
         for stage in stages:
-            day_ratio = stage.duration_days / total_days
-            stage_gets = monthly_gets * day_ratio
+            day_ratio = stage.duration_days / total_days if total_days > 0 else 0
+
+            # 计算该阶段的 GET 请求数
+            if functional is not None and monthly_puts > 0:
+                stage_gets = BaseCalculator.calculate_monthly_gets_for_period(
+                    functional, monthly_puts, stage.start_day, stage.end_day, total_days
+                )
+            else:
+                stage_gets = monthly_gets * day_ratio
+
+            total_stage_gets += stage_gets
             get_price = self._pricing.get_get_price(stage.storage_class)
             stage_cost = (stage_gets / 1000) * get_price * (1 - self._discount)
             total_get_cost += stage_cost
@@ -303,7 +351,7 @@ class LifecycleCalculator(BaseCalculator):
             name="GET 请求",
             unit_price=round(weighted_price, 6),
             unit_price_unit="USD/千次 (加权)",
-            quantity=monthly_gets / 1000,
+            quantity=total_stage_gets / 1000 if total_stage_gets > 0 else monthly_gets / 1000,
             quantity_unit="千次",
             amount=round(total_get_cost, 4),
         )
@@ -382,7 +430,7 @@ class LifecycleCalculator(BaseCalculator):
         monthly_retrieval_gb: float,
         day_ratio: float,
     ) -> Optional[CostItem]:
-        """计算阶段检索费用"""
+        """计算阶段检索费用（旧版本，按天数比例分配）"""
         if storage_class == StorageClass.STANDARD:
             return None
 
@@ -391,6 +439,41 @@ class LifecycleCalculator(BaseCalculator):
             return None
 
         stage_retrieval_gb = monthly_retrieval_gb * day_ratio
+        retrieval_amount = stage_retrieval_gb * retrieval_price * (1 - self._discount)
+
+        return CostItem(
+            name="数据检索",
+            unit_price=retrieval_price,
+            unit_price_unit="USD/GB",
+            quantity=stage_retrieval_gb,
+            quantity_unit="GB",
+            amount=round(retrieval_amount, 4),
+        )
+
+    def _calculate_stage_retrieval_cost_v2(
+        self,
+        storage_class: StorageClass,
+        stage_retrieval_gb: float,
+    ) -> Optional[CostItem]:
+        """计算阶段检索费用（v2 版本，直接使用阶段检索量）
+
+        支持时间衰减访问模式，直接接收该阶段的检索量，
+        而不是通过 day_ratio 从全局检索量计算。
+
+        Args:
+            storage_class: 存储类型
+            stage_retrieval_gb: 该阶段的检索数据量 (GB)
+
+        Returns:
+            CostItem 实例，如果无检索费用则返回 None
+        """
+        if storage_class == StorageClass.STANDARD:
+            return None
+
+        retrieval_price = self._pricing.get_retrieval_price(storage_class)
+        if retrieval_price <= 0:
+            return None
+
         retrieval_amount = stage_retrieval_gb * retrieval_price * (1 - self._discount)
 
         return CostItem(
@@ -487,9 +570,25 @@ class LifecycleCalculator(BaseCalculator):
         monthly_retrieval_gb: float,
         stages: List[LifecycleStage],
         total_days: int,
+        functional: Optional["FunctionalDimensions"] = None,
+        daily_data_gb: float = 0,
     ) -> Optional[CostItem]:
-        """创建检索费用项"""
+        """创建检索费用项
+
+        支持时间衰减访问模式。如果提供 functional 参数，则使用分阶段访问比例。
+
+        Args:
+            monthly_retrieval_gb: 月度检索量（向后兼容）
+            stages: 生命周期阶段列表
+            total_days: 总保留天数
+            functional: 功能维度配置（用于获取阶段访问比例）
+            daily_data_gb: 每日数据量（分阶段计算需要）
+
+        Returns:
+            CostItem 实例，如果无检索费用则返回 None
+        """
         total_retrieval_cost = 0.0
+        total_retrieval_gb = 0.0
         weighted_price = 0.0
         has_retrieval = False
 
@@ -500,8 +599,17 @@ class LifecycleCalculator(BaseCalculator):
             retrieval_price = self._pricing.get_retrieval_price(stage.storage_class)
             if retrieval_price > 0:
                 has_retrieval = True
-                day_ratio = stage.duration_days / total_days
-                stage_retrieval_gb = monthly_retrieval_gb * day_ratio
+                day_ratio = stage.duration_days / total_days if total_days > 0 else 0
+
+                # 计算该阶段的检索量
+                if functional is not None and daily_data_gb > 0:
+                    stage_retrieval_gb = BaseCalculator.calculate_monthly_retrieval_for_period(
+                        daily_data_gb, functional, stage.start_day, stage.end_day
+                    )
+                else:
+                    stage_retrieval_gb = monthly_retrieval_gb * day_ratio
+
+                total_retrieval_gb += stage_retrieval_gb
                 stage_cost = (
                     stage_retrieval_gb * retrieval_price * (1 - self._discount)
                 )
@@ -515,7 +623,7 @@ class LifecycleCalculator(BaseCalculator):
             name="数据检索",
             unit_price=round(weighted_price, 6),
             unit_price_unit="USD/GB (加权)",
-            quantity=monthly_retrieval_gb,
+            quantity=total_retrieval_gb if total_retrieval_gb > 0 else monthly_retrieval_gb,
             quantity_unit="GB",
             amount=round(total_retrieval_cost, 4),
         )

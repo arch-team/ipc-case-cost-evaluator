@@ -291,6 +291,64 @@ class BaseCalculator:
         """
         return monthly_retrieval_gb
 
+    @staticmethod
+    def calculate_monthly_gets_for_period(
+        functional: FunctionalDimensions,
+        monthly_puts: float,
+        start_day: int,
+        end_day: int,
+        total_days: int,
+    ) -> float:
+        """计算指定时间段的月度 GET 请求数
+
+        支持时间衰减访问模式。根据指定时间段获取对应的访问比例，
+        并计算该时间段的 GET 请求数。
+
+        Args:
+            functional: 功能维度配置
+            monthly_puts: 月度 PUT 请求总数
+            start_day: 阶段开始天数
+            end_day: 阶段结束天数
+            total_days: 总保留天数
+
+        Returns:
+            该时间段的月度 GET 请求数
+        """
+        # 获取该时间段的访问比例
+        access_rate = functional.get_access_rate_for_period(start_day, end_day)
+
+        # 计算该阶段的 PUT 请求比例
+        period_days = end_day - start_day + 1
+        period_puts = monthly_puts * (period_days / total_days) if total_days > 0 else 0
+
+        return period_puts * access_rate
+
+    @staticmethod
+    def calculate_monthly_retrieval_for_period(
+        daily_data_gb: float,
+        functional: FunctionalDimensions,
+        start_day: int,
+        end_day: int,
+    ) -> float:
+        """计算指定时间段的月度检索数据量
+
+        支持时间衰减访问模式。根据指定时间段获取对应的访问比例，
+        并计算该时间段的检索数据量。
+
+        Args:
+            daily_data_gb: 每日数据量 (GB)
+            functional: 功能维度配置
+            start_day: 阶段开始天数
+            end_day: 阶段结束天数
+
+        Returns:
+            该时间段的月度检索量 (GB)
+        """
+        period_days = end_day - start_day + 1
+        access_rate = functional.get_access_rate_for_period(start_day, end_day)
+
+        return daily_data_gb * period_days * access_rate
+
     def _calculate_storage_costs(
         self,
         metrics: IntermediateMetrics,

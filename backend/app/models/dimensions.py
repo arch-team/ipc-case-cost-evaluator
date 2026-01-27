@@ -7,7 +7,7 @@
 
 这三类维度共同构成成本计算的输入参数。
 """
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -18,6 +18,99 @@ from app.models.enums import (
     StorageClass,
     PricingModel,
 )
+
+
+class AccessPatternStage(BaseModel):
+    """访问模式阶段
+
+    定义某个时间段内的回看比例。
+
+    Attributes:
+        start_day: 开始天数（从第 1 天起）
+        end_day: 结束天数
+        access_rate: 该阶段的访问比例 (0.0-1.0)
+    """
+
+    start_day: int = Field(
+        ...,
+        ge=1,
+        description="开始天数（从第 1 天起）",
+    )
+    end_day: int = Field(
+        ...,
+        ge=1,
+        description="结束天数",
+    )
+    access_rate: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="该阶段的访问比例 (0.0-1.0)",
+    )
+
+    @property
+    def duration_days(self) -> int:
+        """获取阶段持续天数"""
+        return self.end_day - self.start_day + 1
+
+    @model_validator(mode="after")
+    def validate_day_range(self) -> "AccessPatternStage":
+        """验证天数范围的有效性"""
+        if self.end_day < self.start_day:
+            raise ValueError(
+                f"结束天数 ({self.end_day}) 不能小于开始天数 ({self.start_day})"
+            )
+        return self
+
+
+class AccessPatternConfig(BaseModel):
+    """访问模式配置
+
+    支持两种模式：
+    1. 简单模式：使用单一的全局 access_pattern（向后兼容）
+    2. 时间衰减模式：分阶段定义不同的访问比例
+
+    Attributes:
+        mode: 模式类型 - 'simple' 或 'time_decay'
+        stages: 多阶段访问配置（time_decay 模式）
+        decay_preset: 预设衰减模式 ID（可选）
+    """
+
+    mode: Literal["simple", "time_decay"] = Field(
+        default="simple",
+        description="访问模式: simple (单一比例) 或 time_decay (时间衰减)",
+    )
+    stages: Optional[List[AccessPatternStage]] = Field(
+        default=None,
+        description="多阶段访问配置（time_decay 模式）",
+    )
+    decay_preset: Optional[str] = Field(
+        default=None,
+        description="预设衰减模式 ID",
+    )
+
+    @model_validator(mode="after")
+    def validate_stages_continuity(self) -> "AccessPatternConfig":
+        """验证阶段连续性"""
+        if self.mode == "time_decay" and self.stages:
+            sorted_stages = sorted(self.stages, key=lambda s: s.start_day)
+
+            # 验证第一阶段从第 1 天开始
+            if sorted_stages[0].start_day != 1:
+                raise ValueError("第一个阶段必须从第 1 天开始")
+
+            # 验证阶段连续性
+            for i in range(1, len(sorted_stages)):
+                prev_end = sorted_stages[i - 1].end_day
+                curr_start = sorted_stages[i].start_day
+                if curr_start != prev_end + 1:
+                    raise ValueError(
+                        f"阶段不连续：阶段 {i} 结束于第 {prev_end} 天，"
+                        f"阶段 {i + 1} 开始于第 {curr_start} 天"
+                    )
+
+            self.stages = sorted_stages
+        return self
 
 
 class LifecycleStage(BaseModel):
@@ -168,7 +261,11 @@ class FunctionalDimensions(BaseModel):
         default=0.1,
         ge=0.0,
         le=1.0,
-        description="回看比例，0.0-1.0",
+        description="回看比例，0.0-1.0（简单模式或默认值）",
+    )
+    access_pattern_config: Optional[AccessPatternConfig] = Field(
+        default=None,
+        description="高级访问模式配置，支持时间衰减",
     )
     retention_days: int = Field(
         default=30,
@@ -212,6 +309,41 @@ class FunctionalDimensions(BaseModel):
             数据速率，单位 KB/s
         """
         return self.video_quality.data_rate_kb
+
+    def get_access_rate_for_period(self, start_day: int, end_day: int) -> float:
+        """获取指定时间段的访问比例
+
+        如果配置了时间衰减模式，则根据阶段配置计算加权平均访问比例。
+        否则返回全局 access_pattern。
+
+        Args:
+            start_day: 开始天数（从第 1 天起）
+            end_day: 结束天数
+
+        Returns:
+            该时间段的加权平均访问比例
+        """
+        config = self.access_pattern_config
+
+        # 简单模式或无配置：返回全局 access_pattern
+        if not config or config.mode == "simple" or not config.stages:
+            return self.access_pattern
+
+        # 时间衰减模式：计算加权平均
+        total_days = 0
+        weighted_sum = 0.0
+
+        for stage in config.stages:
+            # 计算与查询范围的重叠
+            overlap_start = max(stage.start_day, start_day)
+            overlap_end = min(stage.end_day, end_day)
+
+            if overlap_start <= overlap_end:
+                overlap_days = overlap_end - overlap_start + 1
+                weighted_sum += stage.access_rate * overlap_days
+                total_days += overlap_days
+
+        return weighted_sum / total_days if total_days > 0 else self.access_pattern
 
 
 class TechnicalDimensions(BaseModel):

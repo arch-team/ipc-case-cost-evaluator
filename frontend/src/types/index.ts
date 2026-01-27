@@ -47,6 +47,29 @@ export interface LifecycleTemplate {
   stage_count: number;
 }
 
+// 访问模式阶段
+export interface AccessPatternStage {
+  start_day: number;
+  end_day: number;
+  access_rate: number;
+}
+
+// 访问模式配置
+export interface AccessPatternConfig {
+  mode: 'simple' | 'time_decay';
+  stages?: AccessPatternStage[];
+  decay_preset?: string;
+}
+
+// 访问模式预设
+export interface AccessPatternPreset {
+  id: string;
+  name: string;
+  description: string;
+  is_default?: boolean;
+  stages: AccessPatternStage[];
+}
+
 // 功能维度
 export interface FunctionalDimensions {
   device_count: number;
@@ -56,6 +79,7 @@ export interface FunctionalDimensions {
   event_duration_sec: number;
   retention_days: number;
   access_pattern: number;
+  access_pattern_config?: AccessPatternConfig;  // 高级访问模式配置
 }
 
 // 技术维度

@@ -1,0 +1,24 @@
+# AWS Lambda 容器镜像 Dockerfile
+# 基于 AWS 提供的 Python 3.11 Lambda 基础镜像
+
+FROM public.ecr.aws/lambda/python:3.11
+
+# 设置工作目录为 Lambda 任务根目录
+WORKDIR ${LAMBDA_TASK_ROOT}
+
+# 复制依赖文件
+COPY requirements.txt .
+
+# 安装 Python 依赖
+# --no-cache-dir 减少镜像大小
+# --upgrade 确保使用最新版本
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# 复制应用代码
+COPY app/ ./app/
+COPY lambda_handler.py .
+
+# 设置 Lambda 处理函数入口点
+# 格式: 模块名.处理函数名
+CMD ["lambda_handler.handler"]
