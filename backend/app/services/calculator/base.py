@@ -14,9 +14,9 @@
 from typing import TYPE_CHECKING, Optional
 
 from app.models.dimensions import FunctionalDimensions
-from app.models.enums import RecordingMode, SegmentStrategy
+from app.models.enums import RecordingMode, SegmentStrategy, StorageClass
 from app.models.pricing import S3Pricing
-from app.models.results import IntermediateMetrics
+from app.models.results import IntermediateMetrics, CostBreakdown
 
 if TYPE_CHECKING:
     from app.services.pricing_service import PricingService
@@ -290,3 +290,61 @@ class BaseCalculator:
             月度数据传输量 (GB)
         """
         return monthly_retrieval_gb
+
+    def _calculate_storage_costs(
+        self,
+        metrics: IntermediateMetrics,
+        pricing: S3Pricing,
+        storage_class: StorageClass,
+        discount: float,
+    ) -> CostBreakdown:
+        """计算各项存储费用（通用方法）
+
+        提供标准的费用计算逻辑，减少子类重复代码。
+        支持 S3 Standard 和 Glacier IR 的费用计算。
+
+        Args:
+            metrics: 中间指标
+            pricing: 定价信息
+            storage_class: 存储类型
+            discount: 折扣比例 (0-1)
+
+        Returns:
+            费用明细
+        """
+        # 应用折扣的乘数
+        discount_multiplier = 1 - discount
+
+        # 计算基础费用
+        storage_cost = (
+            metrics.avg_storage_gb * pricing.get_storage_price(storage_class) * discount_multiplier
+        )
+        put_cost = (
+            (metrics.monthly_puts / 1000) * pricing.get_put_price(storage_class) * discount_multiplier
+        )
+        get_cost = (
+            (metrics.monthly_gets / 1000) * pricing.get_get_price(storage_class) * discount_multiplier
+        )
+        transfer_cost = (
+            metrics.monthly_transfer_gb
+            * pricing.get_data_transfer_price(metrics.monthly_transfer_gb)
+            * discount_multiplier
+        )
+
+        # 计算检索费用（仅 Glacier IR 有）
+        retrieval_cost = 0.0
+        if storage_class == StorageClass.GLACIER_IR:
+            retrieval_cost = (
+                metrics.monthly_retrieval_gb
+                * pricing.get_retrieval_price(storage_class)
+                * discount_multiplier
+            )
+
+        return CostBreakdown(
+            storage_cost=storage_cost,
+            put_request_cost=put_cost,
+            get_request_cost=get_cost,
+            retrieval_cost=retrieval_cost,
+            data_transfer_cost=transfer_cost,
+            lifecycle_cost=0.0,  # 直接使用单一存储类型时没有生命周期费用
+        )

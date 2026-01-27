@@ -1,16 +1,9 @@
 """成本计算 API 路由"""
-from typing import Union
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
+
 from app.models.dimensions import CostCalculationInput
 from app.models.results import CostSummary
-from app.models.enums import StorageClass
-from app.services.calculator.s3_standard import S3StandardCalculator
-from app.services.calculator.s3_glacier import S3GlacierCalculator
-from app.services.calculator.lifecycle import LifecycleCalculator
-from app.models.pricing import PricingLoader
-
-# 计算器类型联合
-Calculator = Union[S3StandardCalculator, S3GlacierCalculator, LifecycleCalculator]
+from app.api.utils import validate_region, get_calculator, handle_calculation_error
 
 router = APIRouter(prefix="/calculate", tags=["计算"])
 
@@ -30,26 +23,12 @@ async def calculate_cost(input_data: CostCalculationInput) -> CostSummary:
         成本计算汇总，包括月度/年度成本、费用明细和中间指标
     """
     # 验证区域
-    try:
-        PricingLoader.load(input_data.pricing.region)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    validate_region(input_data.pricing.region)
 
-    # 根据存储类型和生命周期策略选择计算器
-    lifecycle_policy = input_data.technical.lifecycle_policy
-    storage_class = input_data.technical.storage_class
-
-    calculator: Calculator
-    if lifecycle_policy and lifecycle_policy.enabled:
-        # 使用生命周期计算器
-        calculator = LifecycleCalculator()
-    elif storage_class == StorageClass.GLACIER_IR:
-        calculator = S3GlacierCalculator()
-    else:
-        calculator = S3StandardCalculator()
+    # 选择并执行计算
+    calculator = get_calculator(input_data)
 
     try:
-        result = calculator.calculate(input_data)
-        return result
+        return calculator.calculate(input_data)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"计算错误: {str(e)}")
+        handle_calculation_error(e)

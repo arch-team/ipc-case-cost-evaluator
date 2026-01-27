@@ -252,80 +252,23 @@ class LifecycleCalculator(BaseCalculator):
         duration_days = stage.duration_days
         day_ratio = duration_days / total_days
 
-        # 存储费用
-        stage_storage_gb = daily_data_gb * duration_days
-        storage_price = self._pricing.get_storage_price(storage_class)
-        storage_amount = stage_storage_gb * storage_price * (1 - self._discount)
-
-        storage_cost = CostItem(
-            name=f"{storage_class.value} 存储",
-            unit_price=storage_price,
-            unit_price_unit="USD/GB-月",
-            quantity=stage_storage_gb,
-            quantity_unit="GB",
-            amount=round(storage_amount, 4),
+        # 计算各项费用
+        storage_cost = self._calculate_stage_storage_cost(
+            stage, daily_data_gb, storage_class, duration_days
         )
 
-        # PUT 请求费用（只在第一阶段计算，所有数据都先写入）
-        if is_first_stage:
-            put_price = self._pricing.get_put_price(storage_class)
-            put_amount = (monthly_puts / 1000) * put_price * (1 - self._discount)
-            request_cost = CostItem(
-                name="PUT 请求",
-                unit_price=put_price,
-                unit_price_unit="USD/千次",
-                quantity=monthly_puts / 1000,
-                quantity_unit="千次",
-                amount=round(put_amount, 4),
-            )
-        else:
-            request_cost = CostItem(
-                name="PUT 请求",
-                unit_price=0,
-                unit_price_unit="USD/千次",
-                quantity=0,
-                quantity_unit="千次",
-                amount=0,
-            )
+        request_cost = self._calculate_stage_request_cost(
+            storage_class, monthly_puts, is_first_stage
+        )
 
-        # 检索费用（非 Standard 存储类型）
-        retrieval_cost = None
-        if storage_class != StorageClass.STANDARD:
-            retrieval_price = self._pricing.get_retrieval_price(storage_class)
-            if retrieval_price > 0:
-                stage_retrieval_gb = monthly_retrieval_gb * day_ratio
-                retrieval_amount = (
-                    stage_retrieval_gb * retrieval_price * (1 - self._discount)
-                )
-                retrieval_cost = CostItem(
-                    name=f"{storage_class.value} 检索",
-                    unit_price=retrieval_price,
-                    unit_price_unit="USD/GB",
-                    quantity=stage_retrieval_gb,
-                    quantity_unit="GB",
-                    amount=round(retrieval_amount, 4),
-                )
+        retrieval_cost = self._calculate_stage_retrieval_cost(
+            storage_class, monthly_retrieval_gb, day_ratio
+        )
 
         # 生命周期转换费用（非第一阶段）
-        transition_cost = None
-        if not is_first_stage:
-            transition_price = self._pricing.get_lifecycle_price(storage_class)
-            if transition_price > 0:
-                daily_puts = monthly_puts / 30
-                monthly_transitions = daily_puts * 30
-                transition_amount = (
-                    (monthly_transitions / 1000)
-                    * transition_price
-                    * (1 - self._discount)
-                )
-                transition_cost = CostItem(
-                    name=f"转换到 {storage_class.value}",
-                    unit_price=transition_price,
-                    unit_price_unit="USD/千次",
-                    quantity=monthly_transitions / 1000,
-                    quantity_unit="千次",
-                    amount=round(transition_amount, 4),
-                )
+        transition_cost = self._calculate_stage_transition_cost(
+            stage, storage_class, monthly_puts, is_first_stage
+        )
 
         return StageCostBreakdown(
             start_day=stage.start_day,
@@ -381,6 +324,112 @@ class LifecycleCalculator(BaseCalculator):
             quantity_unit="GB",
             amount=round(total_cost, 4),
             tiers=tiers,
+        )
+
+    def _calculate_stage_storage_cost(
+        self,
+        stage: LifecycleStage,
+        daily_data_gb: float,
+        storage_class: StorageClass,
+        duration_days: int,
+    ) -> CostItem:
+        """计算阶段存储费用"""
+        stage_storage_gb = daily_data_gb * duration_days
+        storage_price = self._pricing.get_storage_price(storage_class)
+        storage_amount = stage_storage_gb * storage_price * (1 - self._discount)
+
+        return CostItem(
+            name=f"{storage_class.value} 存储",
+            unit_price=storage_price,
+            unit_price_unit="USD/GB-月",
+            quantity=stage_storage_gb,
+            quantity_unit="GB",
+            amount=round(storage_amount, 4),
+        )
+
+    def _calculate_stage_request_cost(
+        self,
+        storage_class: StorageClass,
+        monthly_puts: float,
+        is_first_stage: bool,
+    ) -> CostItem:
+        """计算阶段 PUT 请求费用"""
+        if not is_first_stage:
+            return CostItem(
+                name="PUT 请求",
+                unit_price=0,
+                unit_price_unit="USD/千次",
+                quantity=0,
+                quantity_unit="千次",
+                amount=0,
+            )
+
+        put_price = self._pricing.get_put_price(storage_class)
+        put_amount = (monthly_puts / 1000) * put_price * (1 - self._discount)
+
+        return CostItem(
+            name="PUT 请求",
+            unit_price=put_price,
+            unit_price_unit="USD/千次",
+            quantity=monthly_puts / 1000,
+            quantity_unit="千次",
+            amount=round(put_amount, 4),
+        )
+
+    def _calculate_stage_retrieval_cost(
+        self,
+        storage_class: StorageClass,
+        monthly_retrieval_gb: float,
+        day_ratio: float,
+    ) -> Optional[CostItem]:
+        """计算阶段检索费用"""
+        if storage_class == StorageClass.STANDARD:
+            return None
+
+        retrieval_price = self._pricing.get_retrieval_price(storage_class)
+        if retrieval_price <= 0:
+            return None
+
+        stage_retrieval_gb = monthly_retrieval_gb * day_ratio
+        retrieval_amount = stage_retrieval_gb * retrieval_price * (1 - self._discount)
+
+        return CostItem(
+            name="数据检索",
+            unit_price=retrieval_price,
+            unit_price_unit="USD/GB",
+            quantity=stage_retrieval_gb,
+            quantity_unit="GB",
+            amount=round(retrieval_amount, 4),
+        )
+
+    def _calculate_stage_transition_cost(
+        self,
+        stage: LifecycleStage,
+        storage_class: StorageClass,
+        monthly_puts: float,
+        is_first_stage: bool,
+    ) -> Optional[CostItem]:
+        """计算阶段生命周期转换费用"""
+        if is_first_stage:
+            return None
+
+        transition_price = self._pricing.get_lifecycle_price(storage_class)
+        if transition_price <= 0:
+            return None
+
+        daily_puts = monthly_puts / 30
+        monthly_transitions = daily_puts * 30
+        transition_amount = (
+            (monthly_transitions / 1000) * transition_price * (1 - self._discount)
+        )
+
+        return CostItem(
+            name=f"转换到 {storage_class.value}",
+            unit_price=transition_price,
+            unit_price_unit="USD/千次",
+            quantity=monthly_transitions / 1000,
+            quantity_unit="千次",
+            amount=round(transition_amount, 4),
         )
 
     def _calculate_transfer_tiers(self, total_gb: float) -> List[TierDetail]:

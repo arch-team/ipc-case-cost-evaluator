@@ -7,6 +7,7 @@ import { Radio, Typography, Space, Tag, Divider } from 'antd';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import type { TechnicalDimensions, StorageClass, LifecyclePolicy } from '../../types';
 import StorageStrategySelector from './StorageStrategySelector';
+import { STORAGE_CLASS_OPTIONS } from '../../constants/forms';
 
 const { Text } = Typography;
 
@@ -15,23 +16,6 @@ interface TechnicalFormProps {
   onChange: (value: TechnicalDimensions) => void;
   retentionDays: number;
 }
-
-const storageClassOptions = [
-  {
-    value: 'STANDARD',
-    label: 'S3 Standard',
-    price: '$0.025/GB',
-    hint: '频繁访问',
-    color: 'blue',
-  },
-  {
-    value: 'GLACIER_IR',
-    label: 'Glacier IR',
-    price: '$0.004/GB',
-    hint: '低频访问',
-    color: 'purple',
-  },
-];
 
 const TechnicalForm: React.FC<TechnicalFormProps> = ({ value, onChange, retentionDays }) => {
   const hasLifecyclePolicy = value.lifecycle_policy?.enabled;
@@ -78,7 +62,7 @@ const TechnicalForm: React.FC<TechnicalFormProps> = ({ value, onChange, retentio
             className="storage-class-group-compact"
           >
             <Space direction="vertical" style={{ width: '100%' }}>
-              {storageClassOptions.map((option) => (
+              {STORAGE_CLASS_OPTIONS.map((option) => (
                 <Radio
                   key={option.value}
                   value={option.value}

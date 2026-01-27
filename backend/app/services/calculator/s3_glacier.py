@@ -56,7 +56,7 @@ class S3GlacierCalculator(BaseCalculator):
         - 没有生命周期转换费用（直接写入 Glacier）
     """
 
-    # _get_pricing 和 _calculate_metrics 方法继承自 BaseCalculator
+    # _get_pricing、_calculate_metrics 和 _calculate_storage_costs 方法继承自 BaseCalculator
 
     def calculate(self, input_data: CostCalculationInput) -> CostSummary:
         """计算 S3 Glacier IR 存储成本
@@ -74,64 +74,23 @@ class S3GlacierCalculator(BaseCalculator):
             检索费用 = 月度检索量 x 检索单价 x (1 - 折扣)
             传输费用 = 月度传输量 x 传输单价 x (1 - 折扣)
         """
-        functional = input_data.functional
-        pricing_dims = input_data.pricing
+        # 获取定价数据和计算中间指标
+        pricing = self._get_pricing(input_data.pricing.region)
+        metrics = self._calculate_metrics(input_data.functional)
 
-        # 获取定价数据（通过基类方法）
-        pricing = self._get_pricing(pricing_dims.region)
-        storage_class = StorageClass.GLACIER_IR
-        discount_multiplier = 1 - pricing_dims.discount_percent
-
-        # 计算中间指标（通过基类方法）
-        metrics = self._calculate_metrics(functional)
-
-        # 计算各项费用
-        storage_cost = (
-            metrics.avg_storage_gb * pricing.get_storage_price(storage_class) * discount_multiplier
-        )
-        put_cost = (
-            (metrics.monthly_puts / 1000)
-            * pricing.get_put_price(storage_class)
-            * discount_multiplier
-        )
-        get_cost = (
-            (metrics.monthly_gets / 1000)
-            * pricing.get_get_price(storage_class)
-            * discount_multiplier
+        # 使用基类方法计算费用（包含 Glacier 检索费用）
+        breakdown = self._calculate_storage_costs(
+            metrics,
+            pricing,
+            StorageClass.GLACIER_IR,
+            input_data.pricing.discount_percent,
         )
 
-        # Glacier IR 有检索费用（按 GB 计费）
-        retrieval_cost = (
-            metrics.monthly_retrieval_gb
-            * pricing.get_retrieval_price(storage_class)
-            * discount_multiplier
-        )
-
-        # 数据传输费用
-        transfer_cost = (
-            metrics.monthly_transfer_gb
-            * pricing.get_data_transfer_price(metrics.monthly_transfer_gb)
-            * discount_multiplier
-        )
-
-        # 构建费用明细
-        breakdown = CostBreakdown(
-            storage_cost=storage_cost,
-            put_request_cost=put_cost,
-            get_request_cost=get_cost,
-            retrieval_cost=retrieval_cost,
-            data_transfer_cost=transfer_cost,
-            lifecycle_cost=0.0,  # 直接使用 Glacier 不需要生命周期转换费用
-        )
-
-        # 计算汇总
-        monthly_total = breakdown.total
-        per_device_monthly = monthly_total / functional.device_count
-
+        # 返回成本汇总
         return CostSummary(
-            monthly_total=monthly_total,
-            per_device_monthly=per_device_monthly,
+            monthly_total=breakdown.total,
+            per_device_monthly=breakdown.total / input_data.functional.device_count,
             breakdown=breakdown,
-            device_count=functional.device_count,
+            device_count=input_data.functional.device_count,
             metrics=metrics,
         )

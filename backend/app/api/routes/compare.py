@@ -1,11 +1,11 @@
 """方案对比 API 路由"""
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
 
 from app.models.dimensions import CostCalculationInput
 from app.models.results import Recommendation
-from app.models.pricing import PricingLoader
+from app.api.utils import validate_region, handle_calculation_error
 from app.services.calculator.comparator import StorageComparator
 from app.services.calculator.recommender import StorageRecommender
 
@@ -41,10 +41,7 @@ async def compare_storage_options(
         方案对比结果，包括各方案成本和优化推荐
     """
     # 验证区域
-    try:
-        PricingLoader.load(input_data.pricing.region)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    validate_region(input_data.pricing.region)
 
     try:
         # 执行方案对比
@@ -65,4 +62,4 @@ async def compare_storage_options(
             recommendation=recommendation,
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"对比错误: {str(e)}")
+        handle_calculation_error(e)

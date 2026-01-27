@@ -46,53 +46,7 @@ class S3StandardCalculator(BaseCalculator):
         5. 汇总返回结果
     """
 
-    # _get_pricing 和 _calculate_metrics 方法继承自 BaseCalculator
-
-    def _calculate_costs(
-        self,
-        metrics: IntermediateMetrics,
-        pricing: S3Pricing,
-        storage_class: StorageClass,
-        discount: float,
-    ) -> CostBreakdown:
-        """计算各项费用
-
-        Args:
-            metrics: 中间指标
-            pricing: 定价信息
-            storage_class: 存储类型
-            discount: 折扣比例
-
-        Returns:
-            费用明细
-        """
-        # 应用折扣的乘数
-        discount_multiplier = 1 - discount
-
-        # 计算各项费用
-        storage_cost = (
-            metrics.avg_storage_gb * pricing.get_storage_price(storage_class) * discount_multiplier
-        )
-        put_cost = (
-            (metrics.monthly_puts / 1000) * pricing.get_put_price(storage_class) * discount_multiplier
-        )
-        get_cost = (
-            (metrics.monthly_gets / 1000) * pricing.get_get_price(storage_class) * discount_multiplier
-        )
-        transfer_cost = (
-            metrics.monthly_transfer_gb
-            * pricing.get_data_transfer_price(metrics.monthly_transfer_gb)
-            * discount_multiplier
-        )
-
-        return CostBreakdown(
-            storage_cost=storage_cost,
-            put_request_cost=put_cost,
-            get_request_cost=get_cost,
-            retrieval_cost=0.0,  # S3 Standard 没有检索费用
-            data_transfer_cost=transfer_cost,
-            lifecycle_cost=0.0,  # S3 Standard 不需要生命周期转换
-        )
+    # _get_pricing、_calculate_metrics 和 _calculate_storage_costs 方法继承自 BaseCalculator
 
     def calculate(self, input_data: CostCalculationInput) -> CostSummary:
         """计算 S3 Standard 存储成本
@@ -109,28 +63,22 @@ class S3StandardCalculator(BaseCalculator):
             GET 费用 = (月度 GET 数 / 1000) x GET 单价 x (1 - 折扣)
             传输费用 = 月度传输量 x 传输单价 x (1 - 折扣)
         """
-        # 获取定价数据（通过 PricingService）
+        # 获取定价数据和计算中间指标
         pricing = self._get_pricing(input_data.pricing.region)
-        storage_class = StorageClass.STANDARD
-
-        # 计算中间指标
         metrics = self._calculate_metrics(input_data.functional)
 
-        # 计算各项费用
-        breakdown = self._calculate_costs(
+        # 使用基类方法计算费用
+        breakdown = self._calculate_storage_costs(
             metrics,
             pricing,
-            storage_class,
+            StorageClass.STANDARD,
             input_data.pricing.discount_percent,
         )
 
-        # 计算汇总
-        monthly_total = breakdown.total
-        per_device_monthly = monthly_total / input_data.functional.device_count
-
+        # 返回成本汇总
         return CostSummary(
-            monthly_total=monthly_total,
-            per_device_monthly=per_device_monthly,
+            monthly_total=breakdown.total,
+            per_device_monthly=breakdown.total / input_data.functional.device_count,
             breakdown=breakdown,
             device_count=input_data.functional.device_count,
             metrics=metrics,
