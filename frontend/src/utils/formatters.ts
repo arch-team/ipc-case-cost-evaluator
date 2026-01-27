@@ -74,3 +74,40 @@ export function formatRequestCount(count: number): string {
 export function formatPercent(value: number, decimals: number = 1): string {
   return `${(value * 100).toFixed(decimals)}%`;
 }
+
+/**
+ * 格式化成本变化百分比（带正负号）
+ * @param percent 百分比数值（已经是百分比形式，如 10 表示 10%）
+ * @returns 格式化后的百分比字符串
+ */
+export function formatCostChangePercent(percent: number): string {
+  if (Math.abs(percent) < 0.5) return '0%';
+  const sign = percent > 0 ? '+' : '';
+  return `${sign}${percent.toFixed(0)}%`;
+}
+
+/**
+ * 格式化成本金额（带美元符号和千分位）
+ * @param cost 成本金额
+ * @param decimals 小数位数，默认 2
+ * @returns 格式化后的成本字符串
+ */
+export function formatCost(cost: number, decimals: number = 2): string {
+  return `$${cost.toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  })}`;
+}
+
+/**
+ * 格式化数字（通用，带千分位）
+ * @param value 数值
+ * @param precision 小数精度，默认 2
+ * @returns 格式化后的数字字符串
+ */
+export function formatNumber(value: number, precision: number = 2): string {
+  return value.toLocaleString('en-US', {
+    minimumFractionDigits: precision,
+    maximumFractionDigits: precision,
+  });
+}

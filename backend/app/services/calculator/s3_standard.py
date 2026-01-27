@@ -12,7 +12,7 @@ S3 Standard 特点：
 """
 from typing import TYPE_CHECKING, Optional
 
-from app.models.dimensions import CostCalculationInput, FunctionalDimensions
+from app.models.dimensions import CostCalculationInput
 from app.models.results import CostBreakdown, CostSummary, IntermediateMetrics
 from app.models.pricing import S3Pricing
 from app.models.enums import StorageClass
@@ -22,11 +22,13 @@ if TYPE_CHECKING:
     from app.services.pricing_service import PricingService
 
 
-class S3StandardCalculator:
+class S3StandardCalculator(BaseCalculator):
     """S3 Standard 存储类型计算器
 
     计算使用 S3 Standard 存储类型时的完整成本。
     S3 Standard 适合频繁访问的数据，具有最低的延迟和最高的吞吐量。
+
+    继承自 BaseCalculator，复用定价服务访问和中间指标计算。
 
     使用方法:
         calculator = S3StandardCalculator()
@@ -44,62 +46,7 @@ class S3StandardCalculator:
         5. 汇总返回结果
     """
 
-    def __init__(self, pricing_service: Optional["PricingService"] = None):
-        """初始化计算器
-
-        Args:
-            pricing_service: 定价服务实例，None 时使用全局单例
-        """
-        self._pricing_service = pricing_service
-
-    def _get_pricing(self, region: str) -> S3Pricing:
-        """获取定价数据
-
-        优先使用 PricingService，否则回退到 PricingLoader。
-
-        Args:
-            region: AWS 区域代码
-
-        Returns:
-            S3Pricing: 定价信息
-        """
-        if self._pricing_service is None:
-            from app.services.pricing_service import get_pricing_service
-            self._pricing_service = get_pricing_service()
-
-        pricing, _ = self._pricing_service.get_pricing(region)
-        return pricing
-
-    def _calculate_metrics(self, functional: FunctionalDimensions) -> IntermediateMetrics:
-        """计算中间指标
-
-        Args:
-            functional: 功能维度配置
-
-        Returns:
-            中间计算指标
-        """
-        daily_data_gb = BaseCalculator.calculate_daily_data_gb(functional)
-        avg_storage_gb = BaseCalculator.calculate_avg_storage_gb(
-            daily_data_gb, functional.retention_days
-        )
-        monthly_puts = BaseCalculator.calculate_monthly_puts(functional, daily_data_gb)
-        monthly_gets = BaseCalculator.calculate_monthly_gets(functional, monthly_puts)
-        monthly_retrieval_gb = BaseCalculator.calculate_monthly_retrieval_gb(
-            daily_data_gb, functional.access_pattern
-        )
-        monthly_transfer_gb = BaseCalculator.calculate_monthly_transfer_gb(
-            monthly_retrieval_gb
-        )
-
-        return IntermediateMetrics(
-            daily_data_gb=daily_data_gb,
-            avg_storage_gb=avg_storage_gb,
-            monthly_puts=monthly_puts,
-            monthly_gets=monthly_gets,
-            monthly_retrieval_gb=monthly_retrieval_gb,
-            monthly_transfer_gb=monthly_transfer_gb,
-        )
+    # _get_pricing 和 _calculate_metrics 方法继承自 BaseCalculator
 
     def _calculate_costs(
         self,

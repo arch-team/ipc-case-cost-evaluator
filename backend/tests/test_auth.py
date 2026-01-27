@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.db.client import get_storage, reset_storage
 from app.services.auth import AuthService, verify_password, get_password_hash
+from app.models.enums import UserRole
 
 
 client = TestClient(app)
@@ -75,22 +76,20 @@ class TestAuthService:
         service = AuthService()
         service.register("test@example.com", "password123", "Test User")
 
-        user = service.authenticate("test@example.com", "wrong_password")
-
-        assert user is None
+        with pytest.raises(ValueError, match="邮箱或密码错误"):
+            service.authenticate("test@example.com", "wrong_password")
 
     def test_authenticate_nonexistent_user(self):
         """测试不存在的用户"""
         service = AuthService()
 
-        user = service.authenticate("nonexistent@example.com", "password")
-
-        assert user is None
+        with pytest.raises(ValueError, match="邮箱或密码错误"):
+            service.authenticate("nonexistent@example.com", "password")
 
     def test_create_access_token(self):
         """测试创建访问令牌"""
         service = AuthService()
-        token = service.create_access_token({"sub": "user_id"})
+        token = service.create_access_token("user_id", UserRole.USER)
 
         assert token is not None
         assert len(token) > 0
@@ -98,7 +97,7 @@ class TestAuthService:
     def test_verify_token(self):
         """测试验证令牌"""
         service = AuthService()
-        token = service.create_access_token({"sub": "user_id"})
+        token = service.create_access_token("user_id", UserRole.USER)
 
         payload = service.verify_token(token)
 

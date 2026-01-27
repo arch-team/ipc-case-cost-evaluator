@@ -5,11 +5,21 @@
 - 平均存储量计算
 - 月度请求数计算
 - 月度检索数据量计算
+- 中间指标计算（复用于各计算器子类）
+- 定价服务访问（复用于各计算器子类）
 
-所有方法为静态方法，可直接调用，不需要实例化。
+静态计算方法可直接调用，不需要实例化。
+实例方法需要继承使用。
 """
+from typing import TYPE_CHECKING, Optional
+
 from app.models.dimensions import FunctionalDimensions
 from app.models.enums import RecordingMode, SegmentStrategy
+from app.models.pricing import S3Pricing
+from app.models.results import IntermediateMetrics
+
+if TYPE_CHECKING:
+    from app.services.pricing_service import PricingService
 
 
 class BaseCalculator:
@@ -18,9 +28,73 @@ class BaseCalculator:
     提供通用的数据量和请求数计算方法。
     这些方法是所有存储类型计算器的基础。
 
-    所有方法均为静态方法，遵循函数式编程风格，
-    输入参数决定输出，无副作用。
+    静态方法遵循函数式编程风格，输入参数决定输出，无副作用。
+    实例方法提供定价服务访问和中间指标计算的复用逻辑。
+
+    子类应继承此类以获得：
+    - 定价服务访问 (_get_pricing)
+    - 中间指标计算 (_calculate_metrics)
     """
+
+    def __init__(self, pricing_service: Optional["PricingService"] = None):
+        """初始化计算器
+
+        Args:
+            pricing_service: 定价服务实例，None 时使用全局单例
+        """
+        self._pricing_service = pricing_service
+
+    def _get_pricing(self, region: str) -> S3Pricing:
+        """获取定价数据
+
+        优先使用注入的 PricingService，否则使用全局单例。
+        此方法由所有计算器子类复用，避免重复实现。
+
+        Args:
+            region: AWS 区域代码
+
+        Returns:
+            S3Pricing: 定价信息
+        """
+        if self._pricing_service is None:
+            from app.services.pricing_service import get_pricing_service
+            self._pricing_service = get_pricing_service()
+
+        pricing, _ = self._pricing_service.get_pricing(region)
+        return pricing
+
+    def _calculate_metrics(self, functional: FunctionalDimensions) -> IntermediateMetrics:
+        """计算中间指标
+
+        此方法由所有计算器子类复用，避免重复实现。
+
+        Args:
+            functional: 功能维度配置
+
+        Returns:
+            中间计算指标
+        """
+        daily_data_gb = BaseCalculator.calculate_daily_data_gb(functional)
+        avg_storage_gb = BaseCalculator.calculate_avg_storage_gb(
+            daily_data_gb, functional.retention_days
+        )
+        monthly_puts = BaseCalculator.calculate_monthly_puts(functional, daily_data_gb)
+        monthly_gets = BaseCalculator.calculate_monthly_gets(functional, monthly_puts)
+        monthly_retrieval_gb = BaseCalculator.calculate_monthly_retrieval_gb(
+            daily_data_gb, functional.access_pattern
+        )
+        monthly_transfer_gb = BaseCalculator.calculate_monthly_transfer_gb(
+            monthly_retrieval_gb
+        )
+
+        return IntermediateMetrics(
+            daily_data_gb=daily_data_gb,
+            avg_storage_gb=avg_storage_gb,
+            monthly_puts=monthly_puts,
+            monthly_gets=monthly_gets,
+            monthly_retrieval_gb=monthly_retrieval_gb,
+            monthly_transfer_gb=monthly_transfer_gb,
+        )
 
     @staticmethod
     def calculate_daily_data_gb(functional: FunctionalDimensions) -> float:

@@ -105,7 +105,8 @@
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1MGRjYmNlYS1jZjQ0LTRhZDgtOGI5NC0yYWNmMWI3MjI3MmUiLCJyb2xlIjoiYWRtaW4iLCJleHAiOjE3Njk1Mjg3OTl9.GIwXQ7vroTBxEjTSW5qTIviEYglFHOkhl__29TDRIMA\")",
       "Bash(__NEW_LINE_775be1421bf59066__ echo \"=== 刷新定价数据 ===\")",
       "Bash(.specify/scripts/bash/create-new-feature.sh:*)",
-      "Bash(.specify/scripts/bash/setup-plan.sh:*)"
+      "Bash(.specify/scripts/bash/setup-plan.sh:*)",
+      "Bash(.specify/scripts/bash/update-agent-context.sh:*)"
     ],
     "deny": []
   },

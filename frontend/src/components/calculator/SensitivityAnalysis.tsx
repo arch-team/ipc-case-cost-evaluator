@@ -7,6 +7,7 @@ import { Slider, Typography, Button, Spin, Tooltip } from 'antd';
 import { SlidersOutlined, BulbOutlined, CheckOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import type { CostCalculationInput } from '../../types';
 import { calculatorApi } from '../../api/client';
+import { formatCost, formatCostChangePercent } from '../../utils/formatters';
 import debounce from 'lodash/debounce';
 
 const { Text, Title } = Typography;
@@ -203,17 +204,8 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
     return items.map((item) => item.label).join(' > ');
   }, [impacts, sensitivityItems]);
 
-  // 格式化百分比
-  const formatPercent = (percent: number) => {
-    if (Math.abs(percent) < 0.5) return '0%';
-    const sign = percent > 0 ? '+' : '';
-    return `${sign}${percent.toFixed(0)}%`;
-  };
-
-  // 格式化成本
-  const formatCost = (cost: number) => {
-    return `$${cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
+  // 使用共用格式化函数 formatCost 和 formatCostChangePercent
+  // 从 ../../utils/formatters 导入
 
   // 计算条形图宽度（基于成本范围）
   const getBarWidth = (cost: number, minCost: number, maxCost: number) => {
@@ -322,7 +314,7 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
                             />
                             <span className="sensitivity-bar-label">
                               {formatCost(impact.minCost)}
-                              <span className="sensitivity-bar-percent">{formatPercent(impact.minPercent)}</span>
+                              <span className="sensitivity-bar-percent">{formatCostChangePercent(impact.minPercent)}</span>
                             </span>
                           </div>
                         </Tooltip>
@@ -339,7 +331,7 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
                             {formatCost(impact.currentCost)}
                             <span className="sensitivity-bar-percent">
                               {hasChanged
-                                ? formatPercent(((impact.currentCost - baselineCost) / baselineCost) * 100)
+                                ? formatCostChangePercent(((impact.currentCost - baselineCost) / baselineCost) * 100)
                                 : '基准'}
                             </span>
                           </span>
@@ -356,7 +348,7 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
                             />
                             <span className="sensitivity-bar-label">
                               {formatCost(impact.maxCost)}
-                              <span className="sensitivity-bar-percent">{formatPercent(impact.maxPercent)}</span>
+                              <span className="sensitivity-bar-percent">{formatCostChangePercent(impact.maxPercent)}</span>
                             </span>
                           </div>
                         </Tooltip>

@@ -24,17 +24,18 @@ if TYPE_CHECKING:
     from app.services.pricing_service import PricingService
 
 
-class LifecycleCalculator:
+class LifecycleCalculator(BaseCalculator):
     """生命周期混合策略计算器
 
     支持两种模式:
     1. 简单模式: Standard → 目标存储类型的两阶段转换
     2. 多阶段模式: 自定义多个存储阶段
 
+    继承自 BaseCalculator，复用定价服务访问。
+
     Attributes:
-        _pricing_service: 定价服务实例
-        _pricing: 当前使用的定价数据
-        _discount: 折扣比例
+        _pricing: 当前使用的定价数据（计算过程中缓存）
+        _discount: 折扣比例（计算过程中缓存）
     """
 
     def __init__(self, pricing_service: Optional["PricingService"] = None):
@@ -43,25 +44,11 @@ class LifecycleCalculator:
         Args:
             pricing_service: 定价服务实例，None 时使用全局单例
         """
-        self._pricing_service = pricing_service
+        super().__init__(pricing_service)
         self._pricing: Optional[S3Pricing] = None
         self._discount: float = 0.0
 
-    def _get_pricing(self, region: str) -> S3Pricing:
-        """获取定价数据
-
-        Args:
-            region: AWS 区域代码
-
-        Returns:
-            S3Pricing: 定价信息
-        """
-        if self._pricing_service is None:
-            from app.services.pricing_service import get_pricing_service
-            self._pricing_service = get_pricing_service()
-
-        pricing, _ = self._pricing_service.get_pricing(region)
-        return pricing
+    # _get_pricing 方法继承自 BaseCalculator
 
     def calculate(self, input_data: CostCalculationInput) -> CostSummary:
         """计算生命周期混合策略成本

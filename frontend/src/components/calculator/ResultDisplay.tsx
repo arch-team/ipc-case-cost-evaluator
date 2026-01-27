@@ -12,6 +12,7 @@ import {
   DownOutlined,
 } from '@ant-design/icons';
 import type { CostSummary, TechnicalDimensions } from '../../types';
+import { formatNumber } from '../../utils/formatters';
 import CostPieChart from './CostPieChart';
 import CostBreakdownTable from './CostBreakdownTable';
 
@@ -35,13 +36,8 @@ type BreakdownViewType = 'chart' | 'table';
 const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, schemeInfo, onExport }) => {
   const [breakdownView, setBreakdownView] = useState<BreakdownViewType>('table');
 
-  // 格式化数字显示
-  const formatNumber = (value: number, precision: number = 2) => {
-    return value.toLocaleString('en-US', {
-      minimumFractionDigits: precision,
-      maximumFractionDigits: precision,
-    });
-  };
+  // 使用共用格式化函数 formatNumber
+  // 从 ../../utils/formatters 导入
 
   // 获取存储类型的中文描述
   const getStorageClassLabel = (storageClass: string): string => {

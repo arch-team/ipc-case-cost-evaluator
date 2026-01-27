@@ -1,7 +1,8 @@
 """敏感度分析器"""
-from typing import List, Optional
+from typing import Callable, List, Optional, Tuple
 from app.models.dimensions import (
     CostCalculationInput,
+    FunctionalDimensions,
 )
 from app.models.results import SensitivityAnalysis, SensitivityItem
 from app.models.enums import StorageClass
@@ -9,17 +10,65 @@ from app.services.calculator.s3_standard import S3StandardCalculator
 from app.services.calculator.s3_glacier import S3GlacierCalculator
 
 
+# 参数配置类型：(字段名, 最小值, 最大值, 显示名称, 变化描述函数)
+ParameterConfig = Tuple[
+    str,  # 字段名
+    float,  # 最小值
+    float,  # 最大值
+    str,  # 显示名称
+    Callable[[float, float], str],  # 变化描述函数
+]
+
+
 class SensitivityAnalyzer:
     """
     敏感度分析器
 
     分析各参数变化对成本的影响程度。
+    使用模板方法模式简化重复的分析逻辑。
     """
 
     # 默认变化幅度
     DEFAULT_DEVICE_VARIATIONS = [0.5, 1.5, 2.0]  # -50%, +50%, +100%
     DEFAULT_RETENTION_VARIATIONS = [0.5, 1.5, 2.0]  # -50%, +50%, +100%
     DEFAULT_ACCESS_VARIATIONS = [0.5, 2.0, 5.0]  # -50%, +100%, +400%
+
+    # 参数配置：统一管理各参数的约束和描述
+    PARAMETER_CONFIGS: dict[str, ParameterConfig] = {
+        "device_count": (
+            "device_count",
+            1,
+            10_000_000,  # 最大设备数量上限
+            "设备数量",
+            lambda base, new: (
+                f"减少 {(1 - new/base) * 100:.0f}% 至 {int(new)} 台"
+                if new < base
+                else f"增加 {(new/base - 1) * 100:.0f}% 至 {int(new)} 台"
+            ),
+        ),
+        "retention_days": (
+            "retention_days",
+            1,
+            365,
+            "保留天数",
+            lambda base, new: (
+                f"缩短 {(1 - new/base) * 100:.0f}% 至 {int(new)} 天"
+                if new < base
+                else f"延长 {(new/base - 1) * 100:.0f}% 至 {int(new)} 天"
+            ),
+        ),
+        "access_pattern": (
+            "access_pattern",
+            0.0,
+            1.0,
+            "回看比例",
+            lambda base, new: (
+                f"降低回看比例至 {new:.0%}"
+                if new < base
+                else f"增加回看比例至 {new:.0%}"
+            ),
+        ),
+    }
 
     def __init__(self):
         self.standard_calc = S3StandardCalculator()
@@ -120,22 +169,45 @@ class SensitivityAnalyzer:
 
         return result.monthly_total
 
-    def _analyze_device_count(
+    def _analyze_parameter(
         self,
         input_data: CostCalculationInput,
         base_cost: float,
         variations: List[float],
+        param_name: str,
     ) -> List[SensitivityItem]:
-        """分析设备数量敏感度"""
-        items = []
-        base_device_count = input_data.functional.device_count
+        """通用参数敏感度分析（模板方法）
 
+        使用模板方法模式消除三个分析方法的重复代码。
+
+        Args:
+            input_data: 原始输入数据
+            base_cost: 基准成本
+            variations: 变化倍数列表
+            param_name: 参数名称（device_count, retention_days, access_pattern）
+
+        Returns:
+            敏感度分析项列表
+        """
+        config = self.PARAMETER_CONFIGS.get(param_name)
+        if not config:
+            return []
+
+        field_name, min_val, max_val, display_name, desc_func = config
+        base_value = getattr(input_data.functional, field_name)
+
+        items = []
         for variation in variations:
-            new_device_count = max(1, int(base_device_count * variation))
+            # 计算新值并约束在有效范围内
+            new_value = base_value * variation
+            if field_name in ("device_count", "retention_days"):
+                new_value = max(int(min_val), min(int(max_val), int(new_value)))
+            else:
+                new_value = max(min_val, min(max_val, new_value))
 
             # 创建修改后的输入
             modified_functional = input_data.functional.model_copy(deep=True)
-            modified_functional.device_count = new_device_count
+            setattr(modified_functional, field_name, new_value)
 
             modified_input = CostCalculationInput(
                 functional=modified_functional,
@@ -147,16 +219,10 @@ class SensitivityAnalyzer:
             cost_change = new_cost - base_cost
             cost_change_percent = cost_change / base_cost if base_cost > 0 else 0
 
-            # 生成描述
-            if variation < 1:
-                change_desc = f"减少 {(1 - variation) * 100:.0f}% 至 {new_device_count} 台"
-            else:
-                change_desc = f"增加 {(variation - 1) * 100:.0f}% 至 {new_device_count} 台"
-
             items.append(
                 SensitivityItem(
-                    parameter="设备数量",
-                    change_description=change_desc,
+                    parameter=display_name,
+                    change_description=desc_func(base_value, new_value),
                     original_cost=base_cost,
                     new_cost=new_cost,
                     cost_change=cost_change,
@@ -165,6 +231,15 @@ class SensitivityAnalyzer:
             )
 
         return items
+
+    def _analyze_device_count(
+        self,
+        input_data: CostCalculationInput,
+        base_cost: float,
+        variations: List[float],
+    ) -> List[SensitivityItem]:
+        """分析设备数量敏感度"""
+        return self._analyze_parameter(input_data, base_cost, variations, "device_count")
 
     def _analyze_retention_days(
         self,
@@ -173,44 +248,7 @@ class SensitivityAnalyzer:
         variations: List[float],
     ) -> List[SensitivityItem]:
         """分析保留天数敏感度"""
-        items = []
-        base_retention = input_data.functional.retention_days
-
-        for variation in variations:
-            new_retention = max(1, min(365, int(base_retention * variation)))
-
-            # 创建修改后的输入
-            modified_functional = input_data.functional.model_copy(deep=True)
-            modified_functional.retention_days = new_retention
-
-            modified_input = CostCalculationInput(
-                functional=modified_functional,
-                technical=input_data.technical.model_copy(deep=True),
-                pricing=input_data.pricing.model_copy(deep=True),
-            )
-
-            new_cost = self._calculate_cost(modified_input)
-            cost_change = new_cost - base_cost
-            cost_change_percent = cost_change / base_cost if base_cost > 0 else 0
-
-            # 生成描述
-            if variation < 1:
-                change_desc = f"缩短 {(1 - variation) * 100:.0f}% 至 {new_retention} 天"
-            else:
-                change_desc = f"延长 {(variation - 1) * 100:.0f}% 至 {new_retention} 天"
-
-            items.append(
-                SensitivityItem(
-                    parameter="保留天数",
-                    change_description=change_desc,
-                    original_cost=base_cost,
-                    new_cost=new_cost,
-                    cost_change=cost_change,
-                    cost_change_percent=cost_change_percent,
-                )
-            )
-
-        return items
+        return self._analyze_parameter(input_data, base_cost, variations, "retention_days")
 
     def _analyze_access_pattern(
         self,
@@ -219,41 +257,4 @@ class SensitivityAnalyzer:
         variations: List[float],
     ) -> List[SensitivityItem]:
         """分析访问比例敏感度"""
-        items = []
-        base_access = input_data.functional.access_pattern
-
-        for variation in variations:
-            new_access = max(0.0, min(1.0, base_access * variation))
-
-            # 创建修改后的输入
-            modified_functional = input_data.functional.model_copy(deep=True)
-            modified_functional.access_pattern = new_access
-
-            modified_input = CostCalculationInput(
-                functional=modified_functional,
-                technical=input_data.technical.model_copy(deep=True),
-                pricing=input_data.pricing.model_copy(deep=True),
-            )
-
-            new_cost = self._calculate_cost(modified_input)
-            cost_change = new_cost - base_cost
-            cost_change_percent = cost_change / base_cost if base_cost > 0 else 0
-
-            # 生成描述
-            if variation < 1:
-                change_desc = f"降低回看比例至 {new_access:.0%}"
-            else:
-                change_desc = f"增加回看比例至 {new_access:.0%}"
-
-            items.append(
-                SensitivityItem(
-                    parameter="回看比例",
-                    change_description=change_desc,
-                    original_cost=base_cost,
-                    new_cost=new_cost,
-                    cost_change=cost_change,
-                    cost_change_percent=cost_change_percent,
-                )
-            )
-
-        return items
+        return self._analyze_parameter(input_data, base_cost, variations, "access_pattern")

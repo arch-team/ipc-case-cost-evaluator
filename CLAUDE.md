@@ -201,6 +201,8 @@ AWS 定价数据存储在 `backend/app/data/aws_pricing/` 目录下的 JSON 文�
 ## Active Technologies
 - Python 3.11+ (Backend), TypeScript 5.9+ (Frontend) + FastAPI, Pydantic, python-jose[cryptography], passlib[bcrypt], React 19, Ant Design 6, React Query 5 (002-user-auth-roles)
 - Amazon DynamoDB (users, evaluations, shares 表), 本地 JSON (AWS 定价数据) (002-user-auth-roles)
+- TypeScript 5.x (CDK) + Python 3.11 (Lambda Runtime) + aws-cdk-lib ^2.120.0, constructs ^10.3.0, Mangum (FastAPI Lambda adapter) (003-aws-cdk-infra)
+- DynamoDB (按需计费模式) (003-aws-cdk-infra)
 
 ## Recent Changes
 - 002-user-auth-roles: Added Python 3.11+ (Backend), TypeScript 5.9+ (Frontend) + FastAPI, Pydantic, python-jose[cryptography], passlib[bcrypt], React 19, Ant Design 6, React Query 5

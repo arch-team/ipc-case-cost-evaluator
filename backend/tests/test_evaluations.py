@@ -5,6 +5,7 @@ from app.main import app
 from app.db.client import get_storage, reset_storage
 from app.db.repositories.evaluations import EvaluationRepository
 from app.services.auth import AuthService
+from app.models.enums import UserRole
 
 
 client = TestClient(app)
@@ -25,7 +26,7 @@ def auth_token():
     """创建测试用户并获取令牌"""
     service = AuthService()
     user = service.register("test@example.com", "password123", "Test User")
-    token = service.create_access_token({"sub": user["id"]})
+    token = service.create_access_token(user["id"], UserRole.USER)
     return token, user["id"]
 
 
