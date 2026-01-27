@@ -282,12 +282,14 @@ const InputPanel: React.FC<InputPanelProps> = ({
           value={multiConfig}
           onChange={handleMultiConfigChange}
           retentionDays={value.functional.retention_days}
+          region={value.pricing.region}
         />
       ) : (
         <TechnicalForm
           value={value.technical}
           onChange={handleTechnicalChange}
           retentionDays={value.functional.retention_days}
+          region={value.pricing.region}
         />
       ),
     },

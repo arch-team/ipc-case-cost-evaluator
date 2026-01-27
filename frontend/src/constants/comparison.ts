@@ -24,34 +24,6 @@ export const COST_ITEMS = [
   { key: 'lifecycle_cost', name: '生命周期费', color: '#945FB9' },
 ];
 
-// AWS 定价信息（单位：美元）
-export const AWS_PRICING = {
-  'S3 Standard': {
-    storage: 0.025,
-    put: 0.0047,
-    get: 0.0004,
-    retrieval: 0,
-    transfer: 0.114,
-    lifecycle: 0,
-  },
-  'S3 Glacier IR': {
-    storage: 0.005,
-    put: 0.02,
-    get: 0.01,
-    retrieval: 0.03,
-    transfer: 0.114,
-    lifecycle: 0.02,
-  },
-  'Lifecycle Policy': {
-    storage: 0.015,
-    put: 0.01,
-    get: 0.005,
-    retrieval: 0.015,
-    transfer: 0.114,
-    lifecycle: 0.02,
-  },
-};
-
 /**
  * 生成技术配置描述
  * @param item 对比项

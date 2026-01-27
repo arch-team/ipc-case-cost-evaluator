@@ -23,60 +23,56 @@ export const VIDEO_QUALITY_OPTIONS: Array<{
   { value: '4k', label: '4K (超高清)', dataRate: '1500 KB/s' },
 ];
 
-/** 存储类型选项 */
+/**
+ * 存储类型选项
+ *
+ * 注意：价格数据从后端 API 动态获取，不在此处硬编码
+ */
 export const STORAGE_CLASS_OPTIONS: Array<{
   value: StorageClass;
   label: string;
-  price: string;
   hint: string;
   color: string;
 }> = [
   {
     value: 'STANDARD',
     label: 'S3 Standard',
-    price: '$0.025/GB',
     hint: '频繁访问，毫秒级延迟',
     color: 'blue',
   },
   {
     value: 'INTELLIGENT_TIERING',
     label: 'Intelligent-Tiering',
-    price: '$0.025/GB',
     hint: '自动分层，访问模式不确定',
     color: 'cyan',
   },
   {
     value: 'STANDARD_IA',
     label: 'Standard-IA',
-    price: '$0.014/GB',
     hint: '不频繁访问，毫秒级延迟',
     color: 'geekblue',
   },
   {
     value: 'ONEZONE_IA',
     label: 'One Zone-IA',
-    price: '$0.011/GB',
     hint: '单可用区，成本更低',
     color: 'green',
   },
   {
     value: 'GLACIER_IR',
     label: 'Glacier Instant',
-    price: '$0.004/GB',
     hint: '即时检索归档，毫秒级',
     color: 'purple',
   },
   {
     value: 'GLACIER_FR',
     label: 'Glacier Flexible',
-    price: '$0.004/GB',
     hint: '灵活检索，分钟到小时',
     color: 'volcano',
   },
   {
     value: 'DEEP_ARCHIVE',
     label: 'Deep Archive',
-    price: '$0.001/GB',
     hint: '深度归档，12-48小时检索',
     color: 'orange',
   },

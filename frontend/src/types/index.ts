@@ -269,21 +269,27 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
+// 存储类型定价
+export interface StorageClassPricing {
+  storage_per_gb_month: number;
+  put_per_1000: number;
+  get_per_1000: number;
+  retrieval_per_gb: number;
+  lifecycle_transition_per_1000: number;
+}
+
 // 区域定价
 export interface RegionPricing {
   region: string;
   region_name: string;
-  storage_classes: {
-    [key: string]: {
-      storage_per_gb: number;
-      put_per_1k: number;
-      get_per_1k: number;
-      retrieval_per_gb?: number;
-      lifecycle_per_1k?: number;
-    };
-  };
+  currency: string;
+  last_updated: string;
+  storage_classes: Record<StorageClass, StorageClassPricing>;
   data_transfer: {
-    first_10tb_per_gb: number;
+    out_first_10tb_per_gb: number;
+    out_next_40tb_per_gb: number;
+    out_next_100tb_per_gb: number;
+    out_over_150tb_per_gb: number;
   };
 }
 

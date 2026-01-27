@@ -56,12 +56,18 @@ interface CostBreakdownTableProps {
   };
 }
 
-// 默认单价配置（当后端不提供详细数据时使用）
+/**
+ * 回退单价配置
+ *
+ * 仅当后端不返回 detailedBreakdown 时使用。
+ * 注意：这些是近似参考值，实际定价以后端 API 返回的数据为准。
+ * 定价数据统一从后端 /api/v1/pricing/{region} 获取。
+ */
 const DEFAULT_PRICING = {
   STANDARD: {
     storage: 0.025,
-    put: 0.0047,
-    get: 0.00037,
+    put: 0.005,
+    get: 0.0004,
   },
   GLACIER_IR: {
     storage: 0.004,

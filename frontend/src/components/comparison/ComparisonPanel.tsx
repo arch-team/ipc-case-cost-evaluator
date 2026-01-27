@@ -1,6 +1,7 @@
 /**
  * 方案对比面板
  * 整合表格视图和图表视图，支持切换显示
+ * 定价数据从后端 API 动态获取
  */
 import React, { useState, useMemo } from 'react';
 import { Table, Tag, Typography, Alert, Segmented } from 'antd';
@@ -12,14 +13,15 @@ import {
   TableOutlined,
   BarChartOutlined,
 } from '@ant-design/icons';
-import type { ComparisonResult, ComparisonItem, UsageMetrics } from '../../types';
+import type { ComparisonResult, ComparisonItem, UsageMetrics, StorageClass, RegionPricing } from '../../types';
 import {
   SCHEME_COLORS,
   COST_ITEMS,
   getTechDescription
 } from '../../constants/comparison';
 import { formatAmount, formatUnitPrice } from '../../utils/formatters';
-import { COST_ROW_CONFIGS } from '../../config/costCalculation';
+import { COST_ROW_CONFIGS, type CostRowConfig } from '../../config/costCalculation';
+import { usePricing } from '../../hooks/usePricing';
 
 const { Text, Title } = Typography;
 
@@ -35,14 +37,36 @@ const formatReasonWithBoldPercent = (reason: string): React.ReactNode => {
   });
 };
 
+/**
+ * 从定价数据中获取指定存储类型的单价
+ */
+function getUnitPrice(
+  pricing: RegionPricing | undefined,
+  storageClass: StorageClass | undefined,
+  pricingField: CostRowConfig['pricingField']
+): number {
+  if (!pricing || !storageClass) return 0;
+
+  // 数据传输费用是全局的，不按存储类型区分
+  if (pricingField === 'out_first_10tb_per_gb') {
+    return pricing.data_transfer.out_first_10tb_per_gb;
+  }
+
+  const classInfo = pricing.storage_classes[storageClass];
+  if (!classInfo) return 0;
+
+  return classInfo[pricingField as keyof typeof classInfo] || 0;
+}
+
 interface Props {
   comparison: ComparisonResult;
   metrics?: UsageMetrics;
   deviceCount: number;
+  region: string;
 }
 
 // 表格行类型
-interface TableRow extends Partial<typeof COST_ROW_CONFIGS[0]> {
+interface TableRow extends Partial<CostRowConfig> {
   key: string;
   name: string;
   unit: string;
@@ -50,9 +74,12 @@ interface TableRow extends Partial<typeof COST_ROW_CONFIGS[0]> {
   isSummary?: boolean;
 }
 
-const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount }) => {
+const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount, region }) => {
   const [viewMode, setViewMode] = useState<'table' | 'chart'>('table');
   const [chartMode, setChartMode] = useState<'total' | 'breakdown'>('total');
+
+  // 从 API 获取定价数据
+  const { data: pricing } = usePricing(region);
 
   // 计算相对节省
   const formatSavings = (item: ComparisonItem) => {
@@ -122,7 +149,11 @@ const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount }) 
             if (record.isTotal || record.isSummary) return null;
             const quantity = record.getQuantity?.(metrics);
             if (quantity === null || quantity === undefined) return '-';
-            const unitPrice = record.unitPrices?.[item.storage_class] || 0;
+            // 从 API 动态获取单价
+            const storageClass = item.technical?.storage_class as StorageClass;
+            const unitPrice = record.pricingField
+              ? getUnitPrice(pricing, storageClass, record.pricingField)
+              : 0;
             return (
               <div>
                 <div>{record.formatQuantity?.(quantity)}</div>

@@ -279,3 +279,48 @@ class PricingLoader:
         用于测试或需要重新加载定价数据的场景。
         """
         cls._cache.clear()
+
+    @classmethod
+    def save(cls, pricing: "S3Pricing") -> None:
+        """保存定价数据到本地 JSON 文件
+
+        将 S3Pricing 对象序列化并保存到对应区域的 JSON 文件中。
+        用于在从 AWS API 获取最新数据后更新本地缓存文件。
+
+        Args:
+            pricing: S3Pricing 定价数据对象
+        """
+        pricing_file = cls._pricing_dir / f"{pricing.region}.json"
+
+        # 确保目录存在
+        cls._pricing_dir.mkdir(parents=True, exist_ok=True)
+
+        # 转换为可序列化的字典格式
+        data = {
+            "region": pricing.region,
+            "region_name": pricing.region_name,
+            "currency": pricing.currency,
+            "last_updated": pricing.last_updated,
+            "storage_classes": {
+                storage_class.value: {
+                    "storage_per_gb_month": class_pricing.storage_per_gb_month,
+                    "put_per_1000": class_pricing.put_per_1000,
+                    "get_per_1000": class_pricing.get_per_1000,
+                    "retrieval_per_gb": class_pricing.retrieval_per_gb,
+                    "lifecycle_transition_per_1000": class_pricing.lifecycle_transition_per_1000,
+                }
+                for storage_class, class_pricing in pricing.storage_classes.items()
+            },
+            "data_transfer": {
+                "out_first_10tb_per_gb": pricing.data_transfer.out_first_10tb_per_gb,
+                "out_next_40tb_per_gb": pricing.data_transfer.out_next_40tb_per_gb,
+                "out_next_100tb_per_gb": pricing.data_transfer.out_next_100tb_per_gb,
+                "out_over_150tb_per_gb": pricing.data_transfer.out_over_150tb_per_gb,
+            },
+        }
+
+        with open(pricing_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+
+        # 更新内存缓存
+        cls._cache[pricing.region] = pricing

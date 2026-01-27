@@ -199,6 +199,12 @@ class PricingService:
                     is_fallback=False,
                 )
                 self._cache.set(region, pricing, metadata)
+                # 同时更新本地 JSON 文件，确保回退数据也是最新的
+                try:
+                    PricingLoader.save(pricing)
+                    logger.info(f"已更新本地定价文件: {region}")
+                except Exception as save_error:
+                    logger.warning(f"保存本地定价文件失败: {save_error}")
                 logger.info(f"从 AWS API 获取定价成功: {region}")
                 return pricing, metadata
             except AWSPricingAPIError as e:

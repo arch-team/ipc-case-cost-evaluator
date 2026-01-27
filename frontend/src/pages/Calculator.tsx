@@ -305,6 +305,7 @@ const Calculator: React.FC = () => {
                   comparison={comparison}
                   metrics={result.metrics}
                   deviceCount={result.device_count}
+                  region={input.pricing.region}
                 />
               </div>
             )}

@@ -26,6 +26,7 @@ interface MultiSchemePanelProps {
   value: MultiTechnicalConfig;
   onChange: (value: MultiTechnicalConfig) => void;
   retentionDays: number;
+  region: string;
 }
 
 const MAX_SCHEMES = 4;
@@ -50,6 +51,7 @@ const MultiSchemePanel: React.FC<MultiSchemePanelProps> = ({
   value,
   onChange,
   retentionDays,
+  region,
 }) => {
   const [editingNameId, setEditingNameId] = useState<string | null>(null);
   const [tempName, setTempName] = useState('');
@@ -259,6 +261,7 @@ const MultiSchemePanel: React.FC<MultiSchemePanelProps> = ({
               value={activeScheme.technical}
               onChange={handleTechnicalChange}
               retentionDays={retentionDays}
+              region={region}
             />
           </div>
         </div>
