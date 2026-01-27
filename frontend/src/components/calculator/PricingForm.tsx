@@ -14,17 +14,40 @@ interface PricingFormProps {
 }
 
 const regionOptions = [
+  // 美洲
   { value: 'us-east-1', label: '美国东部 (弗吉尼亚北部)' },
+  { value: 'us-east-2', label: '美国东部 (俄亥俄)' },
+  { value: 'us-west-1', label: '美国西部 (加利福尼亚北部)' },
   { value: 'us-west-2', label: '美国西部 (俄勒冈)' },
+  { value: 'ca-central-1', label: '加拿大 (中部)' },
+  { value: 'ca-west-1', label: '加拿大西部 (卡尔加里)' },
+  { value: 'sa-east-1', label: '南美洲 (圣保罗)' },
+  // 欧洲
   { value: 'eu-west-1', label: '欧洲 (爱尔兰)' },
+  { value: 'eu-west-2', label: '欧洲 (伦敦)' },
+  { value: 'eu-west-3', label: '欧洲 (巴黎)' },
   { value: 'eu-central-1', label: '欧洲 (法兰克福)' },
+  { value: 'eu-central-2', label: '欧洲 (苏黎世)' },
+  { value: 'eu-north-1', label: '欧洲 (斯德哥尔摩)' },
+  { value: 'eu-south-1', label: '欧洲 (米兰)' },
+  { value: 'eu-south-2', label: '欧洲 (西班牙)' },
+  // 亚太地区
   { value: 'ap-northeast-1', label: '亚太地区 (东京)' },
   { value: 'ap-northeast-2', label: '亚太地区 (首尔)' },
+  { value: 'ap-northeast-3', label: '亚太地区 (大阪)' },
   { value: 'ap-southeast-1', label: '亚太地区 (新加坡)' },
   { value: 'ap-southeast-2', label: '亚太地区 (悉尼)' },
+  { value: 'ap-southeast-3', label: '亚太地区 (雅加达)' },
+  { value: 'ap-southeast-4', label: '亚太地区 (墨尔本)' },
+  { value: 'ap-southeast-5', label: '亚太地区 (马来西亚)' },
   { value: 'ap-south-1', label: '亚太地区 (孟买)' },
-  { value: 'cn-north-1', label: '中国 (北京)' },
-  { value: 'cn-northwest-1', label: '中国 (宁夏)' },
+  { value: 'ap-south-2', label: '亚太地区 (海得拉巴)' },
+  { value: 'ap-east-1', label: '亚太地区 (香港)' },
+  // 中东和非洲
+  { value: 'me-south-1', label: '中东 (巴林)' },
+  { value: 'me-central-1', label: '中东 (阿联酋)' },
+  { value: 'il-central-1', label: '以色列 (特拉维夫)' },
+  { value: 'af-south-1', label: '非洲 (开普敦)' },
 ];
 
 const PricingForm: React.FC<PricingFormProps> = ({ value, onChange }) => {

@@ -266,8 +266,7 @@ const Home: React.FC = () => {
                 >
                   <Statistic
                     title="支持区域"
-                    value={10}
-                    suffix="+"
+                    value={30}
                     valueStyle={{ color: '#52c41a', fontWeight: 700 }}
                   />
                 </Card>
