@@ -811,6 +811,26 @@ body {
   border-color: var(--color-border-light) !important;
 }
 
+/* 条件显示区域 - 事件触发参数等 */
+.form-conditional-section {
+  margin-top: 8px;
+  padding: 12px 16px;
+  background: var(--color-bg-secondary);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-medium);
+}
+
+.form-conditional-hint {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  margin-bottom: 12px;
+  padding-left: 2px;
+}
+
+.form-conditional-section .ant-form-item {
+  margin-bottom: 0;
+}
+
 /* 实时成本预览 */
 .input-panel-cost-preview {
   margin: 16px 0;
@@ -1259,11 +1279,28 @@ body {
    导航菜单增强样式
    ============================================ */
 
-/* 菜单项基础样式 */
-.ant-menu-item {
+/* 菜单项基础样式 - 展开状态 */
+.ant-menu:not(.ant-menu-inline-collapsed) .ant-menu-item {
   margin: 4px 8px !important;
   border-radius: var(--radius-small) !important;
   transition: all 0.2s ease !important;
+}
+
+/* 菜单项基础样式 - 折叠状态 */
+.ant-menu-inline-collapsed .ant-menu-item {
+  margin: 4px auto !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: var(--radius-small) !important;
+  transition: all 0.2s ease !important;
+}
+
+/* 折叠状态下图标居中 */
+.ant-menu-inline-collapsed .ant-menu-item .anticon {
+  margin: 0 !important;
+  font-size: 18px !important;
 }
 
 /* 菜单项悬停 */
@@ -1271,11 +1308,17 @@ body {
   background: var(--color-primary-light) !important;
 }
 
-/* 菜单项选中状态 - 左边框 + 背景色 */
-.ant-menu-item-selected {
+/* 菜单项选中状态 - 展开时左边框 */
+.ant-menu:not(.ant-menu-inline-collapsed) .ant-menu-item-selected {
   background: var(--color-primary-light) !important;
   border-left: 3px solid var(--color-primary) !important;
   font-weight: 500 !important;
+}
+
+/* 菜单项选中状态 - 折叠时背景色 */
+.ant-menu-inline-collapsed .ant-menu-item-selected {
+  background: var(--color-primary-light) !important;
+  border-left: none !important;
 }
 
 .ant-menu-item-selected::after {

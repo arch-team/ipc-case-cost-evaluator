@@ -6,15 +6,13 @@ from typing import TYPE_CHECKING, Union
 from fastapi import HTTPException
 
 from app.models.dimensions import CostCalculationInput
-from app.models.enums import StorageClass
 from app.models.pricing import PricingLoader
 from app.services.calculator.s3_standard import S3StandardCalculator
-from app.services.calculator.s3_glacier import S3GlacierCalculator
 from app.services.calculator.lifecycle import LifecycleCalculator
 
 if TYPE_CHECKING:
     # 计算器类型联合
-    Calculator = Union[S3StandardCalculator, S3GlacierCalculator, LifecycleCalculator]
+    Calculator = Union[S3StandardCalculator, LifecycleCalculator]
 
 
 def validate_region(region: str) -> None:
@@ -35,7 +33,9 @@ def validate_region(region: str) -> None:
 def get_calculator(input_data: CostCalculationInput) -> "Calculator":
     """根据输入选择合适的计算器
 
-    根据存储类型和生命周期策略选择对应的计算器实例。
+    根据生命周期策略选择对应的计算器实例。
+    单一存储类型（包括所有 S3 存储类型）统一使用 S3StandardCalculator，
+    生命周期策略启用时使用 LifecycleCalculator。
 
     Args:
         input_data: 成本计算输入
@@ -44,13 +44,11 @@ def get_calculator(input_data: CostCalculationInput) -> "Calculator":
         计算器实例
     """
     lifecycle_policy = input_data.technical.lifecycle_policy
-    storage_class = input_data.technical.storage_class
 
     if lifecycle_policy and lifecycle_policy.enabled:
         return LifecycleCalculator()
-    elif storage_class == StorageClass.GLACIER_IR:
-        return S3GlacierCalculator()
     else:
+        # S3StandardCalculator 支持所有存储类型
         return S3StandardCalculator()
 
 

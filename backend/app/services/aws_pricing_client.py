@@ -202,11 +202,20 @@ class AWSPricingClient:
             put_price = self._query_request_price(target_region, api_storage_class, "PUT")
             get_price = self._query_request_price(target_region, api_storage_class, "GET")
 
-            # Glacier 类型的检索费用和生命周期转换费用
+            # IA 和 Glacier 类型的检索费用和生命周期转换费用
+            # 这些存储类型都有检索费用（STANDARD 和 INTELLIGENT_TIERING 没有）
             retrieval_price = 0.0
             lifecycle_price = 0.0
 
-            if storage_class in (StorageClass.GLACIER_IR, StorageClass.DEEP_ARCHIVE):
+            storage_classes_with_retrieval = (
+                StorageClass.STANDARD_IA,
+                StorageClass.ONEZONE_IA,
+                StorageClass.GLACIER_IR,
+                StorageClass.GLACIER_FR,
+                StorageClass.DEEP_ARCHIVE,
+            )
+
+            if storage_class in storage_classes_with_retrieval:
                 retrieval_price = self._query_retrieval_price(
                     target_region, api_storage_class
                 )

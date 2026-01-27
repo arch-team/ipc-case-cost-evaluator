@@ -389,12 +389,13 @@ class BaseCalculator:
             * discount_multiplier
         )
 
-        # 计算检索费用（仅 Glacier IR 有）
+        # 计算检索费用（IA 和 Glacier 类型都有检索费用）
+        retrieval_price = pricing.get_retrieval_price(storage_class)
         retrieval_cost = 0.0
-        if storage_class == StorageClass.GLACIER_IR:
+        if retrieval_price > 0:
             retrieval_cost = (
                 metrics.monthly_retrieval_gb
-                * pricing.get_retrieval_price(storage_class)
+                * retrieval_price
                 * discount_multiplier
             )
 

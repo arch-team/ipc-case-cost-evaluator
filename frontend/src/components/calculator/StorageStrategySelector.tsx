@@ -128,8 +128,12 @@ const StorageStrategySelector: React.FC<StorageStrategySelectorProps> = ({
     const totalDays = stages[stages.length - 1]?.end_day || 1;
     const colors: Record<string, string> = {
       STANDARD: '#1890ff',
-      GLACIER_IR: '#722ed1',
-      DEEP_ARCHIVE: '#fa8c16',
+      INTELLIGENT_TIERING: '#2f54eb',
+      STANDARD_IA: '#52c41a',
+      ONEZONE_IA: '#a0d911',
+      GLACIER_IR: '#13c2c2',
+      GLACIER_FR: '#fa8c16',
+      DEEP_ARCHIVE: '#722ed1',
     };
 
     return (
@@ -195,9 +199,11 @@ const StorageStrategySelector: React.FC<StorageStrategySelectorProps> = ({
                   <Tag icon={<ClockCircleOutlined />}>
                     {template.retention_days}天
                   </Tag>
-                  <Tag color="green" icon={<DollarOutlined />}>
-                    省{Math.round(template.estimated_savings_vs_standard * 100)}%
-                  </Tag>
+                  <Tooltip title="仅基于存储费用估算，相比全程 S3 Standard。实际节省受回看频率、检索费用、转换费用影响，请以计算结果为准">
+                    <Tag color="green" icon={<DollarOutlined />}>
+                      省{Math.round(template.estimated_savings_vs_standard * 100)}%
+                    </Tag>
+                  </Tooltip>
                 </div>
                 {renderCompactStageBar(template.stages)}
               </div>

@@ -1,16 +1,15 @@
 /**
  * 功能维度配置表单
+ * 优化布局：三列紧凑设计，按业务逻辑分组
  */
 import React from 'react';
-import { Form, InputNumber, Select, Row, Col, Typography, Divider } from 'antd';
-import { TeamOutlined, VideoCameraOutlined, EyeOutlined } from '@ant-design/icons';
+import { Form, InputNumber, Select, Row, Col, Divider } from 'antd';
+import { SettingOutlined, VideoCameraOutlined, EyeOutlined } from '@ant-design/icons';
 import type { FunctionalDimensions, RecordingMode, VideoQuality, AccessPatternConfig } from '../../types';
 import { validateNumericField } from '../../utils/validation';
 import { FormLabel } from '../common/FormLabel';
 import { RECORDING_MODE_OPTIONS, VIDEO_QUALITY_OPTIONS, FORM_TOOLTIPS } from '../../constants/forms';
 import AccessPatternSelector from './AccessPatternSelector';
-
-const { Text } = Typography;
 
 interface FunctionalFormProps {
   value: FunctionalDimensions;
@@ -38,24 +37,19 @@ const FunctionalForm: React.FC<FunctionalFormProps> = ({ value, onChange }) => {
     });
   };
 
+  const isEventTriggered = value.recording_mode === 'event_triggered';
+
   return (
     <div className="dimension-form">
-      <div className="dimension-form-header">
-        <Text className="dimension-form-header-title">功能维度配置</Text>
-        <Text className="dimension-form-header-desc">
-          配置 IPC 设备的基本参数和录像策略
-        </Text>
-      </div>
-
       <Form layout="vertical">
-        {/* 分组 1: 设备规模 */}
+        {/* 分组 1: 基础配置 - 两列布局 */}
         <div className="form-group">
           <div className="form-group-title">
-            <TeamOutlined className="form-group-icon" />
-            <span>设备规模</span>
+            <SettingOutlined className="form-group-icon" />
+            <span>基础配置</span>
           </div>
-          <Row gutter={24}>
-            <Col span={24}>
+          <Row gutter={16}>
+            <Col span={12}>
               <Form.Item label={<FormLabel label="设备数量" tooltip={FORM_TOOLTIPS.deviceCount} />}>
                 <InputNumber
                   min={1}
@@ -67,43 +61,6 @@ const FunctionalForm: React.FC<FunctionalFormProps> = ({ value, onChange }) => {
                 />
               </Form.Item>
             </Col>
-          </Row>
-        </div>
-
-        <Divider className="form-group-divider" />
-
-        {/* 分组 2: 录像参数 */}
-        <div className="form-group">
-          <div className="form-group-title">
-            <VideoCameraOutlined className="form-group-icon" />
-            <span>录像参数</span>
-          </div>
-          <Row gutter={24}>
-            <Col span={12}>
-              <Form.Item label={<FormLabel label="录像模式" tooltip={FORM_TOOLTIPS.recordingMode} />}>
-                <Select
-                  value={value.recording_mode}
-                  onChange={(val: RecordingMode) => handleChange('recording_mode', val)}
-                  options={RECORDING_MODE_OPTIONS}
-                />
-              </Form.Item>
-            </Col>
-
-            <Col span={12}>
-              <Form.Item label={<FormLabel label="视频质量" tooltip={FORM_TOOLTIPS.videoQuality} />}>
-                <Select
-                  value={value.video_quality}
-                  onChange={(val: VideoQuality) => handleChange('video_quality', val)}
-                >
-                  {VIDEO_QUALITY_OPTIONS.map((opt) => (
-                    <Select.Option key={opt.value} value={opt.value}>
-                      {opt.label} ({opt.dataRate})
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-
             <Col span={12}>
               <Form.Item label={<FormLabel label="保留天数" tooltip={FORM_TOOLTIPS.retentionDays} />}>
                 <InputNumber
@@ -116,9 +73,50 @@ const FunctionalForm: React.FC<FunctionalFormProps> = ({ value, onChange }) => {
                 />
               </Form.Item>
             </Col>
+          </Row>
+        </div>
 
-            {value.recording_mode === 'event_triggered' && (
-              <>
+        <Divider className="form-group-divider" />
+
+        {/* 分组 2: 录像策略 */}
+        <div className="form-group">
+          <div className="form-group-title">
+            <VideoCameraOutlined className="form-group-icon" />
+            <span>录像策略</span>
+          </div>
+
+          {/* 视频质量 + 录像模式 */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label={<FormLabel label="视频质量" tooltip={FORM_TOOLTIPS.videoQuality} />}>
+                <Select
+                  value={value.video_quality}
+                  onChange={(val: VideoQuality) => handleChange('video_quality', val)}
+                >
+                  {VIDEO_QUALITY_OPTIONS.map((opt) => (
+                    <Select.Option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label={<FormLabel label="录像模式" tooltip={FORM_TOOLTIPS.recordingMode} />}>
+                <Select
+                  value={value.recording_mode}
+                  onChange={(val: RecordingMode) => handleChange('recording_mode', val)}
+                  options={RECORDING_MODE_OPTIONS}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* 事件参数 - 条件显示区域 */}
+          {isEventTriggered && (
+            <div className="form-conditional-section">
+              <div className="form-conditional-hint">事件触发参数</div>
+              <Row gutter={16}>
                 <Col span={12}>
                   <Form.Item label={<FormLabel label="每日事件数" tooltip={FORM_TOOLTIPS.eventsPerDay} />}>
                     <InputNumber
@@ -131,7 +129,6 @@ const FunctionalForm: React.FC<FunctionalFormProps> = ({ value, onChange }) => {
                     />
                   </Form.Item>
                 </Col>
-
                 <Col span={12}>
                   <Form.Item label={<FormLabel label="事件时长" tooltip={FORM_TOOLTIPS.eventDuration} />}>
                     <InputNumber
@@ -144,9 +141,9 @@ const FunctionalForm: React.FC<FunctionalFormProps> = ({ value, onChange }) => {
                     />
                   </Form.Item>
                 </Col>
-              </>
-            )}
-          </Row>
+              </Row>
+            </div>
+          )}
         </div>
 
         <Divider className="form-group-divider" />
