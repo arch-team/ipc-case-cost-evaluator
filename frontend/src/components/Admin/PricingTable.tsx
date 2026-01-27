@@ -206,9 +206,10 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false, c
       ),
       dataIndex: 'storage_per_gb_month',
       key: 'storage',
+      width: 130,
       align: 'right' as const,
       render: (value: number) => (
-        <Text strong style={{ color: '#1677ff' }}>
+        <Text strong style={{ color: '#1677ff', whiteSpace: 'nowrap' }}>
           ${value.toFixed(4)}
           <Text type="secondary" style={{ fontSize: 11 }}>/GB-月</Text>
         </Text>
@@ -225,9 +226,10 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false, c
       ),
       dataIndex: 'put_per_1000',
       key: 'put',
+      width: 120,
       align: 'right' as const,
       render: (value: number) => (
-        <Text>
+        <Text style={{ whiteSpace: 'nowrap' }}>
           ${value.toFixed(4)}
           <Text type="secondary" style={{ fontSize: 11 }}>/千次</Text>
         </Text>
@@ -244,9 +246,10 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false, c
       ),
       dataIndex: 'get_per_1000',
       key: 'get',
+      width: 120,
       align: 'right' as const,
       render: (value: number) => (
-        <Text>
+        <Text style={{ whiteSpace: 'nowrap' }}>
           ${value.toFixed(4)}
           <Text type="secondary" style={{ fontSize: 11 }}>/千次</Text>
         </Text>
@@ -260,13 +263,14 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false, c
       ),
       dataIndex: 'retrieval_per_gb',
       key: 'retrieval',
+      width: 110,
       align: 'right' as const,
       render: (value: number) => {
         if (value === 0) {
           return <Text type="secondary">-</Text>;
         }
         return (
-          <Text>
+          <Text style={{ whiteSpace: 'nowrap' }}>
             ${value.toFixed(4)}
             <Text type="secondary" style={{ fontSize: 11 }}>/GB</Text>
           </Text>
@@ -284,13 +288,14 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false, c
       ),
       dataIndex: 'lifecycle_transition_per_1000',
       key: 'lifecycle',
+      width: 120,
       align: 'right' as const,
       render: (value: number) => {
         if (value === 0) {
           return <Text type="secondary">-</Text>;
         }
         return (
-          <Text>
+          <Text style={{ whiteSpace: 'nowrap' }}>
             ${value.toFixed(4)}
             <Text type="secondary" style={{ fontSize: 11 }}>/千次</Text>
           </Text>
@@ -414,7 +419,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false, c
           pagination={false}
           loading={loading}
           size="large"
-          scroll={{ x: 1540 }}
+          scroll={{ x: 1600 }}
           style={{
             '--ant-table-cell-padding-block': '16px',
             '--ant-table-cell-padding-inline': '16px',

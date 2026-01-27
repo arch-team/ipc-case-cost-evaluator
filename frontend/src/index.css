@@ -765,8 +765,114 @@ body {
   padding: 0;
 }
 
+/* 维度表单头部增强 */
 .dimension-form-header {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  padding-left: 12px;
+  border-left: 3px solid var(--color-primary);
+}
+
+.dimension-form-header-title {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: var(--color-text-primary);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.dimension-form-header-desc {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  display: block;
+}
+
+/* 表单分组样式 */
+.form-group {
+  margin-bottom: 8px;
+}
+
+.form-group-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin-bottom: 12px;
+}
+
+.form-group-icon {
+  font-size: 14px;
+  color: var(--color-primary);
+}
+
+.form-group-divider {
+  margin: 16px 0 !important;
+  border-color: var(--color-border-light) !important;
+}
+
+/* 实时成本预览 */
+.input-panel-cost-preview {
+  margin: 16px 0;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f6ffed 0%, #fff 100%);
+  border: 1px solid #b7eb8f;
+  border-radius: var(--radius-medium);
+}
+
+.cost-preview-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cost-preview-icon {
+  font-size: 16px;
+  color: var(--color-success);
+}
+
+.cost-preview-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.cost-preview-loading {
+  margin-left: auto;
+  color: var(--color-primary);
+}
+
+.cost-preview-content {
+  display: flex;
+  gap: 16px;
+}
+
+.cost-preview-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cost-preview-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.cost-preview-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.cost-preview-primary .cost-preview-value {
+  font-size: 20px;
+  color: var(--color-success);
+}
+
+.cost-preview-placeholder {
+  padding: 8px 0;
 }
 
 /* 表单项紧凑化 */

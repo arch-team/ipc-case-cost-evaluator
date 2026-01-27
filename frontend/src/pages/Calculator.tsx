@@ -353,6 +353,11 @@ const Calculator: React.FC = () => {
             onShare={handleShare}
             onSave={handleSave}
             isLoggedIn={isAuthenticated}
+            costPreview={result ? {
+              monthlyTotal: result.monthly_total,
+              perDeviceMonthly: result.per_device_monthly,
+            } : null}
+            isCalculating={status === 'calculating'}
           />
         </aside>
 

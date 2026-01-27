@@ -8,7 +8,6 @@
 import React, { useState, useMemo } from 'react';
 import {
   Slider,
-  Radio,
   Card,
   Space,
   Typography,
@@ -17,11 +16,12 @@ import {
   Tag,
   Row,
   Col,
+  Button,
 } from 'antd';
 import {
   SettingOutlined,
   InfoCircleOutlined,
-  CheckCircleOutlined,
+  CheckOutlined,
 } from '@ant-design/icons';
 import type { AccessPatternConfig, AccessPatternStage } from '../../types';
 import { FormLabel } from '../common/FormLabel';
@@ -222,6 +222,15 @@ const AccessPatternSelector: React.FC<AccessPatternSelectorProps> = ({
         }}
         onClick={() => handlePresetSelect(preset.id)}
       >
+        {/* 选中角标 */}
+        {isSelected && (
+          <div
+            className="preset-card-check"
+            style={{ backgroundColor: preset.color }}
+          >
+            <CheckOutlined style={{ color: '#fff', fontSize: 10 }} />
+          </div>
+        )}
         <div className="preset-card-header">
           <Space>
             <Text strong>{preset.name}</Text>
@@ -229,7 +238,6 @@ const AccessPatternSelector: React.FC<AccessPatternSelectorProps> = ({
               <Tag color="green" style={{ fontSize: 10 }}>推荐</Tag>
             )}
           </Space>
-          {isSelected && <CheckCircleOutlined style={{ color: preset.color }} />}
         </div>
         <Text type="secondary" style={{ fontSize: 12 }}>
           {preset.description}
@@ -265,20 +273,26 @@ const AccessPatternSelector: React.FC<AccessPatternSelectorProps> = ({
             onChange={handleSimpleChange}
             marks={{
               0: '0%',
-              10: '10%',
               25: '25%',
               50: '50%',
+              75: '75%',
               100: '100%',
             }}
           />
         )}
         {isTimeDecayMode && accessPatternConfig?.stages && (
           <div className="time-decay-preview">
+            <div className="time-decay-header">
+              <Tag color="blue">时间衰减模式</Tag>
+              <Button type="link" size="small" onClick={handleSwitchToSimple}>
+                切换到简单模式
+              </Button>
+            </div>
             {renderAccessCurve(accessPatternConfig.stages)}
             <div className="time-decay-info">
               <InfoCircleOutlined style={{ marginRight: 4 }} />
               <Text type="secondary" style={{ fontSize: 12 }}>
-                已启用时间衰减模式，加权平均访问比例: {(displayAccessRate * 100).toFixed(1)}%
+                加权平均访问比例: {(displayAccessRate * 100).toFixed(1)}%
               </Text>
             </div>
           </div>
@@ -301,24 +315,9 @@ const AccessPatternSelector: React.FC<AccessPatternSelectorProps> = ({
             ),
             children: (
               <div className="access-pattern-advanced">
-                <Radio.Group
-                  value={isTimeDecayMode ? 'time_decay' : 'simple'}
-                  onChange={(e) => {
-                    if (e.target.value === 'simple') {
-                      handleSwitchToSimple();
-                    }
-                  }}
-                  style={{ marginBottom: 16 }}
-                >
-                  <Radio value="simple">简单模式</Radio>
-                  <Radio value="time_decay">时间衰减模式</Radio>
-                </Radio.Group>
-
-                {!isTimeDecayMode && (
-                  <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
-                    选择预设模式切换到时间衰减模式
-                  </Text>
-                )}
+                <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
+                  选择预设模式启用时间衰减访问策略
+                </Text>
 
                 <Row gutter={[12, 12]}>
                   {ACCESS_PATTERN_PRESETS.map(preset => (
@@ -343,15 +342,25 @@ const AccessPatternSelector: React.FC<AccessPatternSelectorProps> = ({
         }
 
         .time-decay-preview {
-          padding: 12px;
-          background: #fafafa;
-          border-radius: 6px;
+          padding: 16px;
+          background: linear-gradient(135deg, #f0f5ff 0%, #fff 100%);
+          border: 1px solid #d6e4ff;
+          border-radius: 8px;
           margin-top: 8px;
         }
 
+        .time-decay-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+        }
+
         .time-decay-info {
-          margin-top: 8px;
+          margin-top: 12px;
           text-align: center;
+          padding-top: 12px;
+          border-top: 1px solid #e8e8e8;
         }
 
         .access-curve {
@@ -394,16 +403,37 @@ const AccessPatternSelector: React.FC<AccessPatternSelectorProps> = ({
         }
 
         .preset-card {
-          transition: all 0.3s;
+          position: relative;
+          transition: all 0.2s ease;
         }
 
         .preset-card:hover {
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
         .preset-card-selected {
-          border-width: 2px;
+          border-width: 2px !important;
           background: #f6ffed;
+          box-shadow: 0 4px 12px rgba(82, 196, 26, 0.15);
+        }
+
+        .preset-card-selected:hover {
+          transform: none;
+        }
+
+        .preset-card-check {
+          position: absolute;
+          top: -8px;
+          right: -8px;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          z-index: 1;
         }
 
         .preset-card-header {

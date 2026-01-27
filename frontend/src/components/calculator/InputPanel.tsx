@@ -12,6 +12,7 @@ import {
   Tooltip,
   Divider,
   message,
+  Skeleton,
 } from 'antd';
 import {
   SettingOutlined,
@@ -22,6 +23,7 @@ import {
   DownloadOutlined,
   ShareAltOutlined,
   SaveOutlined,
+  SyncOutlined,
 } from '@ant-design/icons';
 import type {
   CostCalculationInput,
@@ -51,6 +53,12 @@ interface InputPanelProps {
   onShare?: () => void;
   onSave?: () => void;
   isLoggedIn?: boolean;
+  // 实时成本预览
+  costPreview?: {
+    monthlyTotal: number;
+    perDeviceMonthly: number;
+  } | null;
+  isCalculating?: boolean;
 }
 
 // 存储类型显示名称
@@ -85,6 +93,8 @@ const InputPanel: React.FC<InputPanelProps> = ({
   onShare,
   onSave,
   isLoggedIn = false,
+  costPreview,
+  isCalculating = false,
 }) => {
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [categories, setCategories] = useState<ScenarioCategory[]>([]);
@@ -309,6 +319,36 @@ const InputPanel: React.FC<InputPanelProps> = ({
         items={collapseItems}
         expandIconPosition="start"
       />
+
+      {/* 实时成本预览 */}
+      <div className="input-panel-cost-preview">
+        <div className="cost-preview-header">
+          <DollarOutlined className="cost-preview-icon" />
+          <span className="cost-preview-title">实时成本预估</span>
+          {isCalculating && <SyncOutlined spin className="cost-preview-loading" />}
+        </div>
+
+        {costPreview ? (
+          <div className="cost-preview-content">
+            <div className="cost-preview-item cost-preview-primary">
+              <span className="cost-preview-label">月度总成本</span>
+              <span className="cost-preview-value">
+                ${costPreview.monthlyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div className="cost-preview-item">
+              <span className="cost-preview-label">单设备/月</span>
+              <span className="cost-preview-value">
+                ${costPreview.perDeviceMonthly.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="cost-preview-placeholder">
+            <Skeleton.Input active size="small" style={{ width: '100%' }} />
+          </div>
+        )}
+      </div>
 
       <Divider style={{ margin: '16px 0' }} />
 
