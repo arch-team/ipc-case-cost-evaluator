@@ -9,7 +9,14 @@ export type RecordingMode = 'continuous' | 'event_triggered' | 'scheduled';
 export type VideoQuality = '720p' | '1080p' | '2k' | '4k';
 
 // 存储类型
-export type StorageClass = 'STANDARD' | 'GLACIER_IR' | 'DEEP_ARCHIVE';
+export type StorageClass =
+  | 'STANDARD'
+  | 'INTELLIGENT_TIERING'
+  | 'STANDARD_IA'
+  | 'ONEZONE_IA'
+  | 'GLACIER_IR'
+  | 'GLACIER_FR'
+  | 'DEEP_ARCHIVE';
 
 // 生命周期阶段
 export interface LifecycleStage {

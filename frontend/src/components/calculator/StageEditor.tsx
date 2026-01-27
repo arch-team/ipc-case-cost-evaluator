@@ -30,8 +30,12 @@ interface StageEditorProps {
 
 const storageClassOptions = [
   { value: 'STANDARD', label: 'S3 Standard', color: '#1890ff' },
-  { value: 'GLACIER_IR', label: 'Glacier IR', color: '#722ed1' },
-  { value: 'DEEP_ARCHIVE', label: 'Deep Archive', color: '#fa8c16' },
+  { value: 'INTELLIGENT_TIERING', label: 'Intelligent-Tiering', color: '#2f54eb' },
+  { value: 'STANDARD_IA', label: 'Standard-IA', color: '#52c41a' },
+  { value: 'ONEZONE_IA', label: 'One Zone-IA', color: '#a0d911' },
+  { value: 'GLACIER_IR', label: 'Glacier IR', color: '#13c2c2' },
+  { value: 'GLACIER_FR', label: 'Glacier FR', color: '#fa8c16' },
+  { value: 'DEEP_ARCHIVE', label: 'Deep Archive', color: '#722ed1' },
 ];
 
 const StageEditor: React.FC<StageEditorProps> = ({ value, onChange, maxDays }) => {
