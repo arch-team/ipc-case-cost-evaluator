@@ -18,7 +18,7 @@ python-jose[cryptography]>=3.3.0
 passlib[bcrypt]>=1.7.4
 
 # 数据验证
-pydantic>=2.5.0
+pydantic[email]>=2.5.0
 pydantic-settings>=2.1.0
 
 # ============================================

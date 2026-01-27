@@ -89,7 +89,10 @@ function handler(event) {
 
     // 解析 API URL 获取域名
     // apiUrl 格式: https://xxx.execute-api.region.amazonaws.com
-    const apiDomain = apiUrl.replace('https://', '').replace('http://', '');
+    // 使用 CloudFormation 内置函数处理跨栈引用的 Token
+    // Fn.split('/', apiUrl) => ['https:', '', 'xxx.execute-api.region.amazonaws.com']
+    // Fn.select(2, ...) => 'xxx.execute-api.region.amazonaws.com'
+    const apiDomain = cdk.Fn.select(2, cdk.Fn.split('/', apiUrl));
 
     // API 源站
     const apiOrigin = new cloudfrontOrigins.HttpOrigin(apiDomain, {
