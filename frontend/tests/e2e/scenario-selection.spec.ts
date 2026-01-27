@@ -1,5 +1,6 @@
 /**
  * 场景选择 E2E 测试
+ * 适配新版实时计算 UI - 下拉框式场景选择
  */
 import { test, expect } from '@playwright/test';
 import { CalculatorPage } from './pages';
@@ -12,86 +13,97 @@ test.describe('场景选择', () => {
     await calculatorPage.goto();
   });
 
-  test('加载预设场景列表', async ({ page }) => {
-    // 等待页面稳定（loading 状态消失或场景显示）
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(2000);
+  test('快速开始面板显示场景下拉框', async ({ page }) => {
+    // 等待页面加载
+    await calculatorPage.waitForScenariosLoaded();
 
-    // 验证自定义配置卡片存在
-    await calculatorPage.scenarioSelector.expectCustomConfigVisible();
+    // 展开快速开始面板
+    await calculatorPage.expandPanel('quick-start');
 
-    // 检查是否有场景卡片（可能为 0 如果 API 调用失败）
-    const scenarioCount = await calculatorPage.scenarioSelector.getScenarioCount();
-    console.log(`场景数量: ${scenarioCount}`);
+    // 验证场景选择下拉框存在
+    const selectBox = calculatorPage.quickStartPanel.locator('.ant-select');
+    await expect(selectBox).toBeVisible();
+  });
 
-    // 如果有场景，验证场景卡片存在
-    if (scenarioCount > 0) {
-      expect(scenarioCount).toBeGreaterThan(0);
+  test('点击下拉框显示场景选项', async ({ page }) => {
+    // 等待页面加载
+    await calculatorPage.waitForScenariosLoaded();
+
+    // 展开快速开始面板
+    await calculatorPage.expandPanel('quick-start');
+
+    // 点击场景选择下拉框
+    const selectBox = calculatorPage.quickStartPanel.locator('.ant-select');
+    await selectBox.click();
+
+    // 等待下拉选项出现
+    await page.waitForSelector('.ant-select-dropdown', { state: 'visible' });
+
+    // 验证有选项存在
+    const options = page.locator('.ant-select-item-option');
+    const optionCount = await options.count();
+    expect(optionCount).toBeGreaterThan(0);
+  });
+
+  test('选择场景后自动填充参数并计算', async ({ page }) => {
+    // 等待页面加载
+    await calculatorPage.waitForScenariosLoaded();
+
+    // 记录初始月度费用
+    const initialMonthly = await calculatorPage.getMonthlyTotal();
+
+    // 选择第一个场景
+    await calculatorPage.selectFirstScenario();
+
+    // 验证结果更新
+    await calculatorPage.expectResultsVisible();
+    await calculatorPage.expectPositiveMonthlyTotal();
+
+    // 验证设备数量已更新（大于 0）
+    const deviceCount = await calculatorPage.getDisplayedDeviceCount();
+    expect(deviceCount).toBeGreaterThan(0);
+  });
+
+  test('选择场景后费用正确计算', async ({ page }) => {
+    // 等待场景加载
+    await calculatorPage.waitForScenariosLoaded();
+
+    // 展开快速开始面板
+    await calculatorPage.expandPanel('quick-start');
+
+    // 点击场景选择下拉框
+    const selectBox = calculatorPage.quickStartPanel.locator('.ant-select');
+    await selectBox.click();
+
+    // 获取所有选项
+    const options = page.locator('.ant-select-item-option');
+    const optionCount = await options.count();
+
+    if (optionCount >= 1) {
+      // 选择第一个选项
+      await options.nth(0).click();
+      await calculatorPage.waitForCalculationComplete();
+      const cost1 = await calculatorPage.getMonthlyTotal();
+
+      // 验证费用大于零
+      expect(cost1).toBeGreaterThan(0);
+
+      if (optionCount >= 2) {
+        // 选择第二个选项
+        await selectBox.click();
+        await options.nth(1).click();
+        await calculatorPage.waitForCalculationComplete();
+        const cost2 = await calculatorPage.getMonthlyTotal();
+
+        // 验证第二个场景费用也大于零
+        expect(cost2).toBeGreaterThan(0);
+
+        // 注：两个场景可能配置相同，费用可能相等，这是合法的
+      }
     }
   });
 
-  test('显示场景分类', async ({ page }) => {
-    await calculatorPage.scenarioSelector.waitForScenariosLoaded();
-
-    // 验证分类区块存在（新 UI 使用 scenario-category-group 类）
-    const categoryGroups = page.locator('.scenario-category-group');
-    const groupCount = await categoryGroups.count();
-    expect(groupCount).toBeGreaterThan(0);
-
-    // 验证分类标题存在
-    const categoryTitle = categoryGroups.first().locator('.scenario-category-title');
-    await expect(categoryTitle).toBeVisible();
-  });
-
-  test('点击场景卡片自动填充参数', async () => {
-    await calculatorPage.scenarioSelector.waitForScenariosLoaded();
-
-    // 获取第一个场景卡片的信息
-    const scenarioCount = await calculatorPage.scenarioSelector.getScenarioCount();
-    expect(scenarioCount).toBeGreaterThan(0);
-
-    // 点击第一个场景
-    await calculatorPage.scenarioSelector.selectFirstScenario();
-
-    // 验证跳转到功能配置步骤
-    await calculatorPage.expectStep(1);
-
-    // 验证表单已填充值（设备数量应该大于 0）
-    const deviceCount = await calculatorPage.functionalForm.getDeviceCount();
-    expect(parseInt(deviceCount)).toBeGreaterThan(0);
-  });
-
-  test('场景卡片显示信息行', async ({ page }) => {
-    await calculatorPage.scenarioSelector.waitForScenariosLoaded();
-
-    // 检查场景卡片上的信息行（新 UI 使用简洁文字展示代替 Tag）
-    const firstCard = page.locator('.scenario-card').first();
-    const infoRows = firstCard.locator('.scenario-card-info-row');
-
-    // 每个场景应该有两行信息（设备数·天数、录像模式·存储类型）
-    const rowCount = await infoRows.count();
-    expect(rowCount).toBe(2);
-
-    // 验证第一行包含设备数和天数
-    const line1 = await infoRows.nth(0).textContent();
-    expect(line1).toMatch(/\d+\s*台/);
-    expect(line1).toMatch(/\d+\s*天/);
-  });
-
-  test('点击自定义配置进入表单', async () => {
-    await calculatorPage.scenarioSelector.waitForScenariosLoaded();
-
-    // 点击自定义配置
-    await calculatorPage.scenarioSelector.clickCustom();
-
-    // 验证跳转到功能配置步骤
-    await calculatorPage.expectStep(1);
-
-    // 验证表单元素可见
-    await expect(calculatorPage.functionalForm.deviceCountInput).toBeVisible();
-  });
-
-  test('场景加载失败时显示空状态', async ({ page }) => {
+  test('场景加载失败时可手动配置', async ({ page }) => {
     // 拦截 API 请求使其失败
     await page.route('**/api/v1/scenarios', route => {
       route.fulfill({
@@ -103,14 +115,28 @@ test.describe('场景选择', () => {
     // 刷新页面
     await page.reload();
 
-    // 等待加载完成
-    await page.waitForLoadState('networkidle');
+    // 等待页面加载
+    await calculatorPage.waitForPageReady();
 
-    // 应该仍然显示自定义配置选项
-    await calculatorPage.scenarioSelector.expectCustomConfigVisible();
+    // 仍然可以手动配置参数
+    await calculatorPage.expandPanel('functional');
+    await expect(calculatorPage.functionalForm.deviceCountInput).toBeVisible();
+
+    // 修改设备数量
+    await calculatorPage.setDeviceCount(50);
+
+    // 验证结果更新
+    await calculatorPage.expectResultsVisible();
   });
 
-  test.skip('场景加载中显示 loading 状态', async () => {
-    // 跳过此测试 - API 响应太快，难以可靠地捕捉 loading 状态
+  test('功能维度面板显示完整配置表单', async ({ page }) => {
+    // 展开功能维度面板
+    await calculatorPage.expandPanel('functional');
+
+    // 验证表单字段存在
+    await expect(calculatorPage.functionalForm.deviceCountInput).toBeVisible();
+    await expect(calculatorPage.functionalForm.retentionDaysInput).toBeVisible();
+    await expect(calculatorPage.functionalForm.recordingModeSelect).toBeVisible();
+    await expect(calculatorPage.functionalForm.videoQualitySelect).toBeVisible();
   });
 });

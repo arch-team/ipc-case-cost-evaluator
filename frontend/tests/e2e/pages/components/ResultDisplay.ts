@@ -85,8 +85,8 @@ export class ResultDisplay {
     this.breakdownSection = page.locator('[data-testid="result-breakdown-section"]');
     this.viewToggle = this.breakdownSection.locator('.ant-segmented');
 
-    // 费用明细表格
-    this.breakdownTable = page.locator('.ant-table');
+    // 费用明细表格 - 使用更具体的选择器（费用明细区域内的表格）
+    this.breakdownTable = page.locator('[data-testid="result-breakdown-section"] .ant-table').first();
 
     // 使用量指标区域（可折叠面板）
     this.metricsCollapse = page.locator('.result-metrics-collapse');
