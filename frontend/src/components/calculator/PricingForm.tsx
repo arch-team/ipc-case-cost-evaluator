@@ -24,13 +24,6 @@ const PricingForm: React.FC<PricingFormProps> = ({ value, onChange }) => {
 
   return (
     <div className="dimension-form">
-      <div className="dimension-form-header">
-        <Text strong style={{ fontSize: 14 }}>价格维度配置</Text>
-        <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
-          选择 AWS 区域和设置折扣
-        </Text>
-      </div>
-
       <Form layout="vertical">
         <Row gutter={24}>
           <Col span={12}>
@@ -89,9 +82,6 @@ const PricingForm: React.FC<PricingFormProps> = ({ value, onChange }) => {
             </li>
             <li>
               <Text strong>企业折扣</Text>：大批量使用可联系 AWS 获取企业折扣
-            </li>
-            <li>
-              <Text strong>预留容量</Text>：确定用量后可购买预留容量获得折扣
             </li>
           </ul>
         </Paragraph>
