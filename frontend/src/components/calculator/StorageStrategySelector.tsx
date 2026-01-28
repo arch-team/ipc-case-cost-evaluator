@@ -69,10 +69,13 @@ const StorageStrategySelector: React.FC<StorageStrategySelectorProps> = ({
     if (newMode === 'single') {
       onChange(undefined);
       setSelectedTemplateId(null);
-    } else if (newMode === 'template' && selectedTemplateId) {
-      const template = templates.find(t => t.id === selectedTemplateId);
-      if (template) {
-        applyTemplate(template);
+    } else if (newMode === 'template') {
+      // 如果有已选模板则使用，否则自动选择第一个模板
+      const templateToApply = selectedTemplateId
+        ? templates.find(t => t.id === selectedTemplateId)
+        : templates[0];
+      if (templateToApply) {
+        applyTemplate(templateToApply);
       }
     } else if (newMode === 'custom') {
       onChange({
