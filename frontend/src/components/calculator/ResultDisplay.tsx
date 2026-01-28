@@ -11,8 +11,9 @@ import {
   TableOutlined,
   DownOutlined,
 } from '@ant-design/icons';
-import type { CostSummary, TechnicalDimensions, StorageClass } from '../../types';
+import type { CostSummary, TechnicalDimensions, StorageClass, ComparisonItem } from '../../types';
 import { formatNumber } from '../../utils/formatters';
+import { getTechDescription } from '../../constants/comparison';
 import CostPieChart from './CostPieChart';
 import CostBreakdownTable from './CostBreakdownTable';
 
@@ -43,27 +44,20 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, schemeInfo, regio
   // 使用共用格式化函数 formatNumber
   // 从 ../../utils/formatters 导入
 
-  // 获取存储类型的中文描述
-  const getStorageClassLabel = (storageClass: string): string => {
-    const labels: Record<string, string> = {
-      'STANDARD': 'S3 Standard',
-      'GLACIER_IR': 'S3 Glacier IR',
+  // 获取方案技术描述（使用统一的 getTechDescription 函数）
+  const getSchemeDescriptionLines = (): string[] => {
+    if (!schemeInfo) return [];
+    // 构造一个临时的 ComparisonItem 对象以复用 getTechDescription
+    const tempItem: ComparisonItem = {
+      name: schemeInfo.name,
+      storage_class: schemeInfo.technical.storage_class,
+      monthly_cost: 0,
+      yearly_cost: 0,
+      vs_baseline: 0,
+      is_recommended: false,
+      technical: schemeInfo.technical,
     };
-    return labels[storageClass] || storageClass;
-  };
-
-  // 获取方案技术描述
-  const getSchemeDescription = (): string => {
-    if (!schemeInfo) return '';
-    const { technical } = schemeInfo;
-    if (technical.lifecycle_policy?.enabled) {
-      const stages = technical.lifecycle_policy.stages || [];
-      if (stages.length > 0) {
-        return `生命周期策略 (${stages.length}阶段)`;
-      }
-      return '生命周期策略';
-    }
-    return getStorageClassLabel(technical.storage_class);
+    return getTechDescription(tempItem);
   };
 
   return (
@@ -89,9 +83,13 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, schemeInfo, regio
             <Tag color="blue" style={{ fontSize: 14, padding: '4px 12px' }}>
               {schemeInfo.name}
             </Tag>
-            <Text type="secondary" style={{ fontSize: 13, marginLeft: 8 }}>
-              {getSchemeDescription()}
-            </Text>
+            <div style={{ marginLeft: 8, display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+              {getSchemeDescriptionLines().map((line, idx) => (
+                <Text key={idx} type="secondary" style={{ fontSize: idx === 0 ? 13 : 12, lineHeight: 1.4 }}>
+                  {line}
+                </Text>
+              ))}
+            </div>
           </div>
         )}
         <div className="result-hero-label">单设备月均费用</div>

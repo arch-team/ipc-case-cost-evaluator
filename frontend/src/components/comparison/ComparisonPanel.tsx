@@ -180,7 +180,7 @@ const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount, re
           title: '费用',
           dataIndex: `${item.name}_amount`,
           key: `${item.name}_amount`,
-          width: 90,
+          width: 110,
           align: 'right' as const,
           render: (_: unknown, record: TableRow) => {
             if (record.isTotal) {
@@ -202,7 +202,24 @@ const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount, re
               }
             }
             const amount = record.getAmount?.(item.breakdown);
-            return <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatAmount(amount || 0)}</span>;
+            // 生成费用计算公式
+            const costFormula = record.getCostFormula?.({
+              pricing,
+              technical: item.technical,
+              metrics,
+            });
+            return (
+              <div>
+                <div style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {formatAmount(amount || 0)}
+                </div>
+                {costFormula && (
+                  <div style={{ fontSize: 10, color: 'var(--color-text-tertiary)', marginTop: 2 }}>
+                    {costFormula}
+                  </div>
+                )}
+              </div>
+            );
           },
         },
       ],
