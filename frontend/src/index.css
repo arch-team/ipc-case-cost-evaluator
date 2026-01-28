@@ -905,6 +905,22 @@ body {
   height: 0 !important;
 }
 
+/* 水平布局表单项 - 标签在左，输入框在右 */
+.form-horizontal-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.form-horizontal-item .form-label {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.form-horizontal-item .ant-input-number {
+  flex: 1;
+}
+
 /* 条件显示区域 - 事件触发参数等 */
 .form-conditional-section {
   margin-top: 12px;

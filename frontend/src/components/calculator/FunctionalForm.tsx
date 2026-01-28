@@ -48,16 +48,16 @@ const FunctionalForm: React.FC<FunctionalFormProps> = ({ value, onChange }) => {
             <SettingOutlined className="form-group-icon" />
             <span>基础配置</span>
           </div>
-          <Form.Item label={<FormLabel label="设备数量" tooltip={FORM_TOOLTIPS.deviceCount} />}>
+          <div className="form-horizontal-item">
+            <FormLabel label="设备数量" tooltip={FORM_TOOLTIPS.deviceCount} />
             <InputNumber
               min={1}
               max={100000}
               value={value.device_count}
               onChange={(val) => handleChange('device_count', val)}
-              style={{ width: '100%' }}
               addonAfter="台"
             />
-          </Form.Item>
+          </div>
         </div>
 
         <Divider className="form-group-divider" />
