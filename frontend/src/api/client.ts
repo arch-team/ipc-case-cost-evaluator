@@ -176,6 +176,7 @@ export const calculatorApi = {
         breakdown: r.result.breakdown,
         is_recommended: isRecommended,
         technical: r.technical,
+        metrics: r.result.metrics,
       };
     });
 

@@ -8,6 +8,7 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel, Field, computed_field
 
 from app.models.enums import StorageClass
+from app.models.dimensions import TechnicalDimensions
 
 
 class CostBreakdown(BaseModel):
@@ -140,6 +141,8 @@ class ComparisonItem(BaseModel):
         vs_baseline: 相对基准的差异比例（负值表示节省）
         breakdown: 费用明细（可选）
         is_recommended: 是否为推荐方案
+        metrics: 中间计算指标（可选），用于显示每个方案独立的用量公式
+        technical: 技术配置（可选），用于显示生命周期策略等信息
     """
 
     name: str = Field(..., description="方案名称")
@@ -149,6 +152,12 @@ class ComparisonItem(BaseModel):
     vs_baseline: float = Field(..., description="相对基准的差异比例")
     breakdown: Optional[CostBreakdown] = Field(default=None, description="费用明细")
     is_recommended: bool = Field(default=False, description="是否为推荐方案")
+    metrics: Optional[IntermediateMetrics] = Field(
+        default=None, description="中间计算指标"
+    )
+    technical: Optional[TechnicalDimensions] = Field(
+        default=None, description="技术配置"
+    )
 
     @property
     def vs_baseline_percent(self) -> str:

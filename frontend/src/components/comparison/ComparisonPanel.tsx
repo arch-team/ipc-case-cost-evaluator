@@ -181,10 +181,12 @@ const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount, re
           align: 'right' as const,
           render: (_: unknown, record: TableRow) => {
             if (record.isTotal || record.isSummary) return null;
-            const quantity = record.getQuantity?.(metrics);
+            // 使用方案独立的 metrics，如果没有则回退到全局 metrics
+            const schemeMetrics = item.metrics || metrics;
+            const quantity = record.getQuantity?.(schemeMetrics);
             if (quantity === null || quantity === undefined) return <Text type="secondary">-</Text>;
             // 优先使用动态公式，如果没有则使用静态公式
-            const quantityFormula = record.getQuantityFormula?.(metrics) || record.formula;
+            const quantityFormula = record.getQuantityFormula?.(schemeMetrics) || record.formula;
             return (
               <div>
                 <div style={{ fontVariantNumeric: 'tabular-nums' }}>
@@ -225,11 +227,12 @@ const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount, re
               }
             }
             const amount = record.getAmount?.(item.breakdown);
-            // 生成费用计算公式
+            // 使用方案独立的 metrics 生成费用计算公式
+            const schemeMetrics = item.metrics || metrics;
             const costFormula = record.getCostFormula?.({
               pricing,
               technical: item.technical,
-              metrics,
+              metrics: schemeMetrics,
             });
             return (
               <div>

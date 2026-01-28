@@ -199,6 +199,8 @@ export interface ComparisonItem {
   is_recommended: boolean;
   // 完整的技术配置信息
   technical?: TechnicalDimensions;
+  // 中间计算指标（用于显示每个方案独立的用量公式）
+  metrics?: UsageMetrics;
 }
 
 // 推荐

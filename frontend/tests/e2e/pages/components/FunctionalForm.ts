@@ -1,61 +1,65 @@
 /**
  * 功能配置表单组件 Page Object
+ * 适配优化后的三列紧凑设计布局
  */
 import { Page, Locator, expect } from '@playwright/test';
 
 export class FunctionalForm {
   readonly page: Page;
 
-  // 设备数量
+  // 设备数量 - 在 form-horizontal-item 中
   readonly deviceCountInput: Locator;
 
-  // 录像模式
+  // 录像模式 - 在录像策略分组中
   readonly recordingModeSelect: Locator;
 
-  // 视频质量
+  // 视频质量 - 在录像策略分组中
   readonly videoQualitySelect: Locator;
 
-  // 事件触发模式特有字段
+  // 事件触发模式特有字段 - 在 form-conditional-section 中
   readonly eventsPerDayInput: Locator;
   readonly eventDurationInput: Locator;
 
-  // 保留天数
+  // 保留天数 - 现在在技术维度面板顶部
   readonly retentionDaysInput: Locator;
 
-  // 回看比例
-  readonly accessPatternSlider: Locator;
+  // 访问模式区域
+  readonly accessPatternSection: Locator;
 
   constructor(page: Page) {
     this.page = page;
 
-    // 使用文本内容定位表单项，然后找到对应的输入框
-    this.deviceCountInput = page.locator('.ant-form-item').filter({
+    // 设备数量 - 在基础配置分组的 form-horizontal-item 中
+    this.deviceCountInput = page.locator('.form-horizontal-item').filter({
       hasText: '设备数量'
     }).locator('.ant-input-number-input');
 
-    this.recordingModeSelect = page.locator('.ant-form-item').filter({
-      hasText: '录像模式'
+    // 录像模式 - 使用 Form.Item 的 label
+    this.recordingModeSelect = page.locator('.dimension-form .ant-form-item').filter({
+      has: page.locator('label:has-text("录像模式")')
     }).locator('.ant-select');
 
-    this.videoQualitySelect = page.locator('.ant-form-item').filter({
-      hasText: '视频质量'
+    // 视频质量 - 使用 Form.Item 的 label
+    this.videoQualitySelect = page.locator('.dimension-form .ant-form-item').filter({
+      has: page.locator('label:has-text("视频质量")')
     }).locator('.ant-select');
 
-    this.eventsPerDayInput = page.locator('.ant-form-item').filter({
-      hasText: '每日事件数'
+    // 事件参数 - 在条件显示区域内
+    this.eventsPerDayInput = page.locator('.form-conditional-section .ant-form-item').filter({
+      has: page.locator('label:has-text("每日事件数")')
     }).locator('.ant-input-number-input');
 
-    this.eventDurationInput = page.locator('.ant-form-item').filter({
-      hasText: '事件时长'
+    this.eventDurationInput = page.locator('.form-conditional-section .ant-form-item').filter({
+      has: page.locator('label:has-text("事件时长")')
     }).locator('.ant-input-number-input');
 
-    this.retentionDaysInput = page.locator('.ant-form-item').filter({
-      hasText: '保留天数'
-    }).locator('.ant-input-number-input');
+    // 保留天数 - 在技术维度面板顶部，不在功能维度表单中
+    this.retentionDaysInput = page.locator('.input-panel .ant-input-number-input').first();
 
-    this.accessPatternSlider = page.locator('.ant-form-item').filter({
-      hasText: '回看比例'
-    }).locator('.ant-slider');
+    // 访问模式区域
+    this.accessPatternSection = page.locator('.form-group').filter({
+      hasText: '访问模式'
+    });
   }
 
   /**

@@ -67,6 +67,8 @@ class StorageComparator:
             yearly_cost=standard_result.yearly_total,
             vs_baseline=0.0,  # 基准
             breakdown=standard_result.breakdown,
+            metrics=standard_result.metrics,
+            technical=standard_input.technical,
         )
         items.append(standard_item)
 
@@ -85,6 +87,8 @@ class StorageComparator:
             yearly_cost=glacier_result.yearly_total,
             vs_baseline=glacier_diff,
             breakdown=glacier_result.breakdown,
+            metrics=glacier_result.metrics,
+            technical=glacier_input.technical,
         )
         items.append(glacier_item)
 
@@ -104,6 +108,8 @@ class StorageComparator:
                 yearly_cost=lifecycle_result.yearly_total,
                 vs_baseline=lifecycle_diff,
                 breakdown=lifecycle_result.breakdown,
+                metrics=lifecycle_result.metrics,
+                technical=lifecycle_input.technical,
             )
             items.append(lifecycle_item)
 

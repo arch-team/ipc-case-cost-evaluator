@@ -50,7 +50,7 @@ export interface CostRowConfig {
 /**
  * 生成存储费用的计算公式
  *
- * 对于生命周期策略：阶段1天数×单价1 + 阶段2天数×单价2
+ * 对于生命周期策略：阶段1存储量×单价1 + 阶段2存储量×单价2
  * 对于单一存储类型：具体存储量×单价
  */
 function generateStorageCostFormula(params: CostFormulaParams): string | null {
@@ -61,12 +61,27 @@ function generateStorageCostFormula(params: CostFormulaParams): string | null {
 
   // 检查是否启用了生命周期策略
   if (lifecycle?.enabled && lifecycle.stages && lifecycle.stages.length > 1) {
-    // 多阶段生命周期策略
+    // 多阶段生命周期策略 - 显示各阶段实际存储量
     const formulaParts: string[] = [];
+    const dailyDataGB = metrics?.daily_data_gb;
+
     for (const stage of lifecycle.stages) {
       const days = stage.end_day - stage.start_day + 1;
       const price = pricing.storage_classes[stage.storage_class as StorageClass]?.storage_per_gb_month || 0;
-      formulaParts.push(`${days}天×$${price}`);
+
+      if (dailyDataGB && dailyDataGB > 0) {
+        // 计算该阶段的存储量：每日数据量 × 阶段天数
+        const stageGB = dailyDataGB * days;
+        if (stageGB >= 1024) {
+          const stageTB = (stageGB / 1024).toFixed(2);
+          formulaParts.push(`${stageTB}TB×$${price}`);
+        } else {
+          formulaParts.push(`${stageGB.toFixed(1)}GB×$${price}`);
+        }
+      } else {
+        // 回退到显示天数
+        formulaParts.push(`${days}天×$${price}`);
+      }
     }
     return formulaParts.join(' + ');
   }
@@ -112,14 +127,29 @@ function generateGetCostFormula(params: CostFormulaParams): string | null {
 
   const lifecycle = technical.lifecycle_policy;
 
-  // 对于生命周期策略，显示各阶段的 GET 单价
+  // 对于生命周期策略，显示各阶段的实际请求数
   if (lifecycle?.enabled && lifecycle.stages && lifecycle.stages.length > 1) {
     const formulaParts: string[] = [];
+    const totalDays = lifecycle.stages[lifecycle.stages.length - 1].end_day;
+    const monthlyGets = metrics?.monthly_gets || 0;
+
     for (const stage of lifecycle.stages) {
       const days = stage.end_day - stage.start_day + 1;
       const price = pricing.storage_classes[stage.storage_class as StorageClass]?.get_per_1000 || 0;
+
       if (price > 0) {
-        formulaParts.push(`${days}天×$${price}`);
+        if (monthlyGets > 0 && totalDays > 0) {
+          // 按天数比例计算该阶段的请求数
+          const dayRatio = days / totalDays;
+          const stageGets = monthlyGets * dayRatio;
+          const thousands = Math.round(stageGets / 1000);
+          if (thousands > 0) {
+            formulaParts.push(`${thousands}千次×$${price}`);
+          }
+        } else {
+          // 回退到显示天数
+          formulaParts.push(`${days}天×$${price}`);
+        }
       }
     }
     return formulaParts.length > 0 ? formulaParts.join(' + ') : null;
@@ -149,13 +179,31 @@ function generateRetrievalCostFormula(params: CostFormulaParams): string | null 
   const lifecycle = technical.lifecycle_policy;
 
   if (lifecycle?.enabled && lifecycle.stages && lifecycle.stages.length > 1) {
-    // 显示有检索费用的阶段的单价
+    // 显示有检索费用的阶段的实际检索量
     const formulaParts: string[] = [];
+    const totalDays = lifecycle.stages[lifecycle.stages.length - 1].end_day;
+    const monthlyRetrievalGB = metrics?.monthly_retrieval_gb || 0;
+
     for (const stage of lifecycle.stages) {
       const price = pricing.storage_classes[stage.storage_class as StorageClass]?.retrieval_per_gb || 0;
       if (price > 0) {
         const days = stage.end_day - stage.start_day + 1;
-        formulaParts.push(`${days}天×$${price}`);
+
+        if (monthlyRetrievalGB > 0 && totalDays > 0) {
+          // 按天数比例计算该阶段的检索量
+          const dayRatio = days / totalDays;
+          const stageRetrievalGB = monthlyRetrievalGB * dayRatio;
+
+          if (stageRetrievalGB >= 1024) {
+            const retrievalTB = (stageRetrievalGB / 1024).toFixed(2);
+            formulaParts.push(`${retrievalTB}TB×$${price}`);
+          } else if (stageRetrievalGB > 0) {
+            formulaParts.push(`${stageRetrievalGB.toFixed(1)}GB×$${price}`);
+          }
+        } else {
+          // 回退到显示天数
+          formulaParts.push(`${days}天×$${price}`);
+        }
       }
     }
     return formulaParts.length > 0 ? formulaParts.join(' + ') : null;
