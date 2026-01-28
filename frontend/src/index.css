@@ -754,16 +754,19 @@ body {
   font-size: 13px;
 }
 
-/* 表头第一行（方案名）样式 */
+/* 表头第一行（方案名）样式 - 浅蓝背景色块 */
 .detailed-comparison-table .ant-table-thead > tr:first-child > th {
-  padding: 8px 12px;
+  padding: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid var(--color-border);
 }
 
 /* 表头第二行（用量/费用）样式 */
 .detailed-comparison-table .ant-table-thead > tr:nth-child(2) > th {
-  padding: 6px 12px;
+  padding: 8px 12px;
   font-size: 12px;
   color: var(--color-text-secondary);
+  background: var(--color-border-light);
 }
 
 /* 表格单元格样式 */
