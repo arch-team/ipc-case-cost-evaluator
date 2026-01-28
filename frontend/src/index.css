@@ -188,7 +188,7 @@ body {
   background: var(--color-primary-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
-  padding: 32px;
+  padding: 20px 24px;
   text-align: center;
   margin-bottom: var(--spacing-card-gap);
 }
@@ -196,14 +196,14 @@ body {
 .result-hero-label {
   font-size: 14px;
   color: var(--color-text-secondary);
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .result-hero-value {
-  font-size: 48px;
+  font-size: 42px;
   font-weight: 600;
   color: var(--color-primary);
-  line-height: 1.2;
+  line-height: 1.1;
 }
 
 .result-hero-unit {
@@ -217,7 +217,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
 .result-secondary-stats {
@@ -230,13 +230,23 @@ body {
   flex: 1;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
-  padding: 16px 20px;
+  padding: 12px 16px;
   background: var(--color-bg-card);
 }
 
 .result-secondary-card:hover {
   border-color: var(--color-border);
   box-shadow: none;
+}
+
+/* 副指标卡片内 Statistic 组件紧凑样式 */
+.result-secondary-card .ant-statistic-title {
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.result-secondary-card .ant-statistic-content {
+  font-size: 22px;
 }
 
 .result-breakdown-section {
@@ -733,23 +743,85 @@ body {
 
 .detailed-comparison-table .ant-table {
   border-radius: var(--radius-small);
+  font-size: 13px;
 }
 
+/* 表头样式优化 */
 .detailed-comparison-table .ant-table-thead > tr > th {
   background: var(--color-bg-page);
-  font-weight: 600;
+  font-weight: 500;
+  padding: 10px 12px;
+  font-size: 13px;
 }
 
+/* 表头第一行（方案名）样式 */
+.detailed-comparison-table .ant-table-thead > tr:first-child > th {
+  padding: 8px 12px;
+}
+
+/* 表头第二行（用量/费用）样式 */
+.detailed-comparison-table .ant-table-thead > tr:nth-child(2) > th {
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+/* 表格单元格样式 */
+.detailed-comparison-table .ant-table-tbody > tr > td {
+  padding: 10px 12px;
+}
+
+/* 总计行 */
 .detailed-comparison-table .comparison-row-total {
   background: var(--color-primary-light) !important;
 }
 
 .detailed-comparison-table .comparison-row-total td {
   font-weight: 600;
+  padding: 12px !important;
 }
 
+/* 汇总行 */
 .detailed-comparison-table .comparison-row-summary {
   background: var(--color-border-light);
+}
+
+.detailed-comparison-table .comparison-row-summary td {
+  padding: 8px 12px;
+}
+
+/* 固定列优化 */
+.detailed-comparison-table .ant-table-cell-fix-left {
+  background: var(--color-bg-card);
+}
+
+.detailed-comparison-table .ant-table-thead .ant-table-cell-fix-left {
+  background: var(--color-bg-page);
+}
+
+/* 总计行特殊样式 */
+.detailed-comparison-table .comparison-row-total .ant-table-cell-fix-left {
+  background: var(--color-primary-light) !important;
+}
+
+/* 汇总行固定列样式 */
+.detailed-comparison-table .comparison-row-summary .ant-table-cell-fix-left {
+  background: var(--color-border-light);
+}
+
+/* 表格边框优化 */
+.detailed-comparison-table .ant-table-bordered > .ant-table-container {
+  border: none;
+}
+
+.detailed-comparison-table .ant-table-bordered > .ant-table-container > .ant-table-content > table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* 方案列标题居中 */
+.detailed-comparison-table .ant-table-thead > tr > th[colspan] {
+  text-align: center;
 }
 
 .detailed-comparison-recommendation {
@@ -1171,22 +1243,6 @@ body {
   text-align: center;
 }
 
-/* 多方案对比表格列宽调整 */
-.detailed-comparison-table .ant-table-thead > tr > th {
-  padding: 8px 12px;
-}
-
-.detailed-comparison-table .ant-table-tbody > tr > td {
-  padding: 8px 12px;
-}
-
-/* 4列方案时的紧凑布局 */
-.detailed-comparison-table.schemes-4 .ant-table-thead > tr > th,
-.detailed-comparison-table.schemes-4 .ant-table-tbody > tr > td {
-  padding: 6px 8px;
-  font-size: 12px;
-}
-
 /* ============================================
    响应式调整 - 双栏布局
    ============================================ */
@@ -1288,6 +1344,16 @@ body {
 
 /* ====== 折叠状态样式 ====== */
 
+/* 折叠状态 - 移除 Menu 容器和 Sider 的默认内边距 */
+.ant-layout-sider-collapsed .ant-menu {
+  padding: 0 !important;
+}
+
+.ant-menu-inline-collapsed {
+  padding: 0 !important;
+  width: 100% !important;
+}
+
 /* 折叠状态 - 统一菜单项和子菜单标题的基础布局 */
 .ant-menu-inline-collapsed .ant-menu-item,
 .ant-menu-inline-collapsed .ant-menu-submenu > .ant-menu-submenu-title {
@@ -1299,7 +1365,9 @@ body {
   width: calc(100% - 16px) !important;
   height: 40px !important;
   line-height: 40px !important;
-  text-align: center !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   border-radius: var(--radius-small) !important;
   transition: all 0.2s ease !important;
 }
@@ -1324,13 +1392,15 @@ body {
 .ant-menu-inline-collapsed .ant-menu-item .anticon,
 .ant-menu-inline-collapsed .ant-menu-submenu-title .anticon {
   margin: 0 !important;
+  margin-inline: 0 !important;
   margin-inline-end: 0 !important;
+  margin-inline-start: 0 !important;
   padding: 0 !important;
   font-size: 18px !important;
-  line-height: 40px !important;
+  line-height: 1 !important;
   min-width: auto !important;
-  width: 100% !important;
-  text-align: center !important;
+  width: auto !important;
+  flex-shrink: 0 !important;
 }
 
 /* 菜单项悬停 */

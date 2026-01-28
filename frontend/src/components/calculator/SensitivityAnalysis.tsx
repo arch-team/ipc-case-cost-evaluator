@@ -98,12 +98,12 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
       max: 3,
       step: 1,
       unit: '',
-      formatValue: (val) => ['720p', '1080p', '2k', '4k'][val] || '',
+      formatValue: (val) => ['720p', '1080p', '2K', '4K'][val] || '',
       getInputValue: (val, inp) => ({
         ...inp,
         functional: {
           ...inp.functional,
-          video_quality: (['720p', '1080p', '2k', '4k'] as const)[val] || '1080p',
+          video_quality: (['720p', '1080p', '2K', '4K'] as const)[val] || '1080p',
         },
       }),
     },

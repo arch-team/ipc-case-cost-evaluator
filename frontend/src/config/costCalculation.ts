@@ -19,6 +19,8 @@ export interface CostRowConfig {
   name: string;
   /** 单位显示文本 */
   unit: string;
+  /** 用量计算公式说明 */
+  formula?: string;
   /** 从指标中获取用量 */
   getQuantity: (metrics?: UsageMetrics) => number | null;
   /** 格式化用量显示 */
@@ -39,6 +41,7 @@ export const COST_ROW_CONFIGS: CostRowConfig[] = [
     key: 'storage',
     name: '存储费用',
     unit: '/GB/月',
+    formula: '设备数 × 日数据量 × 保留天数',
     getQuantity: (metrics) => metrics?.avg_storage_gb || null,
     formatQuantity: (val) => `${(val / 1024).toFixed(2)} TB`,
     getAmount: (breakdown) => breakdown?.storage_cost || 0,
@@ -48,6 +51,7 @@ export const COST_ROW_CONFIGS: CostRowConfig[] = [
     key: 'put',
     name: 'PUT 请求费',
     unit: '/千次',
+    formula: '设备数 × 日分片数 × 30',
     getQuantity: (metrics) => metrics?.monthly_puts || null,
     formatQuantity: (val) => `${(val / 10000).toFixed(0)} 万次`,
     getAmount: (breakdown) => breakdown?.put_request_cost || 0,
@@ -57,6 +61,7 @@ export const COST_ROW_CONFIGS: CostRowConfig[] = [
     key: 'get',
     name: 'GET 请求费',
     unit: '/千次',
+    formula: 'PUT请求数 × 回看比例',
     getQuantity: (metrics) => metrics?.monthly_gets || null,
     formatQuantity: (val) => `${(val / 10000).toFixed(0)} 万次`,
     getAmount: (breakdown) => breakdown?.get_request_cost || 0,
@@ -66,6 +71,7 @@ export const COST_ROW_CONFIGS: CostRowConfig[] = [
     key: 'retrieval',
     name: '数据检索费',
     unit: '/GB',
+    formula: '存储量 × 回看比例',
     getQuantity: (metrics) => metrics?.monthly_retrieval_gb || null,
     formatQuantity: (val) => (val > 0 ? `${(val / 1024).toFixed(2)} TB` : '-'),
     getAmount: (breakdown) => breakdown?.retrieval_cost || 0,
@@ -75,6 +81,7 @@ export const COST_ROW_CONFIGS: CostRowConfig[] = [
     key: 'transfer',
     name: '数据传输费',
     unit: '/GB',
+    formula: '存储量 × 回看比例',
     getQuantity: (metrics) => metrics?.monthly_transfer_gb || null,
     formatQuantity: (val) => (val > 0 ? `${(val / 1024).toFixed(2)} TB` : '-'),
     getAmount: (breakdown) => breakdown?.data_transfer_cost || 0,
@@ -84,6 +91,7 @@ export const COST_ROW_CONFIGS: CostRowConfig[] = [
     key: 'lifecycle',
     name: '生命周期转换费',
     unit: '/千次',
+    formula: '转换对象数',
     getQuantity: (metrics) => metrics?.monthly_puts || null,
     formatQuantity: () => '-',
     getAmount: (breakdown) => breakdown?.lifecycle_cost || 0,

@@ -296,6 +296,8 @@ const Calculator: React.FC = () => {
                 technical: currentSchemeResult.technical,
               } : undefined}
               region={input.pricing.region}
+              retentionDays={input.functional.retention_days}
+              accessPattern={input.functional.access_pattern}
               onExport={handleExport}
             />
 

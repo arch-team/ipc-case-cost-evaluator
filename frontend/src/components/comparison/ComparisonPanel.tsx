@@ -100,41 +100,52 @@ const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount, re
   };
 
   // === 表格配置 ===
+  // 获取第一个方案的单价（所有方案共享相同的定价，因为只有一个区域）
+  const firstScheme = comparison.items[0];
+  const firstStorageClass = firstScheme?.technical?.storage_class as StorageClass;
+
   const tableColumns = [
     {
       title: '费用项目',
       dataIndex: 'name',
       key: 'name',
-      width: 120,
+      width: 110,
       fixed: 'left' as const,
       render: (text: string, record: TableRow) => (
         <Text strong={record.isTotal}>{text}</Text>
       ),
     },
     {
-      title: '单位',
+      title: '单价',
       dataIndex: 'unit',
       key: 'unit',
-      width: 80,
-      render: (text: string, record: TableRow) => (
-        <Text type="secondary">{record.isTotal || record.isSummary ? '' : text}</Text>
-      ),
+      width: 110,
+      render: (_: string, record: TableRow) => {
+        if (record.isTotal || record.isSummary) return null;
+        const unitPrice = record.pricingField
+          ? getUnitPrice(pricing, firstStorageClass, record.pricingField)
+          : 0;
+        if (unitPrice === 0) return <Text type="secondary">-</Text>;
+        return (
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {formatUnitPrice(unitPrice, record.unit || '')}
+          </Text>
+        );
+      },
     },
     ...comparison.items.map((item) => ({
       title: (
         <div style={{ textAlign: 'center' }}>
-          <div>
-            {item.name}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <span>{item.name}</span>
             {item.is_recommended && (
-              <Tag color="green" style={{ marginLeft: 8 }}>
+              <Tag color="green" style={{ margin: 0, fontSize: 11, padding: '0 6px', lineHeight: '18px' }}>
                 推荐
               </Tag>
             )}
           </div>
-          <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 400, marginTop: 4 }}>
-            {getTechDescription(item).map((line, idx) => (
-              <div key={idx}>{line}</div>
-            ))}
+          <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 400, marginTop: 2 }}>
+            {getTechDescription(item)[0]}
           </div>
         </div>
       ),
@@ -143,23 +154,22 @@ const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount, re
           title: '用量',
           dataIndex: `${item.name}_quantity`,
           key: `${item.name}_quantity`,
-          width: 120,
+          width: 110,
           align: 'right' as const,
           render: (_: unknown, record: TableRow) => {
             if (record.isTotal || record.isSummary) return null;
             const quantity = record.getQuantity?.(metrics);
-            if (quantity === null || quantity === undefined) return '-';
-            // 从 API 动态获取单价
-            const storageClass = item.technical?.storage_class as StorageClass;
-            const unitPrice = record.pricingField
-              ? getUnitPrice(pricing, storageClass, record.pricingField)
-              : 0;
+            if (quantity === null || quantity === undefined) return <Text type="secondary">-</Text>;
             return (
               <div>
-                <div>{record.formatQuantity?.(quantity)}</div>
-                <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>
-                  {formatUnitPrice(unitPrice, record.unit || '')}
+                <div style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {record.formatQuantity?.(quantity)}
                 </div>
+                {record.formula && (
+                  <div style={{ fontSize: 10, color: 'var(--color-text-tertiary)', marginTop: 2 }}>
+                    {record.formula}
+                  </div>
+                )}
               </div>
             );
           },
@@ -168,29 +178,29 @@ const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount, re
           title: '费用',
           dataIndex: `${item.name}_amount`,
           key: `${item.name}_amount`,
-          width: 100,
+          width: 90,
           align: 'right' as const,
           render: (_: unknown, record: TableRow) => {
             if (record.isTotal) {
               return (
-                <Text strong style={{ fontSize: 16 }}>
+                <Text strong style={{ fontSize: 15, color: 'var(--color-primary)' }}>
                   {formatAmount(item.monthly_cost)}
                 </Text>
               );
             }
             if (record.isSummary) {
               if (record.key === 'yearly') {
-                return formatAmount(item.yearly_cost);
+                return <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatAmount(item.yearly_cost)}</span>;
               }
               if (record.key === 'per_device') {
-                return formatAmount(item.monthly_cost / deviceCount);
+                return <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatAmount(item.monthly_cost / deviceCount)}</span>;
               }
               if (record.key === 'savings') {
                 return formatSavings(item);
               }
             }
             const amount = record.getAmount?.(item.breakdown);
-            return formatAmount(amount || 0);
+            return <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatAmount(amount || 0)}</span>;
           },
         },
       ],

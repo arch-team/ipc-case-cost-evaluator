@@ -29,12 +29,15 @@ interface ResultDisplayProps {
   result: CostSummary;
   schemeInfo?: SchemeInfo;  // 当前显示结果对应的方案信息
   region: string;  // AWS 区域（用于获取定价）
+  // 功能参数（用于显示公式中的具体数值）
+  retentionDays?: number;
+  accessPattern?: number;
   onExport?: () => void;
 }
 
 type BreakdownViewType = 'chart' | 'table';
 
-const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, schemeInfo, region, onExport }) => {
+const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, schemeInfo, region, retentionDays, accessPattern, onExport }) => {
   const [breakdownView, setBreakdownView] = useState<BreakdownViewType>('table');
 
   // 使用共用格式化函数 formatNumber
@@ -106,7 +109,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, schemeInfo, regio
             value={result.monthly_total}
             precision={2}
             prefix="$"
-            valueStyle={{ color: '#2563eb', fontSize: 24 }}
+            valueStyle={{ color: '#2563eb' }}
           />
         </div>
         <div className="result-secondary-card">
@@ -115,7 +118,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, schemeInfo, regio
             value={result.yearly_total}
             precision={2}
             prefix="$"
-            valueStyle={{ color: '#16a34a', fontSize: 24 }}
+            valueStyle={{ color: '#16a34a' }}
           />
         </div>
         <div className="result-secondary-card">
@@ -123,7 +126,6 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, schemeInfo, regio
             title="设备数量"
             value={result.device_count}
             suffix="台"
-            valueStyle={{ fontSize: 24 }}
           />
         </div>
       </div>
@@ -167,6 +169,9 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, schemeInfo, regio
             pricingMetadata={result.pricing_metadata}
             region={region}
             storageClass={(schemeInfo?.technical.storage_class || 'STANDARD') as StorageClass}
+            deviceCount={result.device_count}
+            retentionDays={retentionDays}
+            accessPattern={accessPattern}
             detailedBreakdown={result.detailed_breakdown ? {
               storageCosts: result.detailed_breakdown.storage_costs?.map(c => ({
                 name: c.name,

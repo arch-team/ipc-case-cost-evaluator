@@ -34,6 +34,7 @@ interface EnhancedCostItem {
   unitPriceUnit?: string;
   quantity?: number;
   quantityUnit?: string;
+  formula?: string;  // 用量计算公式
   monthly: number;
   yearly: number;
   percent: number;
@@ -48,6 +49,10 @@ interface CostBreakdownTableProps {
   // 区域和存储类型（用于动态获取定价）
   region: string;
   storageClass: StorageClass;
+  // 功能参数（用于显示公式中的具体数值）
+  deviceCount?: number;
+  retentionDays?: number;
+  accessPattern?: number;
   // 可选的详细明细数据（来自后端增强 API）
   detailedBreakdown?: {
     storageCosts?: Array<{
@@ -69,9 +74,27 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
   pricingMetadata,
   region,
   storageClass,
+  deviceCount,
+  retentionDays,
+  accessPattern,
   detailedBreakdown,
 }) => {
   const [expandedRowKeys, setExpandedRowKeys] = useState<string[]>([]);
+
+  // 计算日数据量（GB）
+  const dailyDataGb = metrics?.avg_storage_gb && retentionDays
+    ? (metrics.avg_storage_gb / retentionDays).toFixed(1)
+    : '-';
+
+  // 计算日分片数
+  const dailySegments = metrics?.monthly_puts && deviceCount
+    ? Math.round(metrics.monthly_puts / deviceCount / 30)
+    : '-';
+
+  // 格式化回看比例为百分比
+  const accessPatternPercent = accessPattern !== undefined
+    ? `${(accessPattern * 100).toFixed(0)}%`
+    : '-';
 
   // 从 API 动态获取定价数据
   const { data: pricing, isLoading: pricingLoading } = usePricing(region);
@@ -113,6 +136,7 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
       items.push({
         key: 'storage',
         name: '存储费用',
+        formula: `${deviceCount || '-'} × ${dailyDataGb}GB × ${retentionDays || '-'}天`,
         monthly: storageTotal,
         yearly: storageTotal * 12,
         percent: (storageTotal / monthlyTotal) * 100,
@@ -127,6 +151,7 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
         unitPriceUnit: 'USD/GB-月',
         quantity: metrics?.avg_storage_gb,
         quantityUnit: 'GB',
+        formula: `${deviceCount || '-'} × ${dailyDataGb}GB × ${retentionDays || '-'}天`,
         monthly: breakdown.storage_cost,
         yearly: breakdown.storage_cost * 12,
         percent: (breakdown.storage_cost / monthlyTotal) * 100,
@@ -141,6 +166,7 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
       unitPriceUnit: 'USD/千次',
       quantity: metrics ? metrics.monthly_puts / 1000 : undefined,
       quantityUnit: '千次',
+      formula: `${deviceCount || '-'} × ${dailySegments} × 30`,
       monthly: breakdown.put_request_cost,
       yearly: breakdown.put_request_cost * 12,
       percent: (breakdown.put_request_cost / monthlyTotal) * 100,
@@ -154,6 +180,7 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
       unitPriceUnit: 'USD/千次',
       quantity: metrics ? metrics.monthly_gets / 1000 : undefined,
       quantityUnit: '千次',
+      formula: `PUT × ${accessPatternPercent}`,
       monthly: breakdown.get_request_cost,
       yearly: breakdown.get_request_cost * 12,
       percent: (breakdown.get_request_cost / monthlyTotal) * 100,
@@ -168,6 +195,7 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
         unitPriceUnit: 'USD/GB',
         quantity: metrics?.monthly_retrieval_gb,
         quantityUnit: 'GB',
+        formula: `存储量 × ${accessPatternPercent}`,
         monthly: breakdown.retrieval_cost,
         yearly: breakdown.retrieval_cost * 12,
         percent: (breakdown.retrieval_cost / monthlyTotal) * 100,
@@ -210,6 +238,7 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
         unitPriceUnit: 'USD/GB',
         quantity: metrics?.monthly_transfer_gb,
         quantityUnit: 'GB',
+        formula: `存储量 × ${accessPatternPercent}`,
         monthly: breakdown.data_transfer_cost,
         yearly: breakdown.data_transfer_cost * 12,
         percent: (breakdown.data_transfer_cost / monthlyTotal) * 100,
@@ -226,6 +255,7 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
         unitPriceUnit: 'USD/千次',
         quantity: metrics ? metrics.monthly_puts / 1000 : undefined,
         quantityUnit: '千次',
+        formula: `${deviceCount || '-'} × ${dailySegments} × 30`,
         monthly: breakdown.lifecycle_cost,
         yearly: breakdown.lifecycle_cost * 12,
         percent: (breakdown.lifecycle_cost / monthlyTotal) * 100,
@@ -260,12 +290,26 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
     {
       title: '用量',
       key: 'quantity',
-      width: 120,
+      width: 150,
       render: (_: unknown, record: EnhancedCostItem) =>
         record.quantity !== undefined ? (
-          <Text>
-            {record.quantity.toFixed(2)} {record.quantityUnit}
-          </Text>
+          <div>
+            <div style={{ whiteSpace: 'nowrap' }}>
+              {record.quantity.toFixed(2)} {record.quantityUnit}
+            </div>
+            {record.formula && (
+              <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 2 }}>
+                {record.formula}
+              </div>
+            )}
+          </div>
+        ) : record.formula ? (
+          <div>
+            <Text type="secondary">-</Text>
+            <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 2 }}>
+              {record.formula}
+            </div>
+          </div>
         ) : (
           <Text type="secondary">-</Text>
         ),

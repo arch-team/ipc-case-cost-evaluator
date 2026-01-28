@@ -123,7 +123,11 @@ const Layout: React.FC = () => {
             bottom: 0,
           }}
         >
-          <div style={{ padding: collapsed ? '16px 8px' : '16px', textAlign: 'center' }}>
+          <div style={{
+            padding: '16px 0',
+            margin: collapsed ? '0 8px' : '0 16px',
+            textAlign: 'center'
+          }}>
             <Title level={4} style={{ margin: 0, color: '#1890ff', fontSize: collapsed ? 14 : 18 }}>
               {collapsed ? 'IPC' : 'IPC 成本评估'}
             </Title>
