@@ -144,9 +144,11 @@ const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount, re
               </Tag>
             )}
           </div>
-          <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 400, marginTop: 2 }}>
-            {getTechDescription(item)[0]}
-          </div>
+          {getTechDescription(item).map((line, idx) => (
+            <div key={idx} style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 400, marginTop: idx === 0 ? 2 : 0 }}>
+              {line}
+            </div>
+          ))}
         </div>
       ),
       children: [

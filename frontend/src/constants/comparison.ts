@@ -43,14 +43,19 @@ export function getTechDescription(item: ComparisonItem): string[] {
 
     // 如果有阶段配置
     if (policy.stages && policy.stages.length > 0) {
+      // 简洁格式：存储类型 + 持续天数
       const stageDescs = policy.stages.map(stage => {
-        const className = STORAGE_CLASS_NAMES[stage.storage_class] || stage.storage_class;
-        if (stage.start_day === stage.end_day) {
-          return `第${stage.start_day}天: ${className}`;
-        }
-        return `${stage.start_day}-${stage.end_day}天: ${className}`;
+        // 使用简短名称
+        const shortNames: Record<string, string> = {
+          'STANDARD': 'Standard',
+          'GLACIER_IR': 'Glacier IR',
+          'DEEP_ARCHIVE': 'Deep Archive',
+        };
+        const className = shortNames[stage.storage_class] || stage.storage_class;
+        const duration = stage.end_day - stage.start_day + 1;
+        return `${className} ${duration}天`;
       });
-      lines.push(`生命周期策略 (${policy.stages.length}阶段)`);
+      lines.push(`生命周期 (${policy.stages.length}阶段)`);
       lines.push(stageDescs.join(' → '));
     } else if (policy.transition_days && policy.target_class) {
       // 简单模式
