@@ -226,7 +226,7 @@ const StorageStrategySelector: React.FC<StorageStrategySelectorProps> = ({
                 </div>
                 <div className="template-item-tags">
                   <Tag icon={<ClockCircleOutlined />}>
-                    {template.retention_days}天
+                    {retentionDays}天
                   </Tag>
                   <Tooltip title="仅基于存储费用估算，相比全程 S3 Standard。实际节省受回看频率、检索费用、转换费用影响，请以计算结果为准">
                     <Tag color="green" icon={<DollarOutlined />}>
