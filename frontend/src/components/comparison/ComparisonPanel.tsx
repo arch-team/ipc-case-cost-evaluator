@@ -116,22 +116,43 @@ const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount, re
       ),
     },
     {
-      title: '单价',
-      dataIndex: 'unit',
-      key: 'unit',
-      width: 110,
-      render: (_: string, record: TableRow) => {
-        if (record.isTotal || record.isSummary) return null;
-        const unitPrice = record.pricingField
-          ? getUnitPrice(pricing, firstStorageClass, record.pricingField)
-          : 0;
-        if (unitPrice === 0) return <Text type="secondary">-</Text>;
-        return (
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            {formatUnitPrice(unitPrice, record.unit || '')}
-          </Text>
-        );
-      },
+      title: '计费模型',
+      children: [
+        {
+          title: '单价',
+          dataIndex: 'unit',
+          key: 'unit',
+          width: 100,
+          render: (_: string, record: TableRow) => {
+            if (record.isTotal || record.isSummary) return null;
+            const unitPrice = record.pricingField
+              ? getUnitPrice(pricing, firstStorageClass, record.pricingField)
+              : 0;
+            if (unitPrice === 0) return <Text type="secondary">-</Text>;
+            return (
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {formatUnitPrice(unitPrice, record.unit || '')}
+              </Text>
+            );
+          },
+        },
+        {
+          title: '用量公式',
+          dataIndex: 'formula',
+          key: 'formula',
+          width: 160,
+          render: (_: string, record: TableRow) => {
+            if (record.isTotal || record.isSummary) return null;
+            const formula = record.formula;
+            if (!formula) return <Text type="secondary">-</Text>;
+            return (
+              <Text style={{ fontSize: 12 }}>
+                {formula}
+              </Text>
+            );
+          },
+        },
+      ],
     },
     ...comparison.items.map((item) => ({
       title: (
@@ -162,14 +183,16 @@ const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount, re
             if (record.isTotal || record.isSummary) return null;
             const quantity = record.getQuantity?.(metrics);
             if (quantity === null || quantity === undefined) return <Text type="secondary">-</Text>;
+            // 优先使用动态公式，如果没有则使用静态公式
+            const quantityFormula = record.getQuantityFormula?.(metrics) || record.formula;
             return (
               <div>
                 <div style={{ fontVariantNumeric: 'tabular-nums' }}>
                   {record.formatQuantity?.(quantity)}
                 </div>
-                {record.formula && (
+                {quantityFormula && (
                   <div style={{ fontSize: 10, color: 'var(--color-text-tertiary)', marginTop: 2 }}>
-                    {record.formula}
+                    {quantityFormula}
                   </div>
                 )}
               </div>
