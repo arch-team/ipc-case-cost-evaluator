@@ -98,12 +98,12 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
       max: 3,
       step: 1,
       unit: '',
-      formatValue: (val) => ['720p', '1080p', '2K', '4K'][val] || '',
+      formatValue: (val) => ['720p', '1080p', '2k', '4k'][val] || '',
       getInputValue: (val, inp) => ({
         ...inp,
         functional: {
           ...inp.functional,
-          video_quality: (['720p', '1080p', '2K', '4K'] as const)[val] || '1080p',
+          video_quality: (['720p', '1080p', '2k', '4k'] as const)[val] || '1080p',
         },
       }),
     },
@@ -222,7 +222,7 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
     if (item.key === 'access_pattern') {
       onApplyValue(item.key, value / 100);
     } else if (item.key === 'video_quality') {
-      onApplyValue(item.key, ['720p', '1080p', '2K', '4K'][value]);
+      onApplyValue(item.key, ['720p', '1080p', '2k', '4k'][value]);
     } else {
       onApplyValue(item.key, value);
     }
@@ -401,7 +401,7 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({
 
 // 获取视频质量索引
 function getQualityIndex(quality: string): number {
-  const qualities = ['720p', '1080p', '2K', '4K'];
+  const qualities = ['720p', '1080p', '2k', '4k'];
   // 标准化为小写后比较，支持大小写混合输入
   const normalizedQuality = quality.toLowerCase();
   const normalizedQualities = qualities.map(q => q.toLowerCase());
