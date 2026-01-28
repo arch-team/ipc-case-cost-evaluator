@@ -116,14 +116,18 @@ export const calculatorApi = {
       };
     }
 
-    // 并行调用 calculate API
-    const calculatePromises = enabledSchemes.map((scheme) =>
-      apiClient.post<CostSummary>('/calculate', {
-        functional,
+    // 并行调用 calculate API（支持方案级 retention_days 覆盖）
+    const calculatePromises = enabledSchemes.map((scheme) => {
+      // 如果方案有自定义 retention_days，则覆盖默认值
+      const schemeFunction = scheme.retention_days
+        ? { ...functional, retention_days: scheme.retention_days }
+        : functional;
+      return apiClient.post<CostSummary>('/calculate', {
+        functional: schemeFunction,
         technical: scheme.technical,
         pricing,
-      })
-    );
+      });
+    });
 
     const responses = await Promise.all(calculatePromises);
 
@@ -133,6 +137,7 @@ export const calculatorApi = {
       schemeName: enabledSchemes[index].name,
       result: response.data,
       technical: enabledSchemes[index].technical,
+      retention_days: enabledSchemes[index].retention_days ?? functional.retention_days,
     }));
 
     // 找出成本最低的方案

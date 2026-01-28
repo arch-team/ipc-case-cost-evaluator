@@ -335,6 +335,7 @@ export interface TechnicalScheme {
   name: string;                    // 方案名称（用户可编辑）
   technical: TechnicalDimensions;  // 技术配置
   enabled: boolean;                // 是否启用此方案进行对比
+  retention_days?: number;         // 方案级保留天数（覆盖默认值）
 }
 
 // 多方案技术配置容器
@@ -349,6 +350,7 @@ export interface BatchCalculationResult {
   schemeName: string;
   result: CostSummary;
   technical: TechnicalDimensions;
+  retention_days: number;            // 方案使用的保留天数
 }
 
 // ============================================

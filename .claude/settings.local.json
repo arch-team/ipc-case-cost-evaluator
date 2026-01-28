@@ -109,7 +109,16 @@
       "Bash(.specify/scripts/bash/update-agent-context.sh:*)",
       "Bash(BASE_URL=http://localhost:5173 npx playwright test:*)",
       "Bash(.venv/bin/pytest tests/ -v --tb=no -q)",
-      "Bash(open:*)"
+      "Bash(open:*)",
+      "Bash(BUCKET=\"ipc-cost-dev-website-897473508751\":*)",
+      "Bash(DIST_ID=\"EWTD543XZRL4G\")",
+      "mcp__chrome-devtools__fill",
+      "mcp__chrome-devtools__press_key",
+      "mcp__chrome-devtools__new_page",
+      "mcp__chrome-devtools__fill_form",
+      "Bash(while read f)",
+      "Bash(do echo \"=== $f ===\")",
+      "Bash(done)"
     ],
     "deny": []
   },

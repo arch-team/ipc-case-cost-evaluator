@@ -123,6 +123,32 @@ const StorageStrategySelector: React.FC<StorageStrategySelectorProps> = ({
     });
   };
 
+  // 根据 retentionDays 调整模板阶段（用于 UI 预览）
+  const getAdjustedStages = (template: LifecycleTemplate): LifecycleStage[] => {
+    let stages = [...template.stages];
+    const templateTotalDays = template.retention_days;
+
+    if (retentionDays !== templateTotalDays) {
+      if (retentionDays < templateTotalDays) {
+        // 截断超出保留天数的阶段
+        stages = stages.filter(s => s.start_day <= retentionDays);
+        if (stages.length > 0) {
+          stages[stages.length - 1] = {
+            ...stages[stages.length - 1],
+            end_day: retentionDays,
+          };
+        }
+      } else {
+        // 延长最后一个阶段
+        stages[stages.length - 1] = {
+          ...stages[stages.length - 1],
+          end_day: retentionDays,
+        };
+      }
+    }
+    return stages;
+  };
+
   // 渲染紧凑的阶段预览条
   const renderCompactStageBar = (stages: LifecycleStage[]) => {
     const totalDays = stages[stages.length - 1]?.end_day || 1;
@@ -205,7 +231,13 @@ const StorageStrategySelector: React.FC<StorageStrategySelectorProps> = ({
                     </Tag>
                   </Tooltip>
                 </div>
-                {renderCompactStageBar(template.stages)}
+                {/* 显示根据 retentionDays 调整后的阶段预览 */}
+                {renderCompactStageBar(getAdjustedStages(template))}
+                {template.retention_days !== retentionDays && (
+                  <Text type="secondary" style={{ fontSize: 11, marginTop: 4, display: 'block' }}>
+                    已根据保留天数({retentionDays}天)调整
+                  </Text>
+                )}
               </div>
             );
           })}

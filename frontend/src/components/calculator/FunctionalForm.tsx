@@ -42,38 +42,22 @@ const FunctionalForm: React.FC<FunctionalFormProps> = ({ value, onChange }) => {
   return (
     <div className="dimension-form">
       <Form layout="vertical">
-        {/* 分组 1: 基础配置 - 两列布局 */}
+        {/* 分组 1: 基础配置 */}
         <div className="form-group">
           <div className="form-group-title">
             <SettingOutlined className="form-group-icon" />
             <span>基础配置</span>
           </div>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label={<FormLabel label="设备数量" tooltip={FORM_TOOLTIPS.deviceCount} />}>
-                <InputNumber
-                  min={1}
-                  max={100000}
-                  value={value.device_count}
-                  onChange={(val) => handleChange('device_count', val)}
-                  style={{ width: '100%' }}
-                  addonAfter="台"
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label={<FormLabel label="保留天数" tooltip={FORM_TOOLTIPS.retentionDays} />}>
-                <InputNumber
-                  min={1}
-                  max={365}
-                  value={value.retention_days}
-                  onChange={(val) => handleChange('retention_days', val)}
-                  style={{ width: '100%' }}
-                  addonAfter="天"
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+          <Form.Item label={<FormLabel label="设备数量" tooltip={FORM_TOOLTIPS.deviceCount} />}>
+            <InputNumber
+              min={1}
+              max={100000}
+              value={value.device_count}
+              onChange={(val) => handleChange('device_count', val)}
+              style={{ width: '100%' }}
+              addonAfter="台"
+            />
+          </Form.Item>
         </div>
 
         <Divider className="form-group-divider" />
