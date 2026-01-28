@@ -395,7 +395,7 @@ const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount, re
           dataSource={tableDataSource}
           pagination={false}
           bordered
-          size="middle"
+          size="small"
           scroll={{ x: 'max-content' }}
           rowClassName={(record: TableRow) => {
             if (record.isTotal) return 'comparison-row-total';

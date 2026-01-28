@@ -378,6 +378,7 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
           dataSource={data}
           columns={columns}
           pagination={false}
+          size="small"
           expandable={{
             expandedRowKeys,
             onExpandedRowsChange: (keys) => setExpandedRowKeys(keys as string[]),
