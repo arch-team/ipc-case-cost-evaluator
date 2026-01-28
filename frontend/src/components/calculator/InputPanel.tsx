@@ -11,6 +11,8 @@ import {
   Tag,
   Tooltip,
   message,
+  InputNumber,
+  Typography,
 } from 'antd';
 import {
   SettingOutlined,
@@ -21,7 +23,10 @@ import {
   DownloadOutlined,
   ShareAltOutlined,
   SaveOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons';
+
+const { Text } = Typography;
 import type {
   CostCalculationInput,
   FunctionalDimensions,
@@ -146,6 +151,18 @@ const InputPanel: React.FC<InputPanelProps> = ({
     onChange({ ...value, pricing });
   };
 
+  // 处理保留天数变化（从技术维度面板调用）
+  const handleRetentionDaysChange = (days: number) => {
+    setIsCustomized(true);
+    onChange({
+      ...value,
+      functional: {
+        ...value.functional,
+        retention_days: days,
+      },
+    });
+  };
+
   // 处理多方案配置变化
   const handleMultiConfigChange = (config: MultiTechnicalConfig) => {
     if (onMultiConfigChange) {
@@ -156,20 +173,20 @@ const InputPanel: React.FC<InputPanelProps> = ({
 
   // 获取功能维度摘要
   const getFunctionalSummary = () => {
-    const parts = [`${value.functional.device_count} 台`, `${value.functional.retention_days} 天`];
-    return parts.join(' · ');
+    return `${value.functional.device_count} 台`;
   };
 
   // 获取技术维度摘要
   const getTechnicalSummary = () => {
     if (useMultiScheme && multiConfig) {
+      const totalCount = multiConfig.schemes.length;
       const enabledCount = multiConfig.schemes.filter((s) => s.enabled).length;
-      return `${enabledCount} 个方案`;
+      return `${totalCount}个方案/${enabledCount}个参与对比`;
+    } else if (value.technical.lifecycle_policy?.enabled) {
+      return `${value.functional.retention_days} 天 · 生命周期`;
+    } else {
+      return `${value.functional.retention_days} 天 · ${storageClassLabels[value.technical.storage_class] || value.technical.storage_class}`;
     }
-    if (value.technical.lifecycle_policy?.enabled) {
-      return '生命周期策略';
-    }
-    return storageClassLabels[value.technical.storage_class] || value.technical.storage_class;
   };
 
   // 获取价格维度摘要
@@ -262,20 +279,44 @@ const InputPanel: React.FC<InputPanelProps> = ({
           </Tooltip>
         </div>
       ),
-      children: useMultiScheme && multiConfig ? (
-        <MultiSchemePanel
-          value={multiConfig}
-          onChange={handleMultiConfigChange}
-          retentionDays={value.functional.retention_days}
-          region={value.pricing.region}
-        />
-      ) : (
-        <TechnicalForm
-          value={value.technical}
-          onChange={handleTechnicalChange}
-          retentionDays={value.functional.retention_days}
-          region={value.pricing.region}
-        />
+      children: (
+        <>
+          {/* 默认保留天数 - 放在技术维度顶部 */}
+          <div style={{ marginBottom: 12, paddingBottom: 12, borderBottom: '1px dashed var(--color-border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <ClockCircleOutlined style={{ fontSize: 14, color: 'var(--color-primary)' }} />
+              <Text style={{ fontSize: 13 }}>默认保留天数</Text>
+              <InputNumber
+                size="small"
+                min={1}
+                max={365}
+                value={value.functional.retention_days}
+                onChange={(days) => days && handleRetentionDaysChange(days)}
+                style={{ width: 70 }}
+                controls={false}
+              />
+              <Text type="secondary" style={{ fontSize: 13 }}>天</Text>
+              <Tooltip title="所有方案的默认数据保留期限，各方案可单独覆盖此值">
+                <QuestionCircleOutlined style={{ fontSize: 12, color: 'var(--color-text-tertiary)', cursor: 'help' }} />
+              </Tooltip>
+            </div>
+          </div>
+          {useMultiScheme && multiConfig ? (
+            <MultiSchemePanel
+              value={multiConfig}
+              onChange={handleMultiConfigChange}
+              retentionDays={value.functional.retention_days}
+              region={value.pricing.region}
+            />
+          ) : (
+            <TechnicalForm
+              value={value.technical}
+              onChange={handleTechnicalChange}
+              retentionDays={value.functional.retention_days}
+              region={value.pricing.region}
+            />
+          )}
+        </>
       ),
     },
     {

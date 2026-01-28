@@ -146,13 +146,13 @@ const Layout: React.FC = () => {
           className="sidebar-collapse-btn"
           style={{
             position: 'fixed',
-            left: collapsed ? 64 : 184,
+            left: collapsed ? 70 : 190,
             top: 72,
-            width: 32,
-            height: 32,
+            width: 28,
+            height: 28,
             background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
             borderRadius: '50%',
-            boxShadow: '0 2px 8px rgba(24, 144, 255, 0.4)',
+            boxShadow: '0 2px 6px rgba(24, 144, 255, 0.35)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -167,13 +167,13 @@ const Layout: React.FC = () => {
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = '0 2px 8px rgba(24, 144, 255, 0.4)';
+            e.currentTarget.style.boxShadow = '0 2px 6px rgba(24, 144, 255, 0.35)';
           }}
         >
           {collapsed ? (
-            <RightOutlined style={{ fontSize: 14, color: '#fff' }} />
+            <RightOutlined style={{ fontSize: 12, color: '#fff' }} />
           ) : (
-            <LeftOutlined style={{ fontSize: 14, color: '#fff' }} />
+            <LeftOutlined style={{ fontSize: 12, color: '#fff' }} />
           )}
         </div>
       </div>
@@ -210,8 +210,8 @@ const Layout: React.FC = () => {
           className="page-content"
           key={location.pathname}
           style={{
-            margin: '24px 16px',
-            padding: 24,
+            margin: '12px 12px 12px 4px',
+            padding: 12,
             minHeight: 280,
             background: '#f5f5f5',
           }}

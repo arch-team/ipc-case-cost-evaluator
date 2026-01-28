@@ -11,12 +11,15 @@ import {
   Typography,
   Tooltip,
   Tag,
+  InputNumber,
 } from 'antd';
 import {
   PlusOutlined,
   CheckCircleOutlined,
   StarOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons';
+// 注意：Input 保留用于未来可能的方案名编辑功能
 import type { TechnicalScheme, TechnicalDimensions, MultiTechnicalConfig } from '../../types';
 import TechnicalForm from './TechnicalForm';
 
@@ -101,6 +104,24 @@ const MultiSchemePanel: React.FC<MultiSchemePanelProps> = ({
       ...value,
       schemes: newSchemes,
     });
+  };
+
+  // 更新方案级保留天数
+  const handleSchemeRetentionDaysChange = (days: number | null) => {
+    const newSchemes = schemes.map((s) =>
+      s.id === activeSchemeId
+        ? { ...s, retention_days: days === retentionDays ? undefined : (days ?? undefined) }
+        : s
+    );
+    onChange({
+      ...value,
+      schemes: newSchemes,
+    });
+  };
+
+  // 获取当前方案的实际保留天数
+  const getSchemeRetentionDays = (scheme: TechnicalScheme) => {
+    return scheme.retention_days ?? retentionDays;
   };
 
   // 切换方案启用状态
@@ -208,48 +229,38 @@ const MultiSchemePanel: React.FC<MultiSchemePanelProps> = ({
       {/* 当前方案配置 */}
       {activeScheme && (
         <div className="scheme-config">
-          {/* 方案名称和启用开关 */}
-          <div className="scheme-header">
-            <div className="scheme-name-edit">
-              {editingNameId === activeScheme.id ? (
-                <Input
+          {/* 保留天数 + 参与对比 - 简化的单行布局 */}
+          <div className="scheme-header" style={{ gap: 12, paddingBottom: 8, marginBottom: 8, borderBottom: '1px solid var(--color-border-light)' }}>
+            {/* 方案级保留天数 */}
+            <Tooltip title={activeScheme.retention_days === undefined ? `使用默认值 ${retentionDays} 天` : '自定义保留天数'}>
+              <Space size={4}>
+                <Text style={{ fontSize: 13 }}>保留天数</Text>
+                <ClockCircleOutlined style={{ fontSize: 12, color: 'var(--color-text-secondary)' }} />
+                <InputNumber
                   size="small"
-                  value={tempName}
-                  onChange={(e) => setTempName(e.target.value)}
-                  onBlur={handleSaveName}
-                  onPressEnter={handleSaveName}
-                  autoFocus
-                  style={{ width: 150 }}
+                  min={1}
+                  max={365}
+                  value={getSchemeRetentionDays(activeScheme)}
+                  onChange={handleSchemeRetentionDaysChange}
+                  style={{ width: 60 }}
+                  controls={false}
                 />
-              ) : (
-                <Space>
-                  <Text
-                    strong
-                    className="scheme-name"
-                    onClick={() => handleStartEditName(activeScheme)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    {activeScheme.name}
-                  </Text>
-                  {schemes.findIndex((s) => s.id === activeScheme.id) === 0 && (
-                    <Tag icon={<StarOutlined />} color="blue">
-                      基准
-                    </Tag>
-                  )}
-                </Space>
-              )}
-            </div>
-            <div className="scheme-toggle">
-              <Space>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  参与对比
-                </Text>
+                <Text type="secondary" style={{ fontSize: 12 }}>天</Text>
+                {activeScheme.retention_days === undefined && (
+                  <Tag color="default" style={{ fontSize: 10, lineHeight: '14px', padding: '0 4px', margin: 0 }}>
+                    默认
+                  </Tag>
+                )}
+              </Space>
+            </Tooltip>
+            {/* 参与对比开关 */}
+            <div style={{ marginLeft: 'auto' }}>
+              <Space size={4}>
+                <Text type="secondary" style={{ fontSize: 12 }}>参与对比</Text>
                 <Switch
                   size="small"
                   checked={activeScheme.enabled}
-                  onChange={(checked) =>
-                    handleToggleEnabled(activeScheme.id, checked)
-                  }
+                  onChange={(checked) => handleToggleEnabled(activeScheme.id, checked)}
                 />
               </Space>
             </div>
@@ -260,20 +271,12 @@ const MultiSchemePanel: React.FC<MultiSchemePanelProps> = ({
             <TechnicalForm
               value={activeScheme.technical}
               onChange={handleTechnicalChange}
-              retentionDays={retentionDays}
+              retentionDays={getSchemeRetentionDays(activeScheme)}
               region={region}
             />
           </div>
         </div>
       )}
-
-      {/* 方案概览 */}
-      <div className="schemes-overview">
-        <Text type="secondary" style={{ fontSize: 12 }}>
-          已配置 {schemes.length} 个方案，
-          {schemes.filter((s) => s.enabled).length} 个参与对比
-        </Text>
-      </div>
     </div>
   );
 };
