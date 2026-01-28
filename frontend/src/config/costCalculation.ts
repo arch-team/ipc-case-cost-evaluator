@@ -31,8 +31,10 @@ export interface CostRowConfig {
   name: string;
   /** 单位显示文本 */
   unit: string;
-  /** 用量计算公式说明 */
+  /** 用量计算公式说明（静态，向后兼容） */
   formula?: string;
+  /** 生成用量计算公式（动态，显示具体数值） */
+  getQuantityFormula?: (metrics?: UsageMetrics) => string | null;
   /** 从指标中获取用量 */
   getQuantity: (metrics?: UsageMetrics) => number | null;
   /** 格式化用量显示 */
@@ -49,10 +51,10 @@ export interface CostRowConfig {
  * 生成存储费用的计算公式
  *
  * 对于生命周期策略：阶段1天数×单价1 + 阶段2天数×单价2
- * 对于单一存储类型：存储量×单价
+ * 对于单一存储类型：具体存储量×单价
  */
 function generateStorageCostFormula(params: CostFormulaParams): string | null {
-  const { pricing, technical } = params;
+  const { pricing, technical, metrics } = params;
   if (!pricing || !technical) return null;
 
   const lifecycle = technical.lifecycle_policy;
@@ -69,10 +71,14 @@ function generateStorageCostFormula(params: CostFormulaParams): string | null {
     return formulaParts.join(' + ');
   }
 
-  // 单一存储类型
+  // 单一存储类型 - 显示具体存储量
   const storageClass = technical.storage_class as StorageClass;
   const price = pricing.storage_classes[storageClass]?.storage_per_gb_month || 0;
   if (price > 0) {
+    if (metrics?.avg_storage_gb) {
+      const storageTB = (metrics.avg_storage_gb / 1024).toFixed(2);
+      return `${storageTB}TB×$${price}`;
+    }
     return `存储量×$${price}/GB`;
   }
 
@@ -101,7 +107,7 @@ function generatePutCostFormula(params: CostFormulaParams): string | null {
  * 生成 GET 请求费用的计算公式
  */
 function generateGetCostFormula(params: CostFormulaParams): string | null {
-  const { pricing, technical } = params;
+  const { pricing, technical, metrics } = params;
   if (!pricing || !technical) return null;
 
   const lifecycle = technical.lifecycle_policy;
@@ -119,9 +125,14 @@ function generateGetCostFormula(params: CostFormulaParams): string | null {
     return formulaParts.length > 0 ? formulaParts.join(' + ') : null;
   }
 
+  // 单一存储类型 - 显示具体请求数
   const storageClass = technical.storage_class as StorageClass;
   const price = pricing.storage_classes[storageClass]?.get_per_1000 || 0;
   if (price > 0) {
+    if (metrics?.monthly_gets) {
+      const thousands = (metrics.monthly_gets / 1000).toFixed(0);
+      return `${thousands}千次×$${price}`;
+    }
     return `请求数×$${price}/千次`;
   }
 
@@ -132,7 +143,7 @@ function generateGetCostFormula(params: CostFormulaParams): string | null {
  * 生成数据检索费用的计算公式
  */
 function generateRetrievalCostFormula(params: CostFormulaParams): string | null {
-  const { pricing, technical } = params;
+  const { pricing, technical, metrics } = params;
   if (!pricing || !technical) return null;
 
   const lifecycle = technical.lifecycle_policy;
@@ -150,9 +161,14 @@ function generateRetrievalCostFormula(params: CostFormulaParams): string | null 
     return formulaParts.length > 0 ? formulaParts.join(' + ') : null;
   }
 
+  // 单一存储类型 - 显示具体检索量
   const storageClass = technical.storage_class as StorageClass;
   const price = pricing.storage_classes[storageClass]?.retrieval_per_gb || 0;
   if (price > 0) {
+    if (metrics?.monthly_retrieval_gb) {
+      const retrievalTB = (metrics.monthly_retrieval_gb / 1024).toFixed(2);
+      return `${retrievalTB}TB×$${price}`;
+    }
     return `检索量×$${price}/GB`;
   }
 
@@ -163,11 +179,15 @@ function generateRetrievalCostFormula(params: CostFormulaParams): string | null 
  * 生成数据传输费用的计算公式
  */
 function generateTransferCostFormula(params: CostFormulaParams): string | null {
-  const { pricing } = params;
+  const { pricing, metrics } = params;
   if (!pricing) return null;
 
   const price = pricing.data_transfer.out_first_10tb_per_gb;
   if (price > 0) {
+    if (metrics?.monthly_transfer_gb) {
+      const transferTB = (metrics.monthly_transfer_gb / 1024).toFixed(2);
+      return `${transferTB}TB×$${price}`;
+    }
     return `传输量×$${price}/GB`;
   }
 
@@ -178,7 +198,7 @@ function generateTransferCostFormula(params: CostFormulaParams): string | null {
  * 生成生命周期转换费用的计算公式
  */
 function generateLifecycleCostFormula(params: CostFormulaParams): string | null {
-  const { pricing, technical } = params;
+  const { pricing, technical, metrics } = params;
   if (!pricing || !technical) return null;
 
   const lifecycle = technical.lifecycle_policy;
@@ -193,11 +213,105 @@ function generateLifecycleCostFormula(params: CostFormulaParams): string | null 
     const stage = lifecycle.stages[i];
     const price = pricing.storage_classes[stage.storage_class as StorageClass]?.lifecycle_transition_per_1000 || 0;
     if (price > 0) {
-      formulaParts.push(`转换×$${price}/千次`);
+      // 转换次数等于月度 PUT 请求数（每个对象转换一次）
+      if (metrics?.monthly_puts) {
+        const thousands = (metrics.monthly_puts / 1000).toFixed(0);
+        formulaParts.push(`${thousands}千次×$${price}`);
+      } else {
+        formulaParts.push(`转换×$${price}/千次`);
+      }
     }
   }
 
   return formulaParts.length > 0 ? formulaParts.join(' + ') : null;
+}
+
+// ========================================
+// 用量公式生成函数（显示在用量列下方）
+// ========================================
+
+/**
+ * 生成存储用量的计算公式
+ * 显示具体数值：如 "100设备 × 1.75GB × 30天"
+ */
+function generateStorageQuantityFormula(metrics?: UsageMetrics): string | null {
+  if (!metrics?.daily_data_gb || !metrics?.avg_storage_gb) return null;
+
+  // 从 avg_storage_gb 和 daily_data_gb 推算保留天数
+  const retentionDays = Math.round(metrics.avg_storage_gb / metrics.daily_data_gb);
+  const dailyDataGB = metrics.daily_data_gb.toFixed(2);
+
+  return `${dailyDataGB}GB × ${retentionDays}天`;
+}
+
+/**
+ * 生成 PUT 请求用量的计算公式
+ * 显示具体数值：如 "100设备 × 4000分片 × 30"
+ */
+function generatePutQuantityFormula(metrics?: UsageMetrics): string | null {
+  if (!metrics?.monthly_puts) return null;
+
+  // 每日分片数 = 月度 PUT / 30
+  const dailySegments = Math.round(metrics.monthly_puts / 30);
+
+  return `${dailySegments}分片/天 × 30`;
+}
+
+/**
+ * 生成 GET 请求用量的计算公式
+ * 显示具体数值：如 "120万次 × 10%"
+ */
+function generateGetQuantityFormula(metrics?: UsageMetrics): string | null {
+  if (!metrics?.monthly_puts || !metrics?.monthly_gets) return null;
+
+  // 计算回看比例
+  const accessPattern = metrics.monthly_gets / metrics.monthly_puts;
+  const accessPercent = (accessPattern * 100).toFixed(0);
+  const putsInWan = (metrics.monthly_puts / 10000).toFixed(0);
+
+  return `${putsInWan}万次 × ${accessPercent}%`;
+}
+
+/**
+ * 生成数据检索用量的计算公式
+ * 显示具体数值：如 "5.24TB × 10%"
+ */
+function generateRetrievalQuantityFormula(metrics?: UsageMetrics): string | null {
+  if (!metrics?.avg_storage_gb || !metrics?.monthly_retrieval_gb) return null;
+
+  // 计算回看比例
+  const monthlyStorageGB = metrics.daily_data_gb ? metrics.daily_data_gb * 30 : metrics.avg_storage_gb;
+  const accessPattern = metrics.monthly_retrieval_gb / monthlyStorageGB;
+  const accessPercent = (accessPattern * 100).toFixed(0);
+  const storageTB = (metrics.avg_storage_gb / 1024).toFixed(2);
+
+  return `${storageTB}TB × ${accessPercent}%`;
+}
+
+/**
+ * 生成数据传输用量的计算公式
+ * 显示具体数值：如 "5.24TB × 10%"
+ */
+function generateTransferQuantityFormula(metrics?: UsageMetrics): string | null {
+  if (!metrics?.avg_storage_gb || !metrics?.monthly_transfer_gb) return null;
+
+  // 计算回看比例
+  const monthlyStorageGB = metrics.daily_data_gb ? metrics.daily_data_gb * 30 : metrics.avg_storage_gb;
+  const accessPattern = metrics.monthly_transfer_gb / monthlyStorageGB;
+  const accessPercent = (accessPattern * 100).toFixed(0);
+  const storageTB = (metrics.avg_storage_gb / 1024).toFixed(2);
+
+  return `${storageTB}TB × ${accessPercent}%`;
+}
+
+/**
+ * 生成生命周期转换用量的计算公式
+ */
+function generateLifecycleQuantityFormula(metrics?: UsageMetrics): string | null {
+  if (!metrics?.monthly_puts) return null;
+
+  const thousands = (metrics.monthly_puts / 1000).toFixed(0);
+  return `${thousands}千次转换`;
 }
 
 /**
@@ -211,6 +325,7 @@ export const COST_ROW_CONFIGS: CostRowConfig[] = [
     name: '存储费用',
     unit: '/GB/月',
     formula: '设备数 × 日数据量 × 保留天数',
+    getQuantityFormula: generateStorageQuantityFormula,
     getQuantity: (metrics) => metrics?.avg_storage_gb || null,
     formatQuantity: (val) => `${(val / 1024).toFixed(2)} TB`,
     getAmount: (breakdown) => breakdown?.storage_cost || 0,
@@ -222,6 +337,7 @@ export const COST_ROW_CONFIGS: CostRowConfig[] = [
     name: 'PUT 请求费',
     unit: '/千次',
     formula: '设备数 × 日分片数 × 30',
+    getQuantityFormula: generatePutQuantityFormula,
     getQuantity: (metrics) => metrics?.monthly_puts || null,
     formatQuantity: (val) => `${(val / 10000).toFixed(0)} 万次`,
     getAmount: (breakdown) => breakdown?.put_request_cost || 0,
@@ -233,6 +349,7 @@ export const COST_ROW_CONFIGS: CostRowConfig[] = [
     name: 'GET 请求费',
     unit: '/千次',
     formula: 'PUT请求数 × 回看比例',
+    getQuantityFormula: generateGetQuantityFormula,
     getQuantity: (metrics) => metrics?.monthly_gets || null,
     formatQuantity: (val) => `${(val / 10000).toFixed(0)} 万次`,
     getAmount: (breakdown) => breakdown?.get_request_cost || 0,
@@ -244,6 +361,7 @@ export const COST_ROW_CONFIGS: CostRowConfig[] = [
     name: '数据检索费',
     unit: '/GB',
     formula: '存储量 × 回看比例',
+    getQuantityFormula: generateRetrievalQuantityFormula,
     getQuantity: (metrics) => metrics?.monthly_retrieval_gb || null,
     formatQuantity: (val) => (val > 0 ? `${(val / 1024).toFixed(2)} TB` : '-'),
     getAmount: (breakdown) => breakdown?.retrieval_cost || 0,
@@ -255,6 +373,7 @@ export const COST_ROW_CONFIGS: CostRowConfig[] = [
     name: '数据传输费',
     unit: '/GB',
     formula: '存储量 × 回看比例',
+    getQuantityFormula: generateTransferQuantityFormula,
     getQuantity: (metrics) => metrics?.monthly_transfer_gb || null,
     formatQuantity: (val) => (val > 0 ? `${(val / 1024).toFixed(2)} TB` : '-'),
     getAmount: (breakdown) => breakdown?.data_transfer_cost || 0,
@@ -266,6 +385,7 @@ export const COST_ROW_CONFIGS: CostRowConfig[] = [
     name: '生命周期转换费',
     unit: '/千次',
     formula: '转换对象数',
+    getQuantityFormula: generateLifecycleQuantityFormula,
     getQuantity: (metrics) => metrics?.monthly_puts || null,
     formatQuantity: () => '-',
     getAmount: (breakdown) => breakdown?.lifecycle_cost || 0,
