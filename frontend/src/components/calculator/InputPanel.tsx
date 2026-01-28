@@ -79,7 +79,7 @@ const InputPanel: React.FC<InputPanelProps> = ({
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
   const [isCustomized, setIsCustomized] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeKeys, setActiveKeys] = useState<string[]>(['quick-start', 'functional']);
+  const [activeKeys, setActiveKeys] = useState<string[]>(['quick-start']);
 
   // 加载预设场景
   useEffect(() => {
@@ -152,6 +152,12 @@ const InputPanel: React.FC<InputPanelProps> = ({
       onMultiConfigChange(config);
     }
     setIsCustomized(true);
+  };
+
+  // 获取功能维度摘要
+  const getFunctionalSummary = () => {
+    const parts = [`${value.functional.device_count} 台`, `${value.functional.retention_days} 天`];
+    return parts.join(' · ');
   };
 
   // 获取技术维度摘要
@@ -232,6 +238,7 @@ const InputPanel: React.FC<InputPanelProps> = ({
             <SettingOutlined style={{ marginRight: 8 }} />
             功能维度
           </span>
+          <span className="input-panel-header-summary">{getFunctionalSummary()}</span>
           <Tooltip title="设备数量、录像模式、视频质量等基本配置">
             <QuestionCircleOutlined className="input-panel-header-help" />
           </Tooltip>
