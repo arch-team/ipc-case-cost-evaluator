@@ -1,6 +1,5 @@
 """用户认证服务"""
 import uuid
-import warnings
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 

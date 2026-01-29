@@ -54,7 +54,7 @@ def get_storage() -> StorageProtocol:
     global _storage_instance
 
     if _storage_instance is None:
-        if settings.USE_LOCAL_STORAGE:
+        if settings.use_local_storage:
             _storage_instance = LocalStorage()
         else:
             _storage_instance = DynamoDBClient()
