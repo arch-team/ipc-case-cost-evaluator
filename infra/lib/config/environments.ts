@@ -192,9 +192,9 @@ export const environments: Record<EnvironmentType, EnvironmentConfig> = {
  * @returns 环境配置，未知环境默认返回 dev 配置
  */
 export function getConfig(envName: string): EnvironmentConfig {
-  if (envName in environments) {
-    return environments[envName as EnvironmentType];
-  }
+  const config = environments[envName as EnvironmentType];
+  if (config) return config;
+
   console.warn(`[CDK] 未知环境 "${envName}"，使用默认环境 "dev"`);
   return devConfig;
 }

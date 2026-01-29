@@ -2,62 +2,62 @@
   "region": "af-south-1",
   "region_name": "Africa (Cape Town)",
   "currency": "USD",
-  "last_updated": "2025-01-27",
+  "last_updated": "2026-01-29",
   "storage_classes": {
     "STANDARD": {
-      "storage_per_gb_month": 0.02737,
-      "put_per_1000": 0.00595,
-      "get_per_1000": 0.000476,
-      "retrieval_per_gb": 0,
-      "lifecycle_transition_per_1000": 0
+      "storage_per_gb_month": 0.0274,
+      "put_per_1000": 0.005,
+      "get_per_1000": 0.0004,
+      "retrieval_per_gb": 0.0,
+      "lifecycle_transition_per_1000": 0.0
     },
     "INTELLIGENT_TIERING": {
-      "storage_per_gb_month": 0.02737,
-      "put_per_1000": 0.00595,
-      "get_per_1000": 0.000476,
-      "retrieval_per_gb": 0,
-      "lifecycle_transition_per_1000": 0
+      "storage_per_gb_month": 0.005,
+      "put_per_1000": 0.005,
+      "get_per_1000": 0.0004,
+      "retrieval_per_gb": 0.0,
+      "lifecycle_transition_per_1000": 0.0
     },
     "STANDARD_IA": {
-      "storage_per_gb_month": 0.014875,
-      "put_per_1000": 0.0119,
-      "get_per_1000": 0.00119,
-      "retrieval_per_gb": 0.0119,
-      "lifecycle_transition_per_1000": 0.0119
+      "storage_per_gb_month": 0.0125,
+      "put_per_1000": 0.01,
+      "get_per_1000": 0.001,
+      "retrieval_per_gb": 0.01,
+      "lifecycle_transition_per_1000": 0.01
     },
     "ONEZONE_IA": {
-      "storage_per_gb_month": 0.0119,
-      "put_per_1000": 0.0119,
-      "get_per_1000": 0.00119,
-      "retrieval_per_gb": 0.0119,
-      "lifecycle_transition_per_1000": 0.0119
+      "storage_per_gb_month": 0.01,
+      "put_per_1000": 0.01,
+      "get_per_1000": 0.001,
+      "retrieval_per_gb": 0.01,
+      "lifecycle_transition_per_1000": 0.01
     },
     "GLACIER_IR": {
-      "storage_per_gb_month": 0.00476,
-      "put_per_1000": 0.0238,
-      "get_per_1000": 0.0119,
-      "retrieval_per_gb": 0.0357,
-      "lifecycle_transition_per_1000": 0.0238
+      "storage_per_gb_month": 0.004,
+      "put_per_1000": 0.02,
+      "get_per_1000": 0.01,
+      "retrieval_per_gb": 0.03,
+      "lifecycle_transition_per_1000": 0.02
     },
     "GLACIER_FR": {
-      "storage_per_gb_month": 0.004284,
-      "put_per_1000": 0.0357,
-      "get_per_1000": 0.000476,
-      "retrieval_per_gb": 0.0119,
-      "lifecycle_transition_per_1000": 0.0357
+      "storage_per_gb_month": 0.0036,
+      "put_per_1000": 0.03,
+      "get_per_1000": 0.0004,
+      "retrieval_per_gb": 0.01,
+      "lifecycle_transition_per_1000": 0.03
     },
     "DEEP_ARCHIVE": {
-      "storage_per_gb_month": 0.001178,
-      "put_per_1000": 0.0595,
-      "get_per_1000": 0.000476,
-      "retrieval_per_gb": 0.0238,
-      "lifecycle_transition_per_1000": 0.0595
+      "storage_per_gb_month": 0.00099,
+      "put_per_1000": 0.05,
+      "get_per_1000": 0.0004,
+      "retrieval_per_gb": 0.02,
+      "lifecycle_transition_per_1000": 0.05
     }
   },
   "data_transfer": {
-    "out_first_10tb_per_gb": 0.154,
-    "out_next_40tb_per_gb": 0.135,
-    "out_next_100tb_per_gb": 0.125,
-    "out_over_150tb_per_gb": 0.1
+    "out_first_10tb_per_gb": 0.114,
+    "out_next_40tb_per_gb": 0.089,
+    "out_next_100tb_per_gb": 0.086,
+    "out_over_150tb_per_gb": 0.084
   }
 }

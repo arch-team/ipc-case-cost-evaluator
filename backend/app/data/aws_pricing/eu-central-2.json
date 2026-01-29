@@ -2,7 +2,7 @@
   "region": "eu-central-2",
   "region_name": "Europe (Zurich)",
   "currency": "USD",
-  "last_updated": "2026-01-28",
+  "last_updated": "2026-01-29",
   "storage_classes": {
     "STANDARD": {
       "storage_per_gb_month": 0.02695,

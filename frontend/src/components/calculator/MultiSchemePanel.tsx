@@ -2,7 +2,7 @@
  * 多方案管理面板
  * 支持最多 4 个技术方案的配置和对比
  */
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Tabs,
   Switch,
@@ -53,8 +53,9 @@ const MultiSchemePanel: React.FC<MultiSchemePanelProps> = ({
   retentionDays,
   region,
 }) => {
-  const [editingNameId, setEditingNameId] = useState<string | null>(null);
-  const [tempName, setTempName] = useState('');
+  // 保留供未来名称编辑功能使用
+  // const [editingNameId, setEditingNameId] = useState<string | null>(null);
+  // const [tempName, setTempName] = useState('');
 
   const { schemes, activeSchemeId } = value;
   const activeScheme = schemes.find((s) => s.id === activeSchemeId);
@@ -105,11 +106,13 @@ const MultiSchemePanel: React.FC<MultiSchemePanelProps> = ({
 
   // 更新方案级保留天数
   const handleSchemeRetentionDaysChange = (days: number | null) => {
-    const newSchemes = schemes.map((s) =>
-      s.id === activeSchemeId
-        ? { ...s, retention_days: days === retentionDays ? undefined : (days ?? undefined) }
-        : s
-    );
+    const newSchemes = schemes.map((s) => {
+      if (s.id !== activeSchemeId) return s;
+
+      // 如果设置的值与全局默认值相同，则清除自定义值
+      const customDays = days === retentionDays ? undefined : days ?? undefined;
+      return { ...s, retention_days: customDays };
+    });
     onChange({
       ...value,
       schemes: newSchemes,
@@ -132,32 +135,27 @@ const MultiSchemePanel: React.FC<MultiSchemePanelProps> = ({
     });
   };
 
-  // 开始编辑名称（保留供未来使用）
-  const _handleStartEditName = (scheme: TechnicalScheme) => {
-    setEditingNameId(scheme.id);
-    setTempName(scheme.name);
-  };
+  // 名称编辑功能（保留供未来使用）
+  // const handleStartEditName = (scheme: TechnicalScheme) => {
+  //   setEditingNameId(scheme.id);
+  //   setTempName(scheme.name);
+  // };
 
-  // 保存名称（保留供未来使用）
-  const _handleSaveName = () => {
-    if (!editingNameId || !tempName.trim()) {
-      setEditingNameId(null);
-      return;
-    }
+  // const handleSaveName = () => {
+  //   if (!editingNameId || !tempName.trim()) {
+  //     setEditingNameId(null);
+  //     return;
+  //   }
 
-    const newSchemes = schemes.map((s) =>
-      s.id === editingNameId ? { ...s, name: tempName.trim() } : s
-    );
-    onChange({
-      ...value,
-      schemes: newSchemes,
-    });
-    setEditingNameId(null);
-  };
-
-  // 抑制未使用变量警告
-  void _handleStartEditName;
-  void _handleSaveName;
+  //   const newSchemes = schemes.map((s) =>
+  //     s.id === editingNameId ? { ...s, name: tempName.trim() } : s
+  //   );
+  //   onChange({
+  //     ...value,
+  //     schemes: newSchemes,
+  //   });
+  //   setEditingNameId(null);
+  // };
 
   // 获取方案标签
   const getSchemeLabel = (scheme: TechnicalScheme, index: number) => {

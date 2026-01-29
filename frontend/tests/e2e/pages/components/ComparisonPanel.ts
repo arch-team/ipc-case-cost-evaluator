@@ -96,7 +96,7 @@ export class ComparisonPanel {
   /**
    * 验证基准方案标记
    */
-  async expectBaselineScheme(schemeName: string): Promise<void> {
+  async expectBaselineScheme(): Promise<void> {
     const baselineTag = this.comparisonTable.locator('thead').locator('.ant-tag-blue').filter({
       hasText: '基准线',
     });

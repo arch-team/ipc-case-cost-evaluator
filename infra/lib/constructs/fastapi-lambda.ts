@@ -49,11 +49,13 @@ export class FastApiLambda extends Construct {
     // CloudWatch Log Group
     // ========================================
 
+    const logRetention = config.envName === 'prod'
+      ? logs.RetentionDays.ONE_MONTH
+      : logs.RetentionDays.ONE_WEEK;
+
     const logGroup = new logs.LogGroup(this, 'LogGroup', {
       logGroupName: `/aws/lambda/${config.appPrefix}-api`,
-      retention: config.envName === 'prod'
-        ? logs.RetentionDays.ONE_MONTH
-        : logs.RetentionDays.ONE_WEEK,
+      retention: logRetention,
       removalPolicy: config.removalPolicy,
     });
 

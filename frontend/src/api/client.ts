@@ -61,11 +61,9 @@ apiClient.interceptors.response.use(
   (error) => {
     // 处理网络错误（无响应）
     if (!error.response) {
-      if (error.code === 'ECONNABORTED') {
-        error.message = '请求超时，请检查网络连接';
-      } else {
-        error.message = '网络连接失败，请检查网络';
-      }
+      error.message = error.code === 'ECONNABORTED'
+        ? '请求超时，请检查网络连接'
+        : '网络连接失败，请检查网络';
       return Promise.reject(error);
     }
 
@@ -118,15 +116,14 @@ export const calculatorApi = {
 
     // 并行调用 calculate API（支持方案级 retention_days 覆盖）
     const calculatePromises = enabledSchemes.map((scheme) => {
-      // 如果方案有自定义 retention_days，则覆盖默认值
-      const schemeFunction = scheme.retention_days
-        ? { ...functional, retention_days: scheme.retention_days }
-        : functional;
-      return apiClient.post<CostSummary>('/calculate', {
-        functional: schemeFunction,
+      const input = {
+        functional: scheme.retention_days
+          ? { ...functional, retention_days: scheme.retention_days }
+          : functional,
         technical: scheme.technical,
         pricing,
-      });
+      };
+      return apiClient.post<CostSummary>('/calculate', input);
     });
 
     const responses = await Promise.all(calculatePromises);
@@ -159,13 +156,16 @@ export const calculatorApi = {
         : (r.result.monthly_total - baselineCost) / baselineCost;
 
       // 获取存储类型显示名称
-      const storageClass = r.technical.lifecycle_policy?.enabled
-        ? 'Lifecycle Policy'
-        : r.technical.storage_class === 'STANDARD'
-        ? 'S3 Standard'
-        : r.technical.storage_class === 'GLACIER_IR'
-        ? 'S3 Glacier IR'
-        : r.technical.storage_class;
+      const getStorageClassName = () => {
+        if (r.technical.lifecycle_policy?.enabled) return 'Lifecycle Policy';
+
+        switch (r.technical.storage_class) {
+          case 'STANDARD': return 'S3 Standard';
+          case 'GLACIER_IR': return 'S3 Glacier IR';
+          default: return r.technical.storage_class;
+        }
+      };
+      const storageClass = getStorageClassName();
 
       return {
         name: r.schemeName,

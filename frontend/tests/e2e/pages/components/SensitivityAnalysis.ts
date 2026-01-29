@@ -105,9 +105,6 @@ export class SensitivityAnalysis {
     const sliderBox = await slider.boundingBox();
     if (!sliderBox) return;
 
-    const targetX = sliderBox.x + sliderBox.width * relativePosition;
-    const targetY = sliderBox.y + sliderBox.height / 2;
-
     await slider.click({ position: { x: sliderBox.width * relativePosition, y: sliderBox.height / 2 } });
     await this.page.waitForTimeout(500);
   }

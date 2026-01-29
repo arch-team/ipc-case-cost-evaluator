@@ -78,7 +78,7 @@ const Layout: React.FC = () => {
             label: '定价管理',
           },
         ],
-      } as any);
+      });
     }
 
     items.push({

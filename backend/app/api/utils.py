@@ -43,13 +43,8 @@ def get_calculator(input_data: CostCalculationInput) -> "Calculator":
     Returns:
         计算器实例
     """
-    lifecycle_policy = input_data.technical.lifecycle_policy
-
-    if lifecycle_policy and lifecycle_policy.enabled:
-        return LifecycleCalculator()
-    else:
-        # S3StandardCalculator 支持所有存储类型
-        return S3StandardCalculator()
+    lifecycle_enabled = input_data.technical.lifecycle_policy and input_data.technical.lifecycle_policy.enabled
+    return LifecycleCalculator() if lifecycle_enabled else S3StandardCalculator()
 
 
 def handle_calculation_error(error: Exception) -> None:

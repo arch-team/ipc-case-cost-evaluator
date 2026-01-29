@@ -106,8 +106,7 @@ class AuthService:
         user = users[0]
 
         # 检查账号状态
-        status = user.get("status", UserStatus.ACTIVE.value)
-        if status == UserStatus.DISABLED.value:
+        if user.get("status", UserStatus.ACTIVE.value) == UserStatus.DISABLED.value:
             raise PermissionError("账号已被禁用，请联系管理员")
 
         # 检查是否被锁定
@@ -118,12 +117,12 @@ class AuthService:
             if now < lock_time:
                 remaining = (lock_time - now).seconds // 60
                 raise PermissionError(f"账号已锁定，请 {remaining + 1} 分钟后重试")
-            else:
-                # 锁定已过期，重置锁定状态
-                user["locked_until"] = None
-                user["failed_login_count"] = 0
-                user["updated_at"] = now.isoformat()
-                self.storage.put(self.table, user["id"], user)
+
+            # 锁定已过期，重置锁定状态
+            user["locked_until"] = None
+            user["failed_login_count"] = 0
+            user["updated_at"] = now.isoformat()
+            self.storage.put(self.table, user["id"], user)
 
         # 验证密码
         if not verify_password(password, user["password_hash"]):

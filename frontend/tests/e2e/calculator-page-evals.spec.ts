@@ -46,7 +46,7 @@ test.describe('一、功能维度输入', () => {
       expect(await groups.count()).toBeGreaterThan(0);
     });
 
-    test('选择场景后参数自动填充', async ({ page }) => {
+    test('选择场景后参数自动填充', async () => {
       // 选择一个预设场景
       await calculatorPage.selectFirstScenario();
 
@@ -55,7 +55,7 @@ test.describe('一、功能维度输入', () => {
       await calculatorPage.expectResultsVisible();
     });
 
-    test('场景选择后显示"已预设"标签', async ({ page }) => {
+    test('场景选择后显示"已预设"标签', async () => {
       await calculatorPage.selectFirstScenario();
 
       // 验证显示"已预设"标签
@@ -418,7 +418,7 @@ test.describe('四、结果展示', () => {
       expect(rowCount).toBeGreaterThan(0);
     });
 
-    test('单价和用量公式正确显示', async ({ page }) => {
+    test('单价和用量公式正确显示', async () => {
       // 验证表格有数据行
       const rows = await calculatorPage.resultDisplay.getBreakdownRowCount();
       expect(rows).toBeGreaterThan(0);

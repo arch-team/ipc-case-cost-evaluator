@@ -57,7 +57,8 @@ class TestS3Pricing:
         # 使用 us-east-1 作为基准区域进行测试
         pricing = PricingLoader.load("us-east-1")
         price = pricing.get_storage_price(StorageClass.STANDARD)
-        assert price == pytest.approx(0.023, rel=0.01)
+        # 定价数据: us-east-1 S3 Standard 存储价格为 $0.022/GB/月
+        assert price == pytest.approx(0.022, rel=0.01)
 
     def test_get_put_request_price(self):
         """测试获取 PUT 请求价格"""

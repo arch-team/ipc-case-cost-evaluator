@@ -2,21 +2,21 @@
   "region": "us-east-1",
   "region_name": "US East (N. Virginia)",
   "currency": "USD",
-  "last_updated": "2025-01-27",
+  "last_updated": "2026-01-29",
   "storage_classes": {
     "STANDARD": {
-      "storage_per_gb_month": 0.023,
+      "storage_per_gb_month": 0.022,
       "put_per_1000": 0.005,
       "get_per_1000": 0.0004,
-      "retrieval_per_gb": 0,
-      "lifecycle_transition_per_1000": 0
+      "retrieval_per_gb": 0.0,
+      "lifecycle_transition_per_1000": 0.0
     },
     "INTELLIGENT_TIERING": {
-      "storage_per_gb_month": 0.023,
+      "storage_per_gb_month": 0.00099,
       "put_per_1000": 0.005,
       "get_per_1000": 0.0004,
-      "retrieval_per_gb": 0,
-      "lifecycle_transition_per_1000": 0
+      "retrieval_per_gb": 0.0,
+      "lifecycle_transition_per_1000": 0.0
     },
     "STANDARD_IA": {
       "storage_per_gb_month": 0.0125,
@@ -55,9 +55,9 @@
     }
   },
   "data_transfer": {
-    "out_first_10tb_per_gb": 0.09,
-    "out_next_40tb_per_gb": 0.085,
-    "out_next_100tb_per_gb": 0.07,
-    "out_over_150tb_per_gb": 0.05
+    "out_first_10tb_per_gb": 0.114,
+    "out_next_40tb_per_gb": 0.089,
+    "out_next_100tb_per_gb": 0.086,
+    "out_over_150tb_per_gb": 0.084
   }
 }
