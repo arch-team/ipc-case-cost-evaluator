@@ -86,11 +86,11 @@ export class FastApiLambda extends Construct {
       timeout: cdk.Duration.seconds(config.lambda.timeout),
       environment: {
         ...config.lambda.environment,
-        // DynamoDB 表名
-        USERS_TABLE: tables.usersTable.tableName,
-        EVALUATIONS_TABLE: tables.evaluationsTable.tableName,
-        SHARES_TABLE: tables.sharesTable.tableName,
-        // AWS 区域 (使用 APP_REGION，AWS_DEFAULT_REGION 是保留变量)
+        // DynamoDB 表名（与后端 config.py 中的变量名匹配）
+        DYNAMODB_USERS_TABLE: tables.usersTable.tableName,
+        DYNAMODB_EVALUATIONS_TABLE: tables.evaluationsTable.tableName,
+        DYNAMODB_SHARES_TABLE: tables.sharesTable.tableName,
+        // AWS 区域（AWS_REGION 是保留变量，使用 APP_REGION）
         APP_REGION: config.region,
       },
       reservedConcurrentExecutions: config.lambda.reservedConcurrency,

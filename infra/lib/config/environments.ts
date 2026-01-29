@@ -80,6 +80,9 @@ export const devConfig: EnvironmentConfig = {
       ENVIRONMENT: 'dev',
       LOG_LEVEL: 'DEBUG',
       STORAGE_TYPE: 'dynamodb',
+      // 初始管理员账号（首次启动时自动创建）
+      ADMIN_EMAIL: 'admin@example.com',
+      ADMIN_PASSWORD: 'Admin123456',
     },
   },
   cloudfront: {

@@ -25,7 +25,7 @@ def get_dynamodb_resource(endpoint_url: Optional[str] = None):
         DynamoDB 资源对象
     """
     kwargs = {
-        "region_name": settings.AWS_REGION,
+        "region_name": settings.aws_region,
     }
 
     if settings.AWS_ACCESS_KEY_ID:

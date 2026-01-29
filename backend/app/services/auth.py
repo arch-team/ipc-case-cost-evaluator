@@ -9,18 +9,10 @@ from app.core.config import settings
 from app.db.client import get_storage
 from app.models.enums import UserRole, UserStatus
 
-# 抑制 argon2-cffi 版本访问弃用警告（passlib 内部兼容性问题）
-with warnings.catch_warnings():
-    warnings.filterwarnings(
-        "ignore",
-        message="Accessing argon2.__version__",
-        category=DeprecationWarning,
-    )
-    from passlib.context import CryptContext
+from passlib.context import CryptContext
 
-
-# 密码加密上下文
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+# 密码加密上下文 - 使用 sha256_crypt（纯 Python 实现，Lambda 兼容）
+pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

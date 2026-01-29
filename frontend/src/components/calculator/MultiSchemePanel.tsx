@@ -5,7 +5,6 @@
 import React, { useState } from 'react';
 import {
   Tabs,
-  Input,
   Switch,
   Space,
   Typography,
@@ -16,10 +15,8 @@ import {
 import {
   PlusOutlined,
   CheckCircleOutlined,
-  StarOutlined,
   ClockCircleOutlined,
 } from '@ant-design/icons';
-// 注意：Input 保留用于未来可能的方案名编辑功能
 import type { TechnicalScheme, TechnicalDimensions, MultiTechnicalConfig } from '../../types';
 import TechnicalForm from './TechnicalForm';
 
@@ -135,14 +132,14 @@ const MultiSchemePanel: React.FC<MultiSchemePanelProps> = ({
     });
   };
 
-  // 开始编辑名称
-  const handleStartEditName = (scheme: TechnicalScheme) => {
+  // 开始编辑名称（保留供未来使用）
+  const _handleStartEditName = (scheme: TechnicalScheme) => {
     setEditingNameId(scheme.id);
     setTempName(scheme.name);
   };
 
-  // 保存名称
-  const handleSaveName = () => {
+  // 保存名称（保留供未来使用）
+  const _handleSaveName = () => {
     if (!editingNameId || !tempName.trim()) {
       setEditingNameId(null);
       return;
@@ -157,6 +154,10 @@ const MultiSchemePanel: React.FC<MultiSchemePanelProps> = ({
     });
     setEditingNameId(null);
   };
+
+  // 抑制未使用变量警告
+  void _handleStartEditName;
+  void _handleSaveName;
 
   // 获取方案标签
   const getSchemeLabel = (scheme: TechnicalScheme, index: number) => {

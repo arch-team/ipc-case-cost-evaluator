@@ -42,7 +42,7 @@ export class FrontendStack extends cdk.Stack {
 
     // 部署前端构建产物
     // 注意: 需要在部署前先执行 `cd frontend && npm run build`
-    // this.website.deployFrontend();
+    this.website.deployFrontend();
 
     // ========================================
     // Stack Outputs

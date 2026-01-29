@@ -39,15 +39,21 @@ class DynamoDBClient:
         """
         if resource:
             self._dynamodb = resource
-        else:
-            # 构建 boto3 配置参数
-            kwargs = {"region_name": settings.AWS_REGION}
-            # 仅在明确配置时才传递凭证，否则让 boto3 使用默认凭证链
-            # （环境变量、~/.aws/credentials、IAM 角色等）
-            if settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY:
-                kwargs["aws_access_key_id"] = settings.AWS_ACCESS_KEY_ID
-                kwargs["aws_secret_access_key"] = settings.AWS_SECRET_ACCESS_KEY
-            self._dynamodb = boto3.resource("dynamodb", **kwargs)
+            return
+
+        # 在 Lambda 环境中，完全依赖默认凭证链（IAM 角色）
+        import os
+        if os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+            # Lambda 环境：使用默认凭证链
+            self._dynamodb = boto3.resource("dynamodb")
+            return
+
+        # 本地环境：可以使用自定义凭证
+        kwargs = {"region_name": settings.aws_region}
+        if settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY:
+            kwargs["aws_access_key_id"] = settings.AWS_ACCESS_KEY_ID
+            kwargs["aws_secret_access_key"] = settings.AWS_SECRET_ACCESS_KEY
+        self._dynamodb = boto3.resource("dynamodb", **kwargs)
 
     def _get_table(self, table: str) -> "Table":
         """
@@ -221,7 +227,7 @@ class DynamoDBClient:
             RuntimeError: 在生产环境调用此方法
         """
         # 安全检查：仅允许在测试/开发环境使用
-        if not settings.DEBUG and not settings.USE_LOCAL_STORAGE:
+        if not settings.DEBUG and not settings.use_local_storage:
             raise RuntimeError(
                 "clear_table 仅允许在测试环境使用（DEBUG=True 或 USE_LOCAL_STORAGE=True）"
             )
@@ -246,7 +252,7 @@ class DynamoDBClient:
             RuntimeError: 在生产环境调用此方法
         """
         # 安全检查：仅允许在测试/开发环境使用
-        if not settings.DEBUG and not settings.USE_LOCAL_STORAGE:
+        if not settings.DEBUG and not settings.use_local_storage:
             raise RuntimeError(
                 "clear_all 仅允许在测试环境使用（DEBUG=True 或 USE_LOCAL_STORAGE=True）"
             )

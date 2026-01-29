@@ -118,7 +118,9 @@
       "mcp__chrome-devtools__fill_form",
       "Bash(while read f)",
       "Bash(do echo \"=== $f ===\")",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(VITE_API_BASE_URL=/api/v1 npm run build:*)",
+      "Bash(file:*)"
     ],
     "deny": []
   },
