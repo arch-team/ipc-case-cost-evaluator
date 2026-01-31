@@ -15,9 +15,7 @@ import type {
   VideoQuality,
   BatchCalculationResult,
 } from '../types';
-import type { DetailedCalculationResult } from '../types/calculationRecords';
 import { calculatorApi } from '../api/client';
-import { calculationRecordApi } from '../api/calculationRecords';
 import { createInitialMultiConfig } from '../components/calculator/MultiSchemePanel';
 import InputPanel from '../components/calculator/InputPanel';
 import ResultDisplay from '../components/calculator/ResultDisplay';
@@ -25,8 +23,6 @@ import ComparisonPanel from '../components/comparison/ComparisonPanel';
 import SensitivityAnalysis from '../components/calculator/SensitivityAnalysis';
 import ExportDialog from '../components/calculator/ExportDialog';
 import ShareDialog from '../components/calculator/ShareDialog';
-import DetailedCostPreview from '../components/calculator/DetailedCostPreview';
-import SaveRecordDialog from '../components/calculator/SaveRecordDialog';
 import debounce from 'lodash/debounce';
 
 const { Title } = Typography;
@@ -70,21 +66,10 @@ const Calculator: React.FC = () => {
   const [comparison, setComparison] = useState<ComparisonResult | null>(null);
   const [status, setStatus] = useState<CalculationStatus>('idle');
 
-  // 详细计算结果状态 (用于实时预览)
-  const [detailedResult, setDetailedResult] = useState<DetailedCalculationResult | null>(null);
-  const [detailedLoading, setDetailedLoading] = useState(false);
-  const [detailedError, setDetailedError] = useState<string | null>(null);
-  const [previousDetailedResult, setPreviousDetailedResult] = useState<DetailedCalculationResult | null>(null);
-
   // 对话框状态
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-  const [saveLoading, setSaveLoading] = useState(false);
   const [evaluationId] = useState<string | undefined>();
-
-  // 用户记录数量 (用于限制检查)
-  const [userRecordCount, setUserRecordCount] = useState<number>(0);
 
   // 访客模式提示关闭状态（从 localStorage 读取）
   const [guestAlertDismissed, setGuestAlertDismissed] = useState(() => {
@@ -155,44 +140,6 @@ const Calculator: React.FC = () => {
     []
   );
 
-  // 实时计算的防抖函数 - 详细成本预览
-  const calculateDetailedDebounced = useMemo(
-    () =>
-      debounce(async (inputData: CostCalculationInput) => {
-        setDetailedLoading(true);
-        setDetailedError(null);
-        try {
-          const detailedRes = await calculationRecordApi.calculateDetailed(inputData);
-          // 保存上次成功结果，以便加载时展示
-          if (detailedResult) {
-            setPreviousDetailedResult(detailedResult);
-          }
-          setDetailedResult(detailedRes);
-        } catch (error: any) {
-          console.error('详细计算失败:', error);
-          setDetailedError(error.response?.data?.detail || error.message || '详细计算失败');
-        } finally {
-          setDetailedLoading(false);
-        }
-      }, 500),
-    [detailedResult]
-  );
-
-  // 获取用户记录数量（登录时）
-  useEffect(() => {
-    const fetchRecordCount = async () => {
-      if (isAuthenticated) {
-        try {
-          const countRes = await calculationRecordApi.getCount();
-          setUserRecordCount(countRes.count);
-        } catch (error) {
-          console.error('获取记录数量失败:', error);
-        }
-      }
-    };
-    fetchRecordCount();
-  }, [isAuthenticated]);
-
   // 输入变化时自动计算
   useEffect(() => {
     if (useMultiScheme) {
@@ -200,9 +147,7 @@ const Calculator: React.FC = () => {
     } else {
       calculateSingleDebounced(input);
     }
-    // 同时触发详细成本计算
-    calculateDetailedDebounced(input);
-  }, [input, multiConfig, useMultiScheme, calculateSingleDebounced, calculateMultiDebounced, calculateDetailedDebounced]);
+  }, [input, multiConfig, useMultiScheme, calculateSingleDebounced, calculateMultiDebounced]);
 
   // 处理参数变化
   const handleInputChange = (newInput: CostCalculationInput) => {
@@ -244,39 +189,14 @@ const Calculator: React.FC = () => {
     setShareDialogOpen(true);
   };
 
-  // 处理保存按钮点击
+  // 处理保存
   const handleSave = () => {
     if (!isAuthenticated) {
-      message.warning('请先登录后再保存核算记录');
+      message.warning('请先登录后再保存评估记录');
       return;
     }
-    if (!detailedResult) {
-      message.warning('请等待计算完成后再保存');
-      return;
-    }
-    if (userRecordCount >= 1000) {
-      message.error('已达到记录数量上限 (1000条)，请删除旧记录后再保存');
-      return;
-    }
-    setSaveDialogOpen(true);
-  };
-
-  // 执行保存核算记录
-  const handleSaveRecord = async (name: string, description: string) => {
-    setSaveLoading(true);
-    try {
-      await calculationRecordApi.create(
-        { name, description },
-        input
-      );
-      setSaveDialogOpen(false);
-      // 更新记录数量
-      setUserRecordCount(prev => prev + 1);
-    } catch (error: any) {
-      throw new Error(error.response?.data?.detail || error.message || '保存失败');
-    } finally {
-      setSaveLoading(false);
-    }
+    // 跳转到详细核算页面进行保存
+    navigate('/detailed-calculation');
   };
 
   // 处理关闭访客模式提示
@@ -403,16 +323,6 @@ const Calculator: React.FC = () => {
                 />
               </Card>
             </div>
-
-            {/* 详细成本预览 */}
-            <div style={{ marginTop: 24 }}>
-              <DetailedCostPreview
-                result={detailedResult}
-                loading={detailedLoading}
-                error={detailedError}
-                previousResult={previousDetailedResult}
-              />
-            </div>
           </>
         )}
       </Spin>
@@ -472,14 +382,6 @@ const Calculator: React.FC = () => {
         evaluationId={evaluationId}
         isLoggedIn={isAuthenticated}
         onNeedSave={handleSave}
-      />
-
-      {/* 保存核算记录对话框 */}
-      <SaveRecordDialog
-        visible={saveDialogOpen}
-        loading={saveLoading}
-        onCancel={() => setSaveDialogOpen(false)}
-        onSave={handleSaveRecord}
       />
     </div>
   );
