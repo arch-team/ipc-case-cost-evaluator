@@ -127,12 +127,12 @@
 
 ### Frontend Implementation for US2
 
-- [ ] T035 [P] [US2] 创建详情页面 `frontend/src/pages/CalculationRecordDetail.tsx`
-- [ ] T036 [P] [US2] 创建输入参数展示组件 `frontend/src/components/calculator/InputParamsDisplay.tsx`
-- [ ] T037 [P] [US2] 创建定价快照展示组件 `frontend/src/components/calculator/PricingSnapshotDisplay.tsx`
-- [ ] T038 [US2] 实现详情页完整布局（6个区块）到 `frontend/src/pages/CalculationRecordDetail.tsx` (依赖 T35-T37)
-- [ ] T039 [US2] 添加详情页路由到 `frontend/src/App.tsx`
-- [ ] T040 [US2] 实现详情页 404/403 错误处理到 `frontend/src/pages/CalculationRecordDetail.tsx`
+- [x] T035 [P] [US2] 创建详情页面 `frontend/src/pages/CalculationRecordDetail.tsx`
+- [x] T036 [P] [US2] 创建输入参数展示组件 `frontend/src/components/calculator/InputParamsDisplay.tsx`
+- [x] T037 [P] [US2] 创建定价快照展示组件 `frontend/src/components/calculator/PricingSnapshotDisplay.tsx`
+- [x] T038 [US2] 实现详情页完整布局（6个区块）到 `frontend/src/pages/CalculationRecordDetail.tsx` (依赖 T35-T37)
+- [x] T039 [US2] 添加详情页路由到 `frontend/src/App.tsx`
+- [x] T040 [US2] 实现详情页 404/403 错误处理到 `frontend/src/pages/CalculationRecordDetail.tsx`
 
 **Checkpoint**: User Story 2 完成 - 详情查看功能可独立验证
 
@@ -153,12 +153,12 @@
 
 ### Frontend Implementation for US3
 
-- [ ] T045 [P] [US3] 创建列表页面 `frontend/src/pages/CalculationRecords.tsx`
-- [ ] T046 [US3] 实现列表页加载状态（骨架屏）和错误处理到 `frontend/src/pages/CalculationRecords.tsx`
-- [ ] T047 [US3] 实现删除确认对话框和删除功能到 `frontend/src/pages/CalculationRecords.tsx`
-- [ ] T048 [US3] 实现空状态提示和引导到 `frontend/src/pages/CalculationRecords.tsx`
-- [ ] T049 [US3] 添加列表页路由到 `frontend/src/App.tsx`
-- [ ] T050 [US3] 添加导航栏入口到核算记录列表页
+- [x] T045 [P] [US3] 创建列表页面 `frontend/src/pages/CalculationRecords.tsx`
+- [x] T046 [US3] 实现列表页加载状态（骨架屏）和错误处理到 `frontend/src/pages/CalculationRecords.tsx`
+- [x] T047 [US3] 实现删除确认对话框和删除功能到 `frontend/src/pages/CalculationRecords.tsx`
+- [x] T048 [US3] 实现空状态提示和引导到 `frontend/src/pages/CalculationRecords.tsx`
+- [x] T049 [US3] 添加列表页路由到 `frontend/src/App.tsx`
+- [x] T050 [US3] 添加导航栏入口到核算记录列表页
 
 **Checkpoint**: User Story 3 完成 - 列表管理功能可独立验证
 
@@ -172,9 +172,9 @@
 
 ### Frontend Implementation for US4
 
-- [ ] T051 [P] [US4] 增强输入参数展示组件，实现三卡片布局到 `frontend/src/components/calculator/InputParamsDisplay.tsx`
-- [ ] T052 [US4] 实现枚举值中文友好标签映射到 `frontend/src/utils/enumLabels.ts`
-- [ ] T053 [US4] 集成枚举标签映射到输入参数展示组件
+- [x] T051 [P] [US4] 增强输入参数展示组件，实现三卡片布局到 `frontend/src/components/calculator/InputParamsDisplay.tsx`
+- [x] T052 [US4] 实现枚举值中文友好标签映射到 `frontend/src/utils/enumLabels.ts`
+- [x] T053 [US4] 集成枚举标签映射到输入参数展示组件
 
 **Checkpoint**: User Story 4 完成 - 参数结构化展示功能可独立验证
 
@@ -185,10 +185,10 @@
 **Purpose**: Improvements that affect multiple user stories
 
 - [x] T054 [P] 实现 XSS 防护（名称和描述字段 HTML 转义）
-- [ ] T055 [P] 验证数据大小限制（200KB 安全限制）
-- [ ] T056 [P] 添加请求日志和监控
-- [ ] T057 执行 quickstart.md 验证流程
-- [ ] T058 代码清理和重构
+- [x] T055 [P] 验证数据大小限制（200KB 安全限制）
+- [x] T056 [P] 添加请求日志和监控
+- [x] T057 执行 quickstart.md 验证流程
+- [x] T058 代码清理和重构
 
 ---
 

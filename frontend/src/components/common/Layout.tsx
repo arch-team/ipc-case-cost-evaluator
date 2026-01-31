@@ -15,6 +15,7 @@ import {
   TeamOutlined,
   DollarOutlined,
   FileTextOutlined,
+  UnorderedListOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet, Link } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
@@ -27,6 +28,7 @@ const breadcrumbNameMap: Record<string, string> = {
   '/': '首页',
   '/calculator': '成本计算',
   '/detailed-calculation': '详细核算',
+  '/calculation-records': '核算记录',
   '/evaluations': '评估记录',
   '/admin': '用户管理',
   '/admin/pricing': '定价管理',
@@ -60,6 +62,11 @@ const Layout: React.FC = () => {
         key: '/detailed-calculation',
         icon: <FileTextOutlined />,
         label: '详细核算',
+      },
+      {
+        key: '/calculation-records',
+        icon: <UnorderedListOutlined />,
+        label: '核算记录',
       },
       {
         key: '/evaluations',
