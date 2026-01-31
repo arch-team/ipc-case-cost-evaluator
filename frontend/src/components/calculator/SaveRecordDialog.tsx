@@ -2,10 +2,15 @@
  * 保存核算记录对话框组件
  *
  * 用于收集记录名称和描述，确认保存核算记录
+ * 支持根据输入参数和计算结果自动生成默认名称
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Modal, Form, Input, message } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
+import type { CostCalculationInput } from '../../types';
+import type { DetailedCalculationResult } from '../../types/calculationRecords';
+import { recordingModeLabels } from '../../utils/enumLabels';
+import { getStorageStrategyLabel } from '../../constants/storageStrategies';
 
 const { TextArea } = Input;
 
@@ -14,6 +19,44 @@ interface SaveRecordDialogProps {
   loading: boolean;
   onCancel: () => void;
   onSave: (name: string, description: string) => Promise<void>;
+  /** 当前输入参数，用于生成默认名称 */
+  input?: CostCalculationInput | null;
+  /** 计算结果，用于生成默认名称 */
+  result?: DetailedCalculationResult | null;
+}
+
+/**
+ * 生成默认记录名称
+ * 格式：{设备数}台-{录像模式}-{存储策略}-${月成本}
+ */
+function generateDefaultName(
+  input: CostCalculationInput | null | undefined,
+  result: DetailedCalculationResult | null | undefined
+): string {
+  if (!input || !result) return '';
+
+  const parts: string[] = [];
+
+  // 设备数量
+  const deviceCount = input.functional.device_count;
+  parts.push(`${deviceCount}台`);
+
+  // 录像模式（简短版本）
+  const modeLabel = recordingModeLabels[input.functional.recording_mode] || input.functional.recording_mode;
+  parts.push(modeLabel);
+
+  // 存储策略（简短版本）
+  const strategyLabel = getStorageStrategyLabel(result.storage_strategy, 'short');
+  parts.push(strategyLabel);
+
+  // 月度成本
+  const totalCost = result.summary.total_cost;
+  const costStr = totalCost >= 1000
+    ? `$${(totalCost / 1000).toFixed(1)}K`
+    : `$${totalCost.toFixed(2)}`;
+  parts.push(costStr);
+
+  return parts.join('-');
 }
 
 const SaveRecordDialog: React.FC<SaveRecordDialogProps> = ({
@@ -21,9 +64,25 @@ const SaveRecordDialog: React.FC<SaveRecordDialogProps> = ({
   loading,
   onCancel,
   onSave,
+  input,
+  result,
 }) => {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
+
+  // 当对话框打开时，生成默认名称
+  const setDefaultName = useCallback(() => {
+    const defaultName = generateDefaultName(input, result);
+    if (defaultName) {
+      form.setFieldsValue({ name: defaultName });
+    }
+  }, [form, input, result]);
+
+  useEffect(() => {
+    if (visible) {
+      setDefaultName();
+    }
+  }, [visible, setDefaultName]);
 
   const handleOk = async () => {
     try {
@@ -34,12 +93,14 @@ const SaveRecordDialog: React.FC<SaveRecordDialogProps> = ({
 
       form.resetFields();
       message.success('核算记录保存成功');
-    } catch (error: any) {
-      if (error.errorFields) {
+    } catch (error: unknown) {
+      const formError = error as { errorFields?: unknown[] };
+      if (formError.errorFields) {
         // 表单验证错误，不需要额外提示
         return;
       }
-      message.error(error.message || '保存失败，请重试');
+      const errMsg = error as { message?: string };
+      message.error(errMsg.message || '保存失败，请重试');
     } finally {
       setSubmitting(false);
     }
@@ -85,7 +146,7 @@ const SaveRecordDialog: React.FC<SaveRecordDialogProps> = ({
           ]}
         >
           <Input
-            placeholder="例如：2026年1月 - 10台设备评估"
+            placeholder="例如：10台-事件触发-S3标准-$4.63"
             maxLength={100}
             showCount
             autoFocus

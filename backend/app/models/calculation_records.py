@@ -164,9 +164,10 @@ class StageCostDetail(BaseModel):
     get_request_cost: CostItemDetail = Field(..., description="GET 请求费用")
     retrieval_cost: Optional[CostItemDetail] = Field(default=None, description="检索费用")
     transition_cost: Optional[CostItemDetail] = Field(default=None, description="转换费用")
+    data_transfer_cost: Optional[CostItemDetail] = Field(default=None, description="数据传输费用")
 
     # 汇总
-    stage_total: float = Field(..., description="阶段总费用")
+    stage_total: float = Field(..., description="阶段总费用（含数据传输）")
 
 
 # ============================================================

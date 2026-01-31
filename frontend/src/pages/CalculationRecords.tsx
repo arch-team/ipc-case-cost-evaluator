@@ -224,7 +224,7 @@ const CalculationRecords: React.FC = () => {
             type="link"
             size="small"
             icon={<EyeOutlined />}
-            onClick={() => navigate(`/calculation-records/${record.record_id}`)}
+            onClick={() => navigate(`/calculation-records/${encodeURIComponent(record.record_id)}`)}
           >
             查看
           </Button>

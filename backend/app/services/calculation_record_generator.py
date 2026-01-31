@@ -169,6 +169,7 @@ def _convert_stage_breakdown(
     stage,
     index: int,
     functional: Optional[FunctionalDimensions] = None,
+    stage_dto_cost: Optional[CostItemDetail] = None,
 ) -> StageCostDetail:
     """将 StageCostBreakdown 转换为 StageCostDetail
 
@@ -176,6 +177,7 @@ def _convert_stage_breakdown(
         stage: 阶段费用明细
         index: 阶段索引
         functional: 功能维度（用于获取访问比例）
+        stage_dto_cost: 该阶段的 DTO 费用明细
 
     Returns:
         StageCostDetail: 转换后的阶段费用明细
@@ -184,6 +186,11 @@ def _convert_stage_breakdown(
     access_rate = 0.0
     if functional:
         access_rate = functional.get_access_rate_for_period(stage.start_day, stage.end_day)
+
+    # 计算阶段总费用（含 DTO）
+    stage_total_with_dto = stage.stage_total
+    if stage_dto_cost:
+        stage_total_with_dto += stage_dto_cost.amount
 
     return StageCostDetail(
         stage_index=index,
@@ -204,7 +211,8 @@ def _convert_stage_breakdown(
         ),
         retrieval_cost=_convert_cost_item(stage.retrieval_cost) if stage.retrieval_cost else None,
         transition_cost=_convert_cost_item(stage.transition_cost) if stage.transition_cost else None,
-        stage_total=stage.stage_total,
+        data_transfer_cost=stage_dto_cost,
+        stage_total=stage_total_with_dto,
     )
 
 
@@ -409,23 +417,106 @@ def _build_pricing_snapshot(region: str) -> PricingSnapshot:
 # ============================================================
 
 
+def _calculate_stage_dto_costs(
+    detailed: DetailedCostBreakdown,
+    functional: FunctionalDimensions,
+    daily_data_gb: float,
+) -> list[CostItemDetail]:
+    """计算每个阶段的 DTO 费用
+
+    采用按比例分摊策略：先计算总 DTO 费用，再按各阶段检索量占比分摊。
+    这样可以正确处理 AWS 的累进阶梯定价。
+
+    Args:
+        detailed: 详细成本分解
+        functional: 功能维度
+        daily_data_gb: 每日数据量 (GB)
+
+    Returns:
+        各阶段的 DTO 费用列表
+    """
+    if not detailed.stage_breakdowns:
+        return []
+
+    # 获取总 DTO 费用
+    total_dto_cost = detailed.data_transfer_cost.amount if detailed.data_transfer_cost else 0
+    total_dto_quantity = detailed.data_transfer_cost.quantity if detailed.data_transfer_cost else 0
+
+    if total_dto_cost == 0:
+        return [None] * len(detailed.stage_breakdowns)
+
+    # 获取 DTO 阶梯明细（用于计算平均单价）
+    dto_tiers = detailed.data_transfer_cost.tiers if detailed.data_transfer_cost else None
+    avg_unit_price = total_dto_cost / total_dto_quantity if total_dto_quantity > 0 else 0
+
+    # 计算每个阶段的检索量
+    stage_retrieval_gbs = []
+    total_days = functional.retention_days
+
+    for stage in detailed.stage_breakdowns:
+        # 计算该阶段的检索量
+        stage_retrieval_gb = BaseCalculator.calculate_monthly_retrieval_for_period(
+            daily_data_gb, functional, stage.start_day, stage.end_day
+        )
+        stage_retrieval_gbs.append(stage_retrieval_gb)
+
+    # 计算总检索量
+    total_retrieval_gb = sum(stage_retrieval_gbs)
+
+    # 按比例分摊 DTO 费用
+    stage_dto_costs = []
+    for i, (stage, stage_retrieval_gb) in enumerate(zip(detailed.stage_breakdowns, stage_retrieval_gbs)):
+        if total_retrieval_gb > 0 and stage_retrieval_gb > 0:
+            # 按检索量占比分摊
+            ratio = stage_retrieval_gb / total_retrieval_gb
+            stage_dto_amount = total_dto_cost * ratio
+
+            stage_dto_costs.append(CostItemDetail(
+                name="数据传输",
+                unit_price=avg_unit_price,
+                unit_price_unit="USD/GB",
+                quantity=stage_retrieval_gb,
+                quantity_unit="GB",
+                amount=stage_dto_amount,
+                tiers=None,  # 阶梯明细不按阶段分，总计时显示
+            ))
+        else:
+            stage_dto_costs.append(CostItemDetail(
+                name="数据传输",
+                unit_price=avg_unit_price,
+                unit_price_unit="USD/GB",
+                quantity=0,
+                quantity_unit="GB",
+                amount=0,
+                tiers=None,
+            ))
+
+    return stage_dto_costs
+
+
 def _build_stage_details(
     detailed: DetailedCostBreakdown,
-    functional: FunctionalDimensions
+    functional: FunctionalDimensions,
+    daily_data_gb: float = 0,
 ) -> list[StageCostDetail]:
     """构建分阶段明细列表
 
     Args:
         detailed: 详细成本分解
         functional: 功能维度
+        daily_data_gb: 每日数据量 (GB)
 
     Returns:
         分阶段明细列表
     """
     stage_details = []
     if detailed.stage_breakdowns:
+        # 计算每个阶段的 DTO 费用
+        stage_dto_costs = _calculate_stage_dto_costs(detailed, functional, daily_data_gb)
+
         for i, stage in enumerate(detailed.stage_breakdowns):
-            stage_details.append(_convert_stage_breakdown(stage, i, functional))
+            stage_dto_cost = stage_dto_costs[i] if i < len(stage_dto_costs) else None
+            stage_details.append(_convert_stage_breakdown(stage, i, functional, stage_dto_cost))
     return stage_details
 
 
@@ -472,7 +563,10 @@ def _generate_common_result(
     intermediate_metrics = _build_intermediate_metrics(summary, input_data.functional)
     cost_summary = _build_cost_summary(summary, intermediate_metrics.avg_storage_gb)
     pricing_snapshot = _build_pricing_snapshot(input_data.pricing.region)
-    stage_details = _build_stage_details(detailed, input_data.functional)
+
+    # 构建分阶段明细（传入每日数据量用于 DTO 分摊计算）
+    daily_data_gb = intermediate_metrics.daily_data_gb
+    stage_details = _build_stage_details(detailed, input_data.functional, daily_data_gb)
 
     return summary, detailed, strategy, intermediate_metrics, cost_summary, pricing_snapshot, stage_details
 

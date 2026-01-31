@@ -274,12 +274,7 @@ const DetailedCostPreview: React.FC<DetailedCostPreviewProps> = ({
                   </span>
                 ),
                 children: (
-                  <StageCostTable
-                    stages={displayResult.stage_details}
-                    dataTransferCost={displayResult.summary.data_transfer_cost}
-                    dataTransferTiers={displayResult.data_transfer_tiers}
-                    totalCostWithTransfer={displayResult.summary.total_cost}
-                  />
+                  <StageCostTable stages={displayResult.stage_details} />
                 ),
               },
             ]}

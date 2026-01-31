@@ -3,7 +3,7 @@
  *
  * 以卡片形式展示单个阶段的费用明细：
  * - 头部: 阶段名 + 存储类型标签 + 小计
- * - 内容: 费用项固定5列对齐显示（便于跨阶段比较）
+ * - 内容: 费用项固定6列对齐显示（便于跨阶段比较）
  * - 展开: 计算公式详情
  */
 import React from 'react';
@@ -14,6 +14,7 @@ import {
   CloudDownloadOutlined,
   SyncOutlined,
   SwapOutlined,
+  SendOutlined,
   InfoCircleOutlined,
   DownOutlined,
   UpOutlined,
@@ -41,6 +42,7 @@ const COST_ITEM_CONFIG = [
   { key: 'get', label: 'GET请求', icon: <CloudDownloadOutlined />, color: '#fac858' },
   { key: 'retrieval', label: '检索费用', icon: <SyncOutlined />, color: '#ee6666' },
   { key: 'transition', label: '转换费用', icon: <SwapOutlined />, color: '#73c0de' },
+  { key: 'transfer', label: '数据传输', icon: <SendOutlined />, color: '#9254de' },
 ];
 
 // 格式化费用公式
@@ -129,6 +131,7 @@ const StageCostCard: React.FC<StageCostCardProps> = ({
       case 'get': return stage.get_request_cost;
       case 'retrieval': return stage.retrieval_cost;
       case 'transition': return stage.transition_cost;
+      case 'transfer': return stage.data_transfer_cost;
       default: return null;
     }
   };
@@ -178,10 +181,10 @@ const StageCostCard: React.FC<StageCostCardProps> = ({
         </div>
       </div>
 
-      {/* 费用项列表 - 固定5列对齐 */}
+      {/* 费用项列表 - 固定6列对齐 */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(5, 1fr)',
+        gridTemplateColumns: 'repeat(6, 1fr)',
         gap: 8,
       }}>
         {COST_ITEM_CONFIG.map(({ key, label, icon, color }) => (

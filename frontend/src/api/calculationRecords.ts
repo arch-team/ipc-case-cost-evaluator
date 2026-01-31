@@ -72,7 +72,7 @@ export const calculationRecordApi = {
    */
   get: async (recordId: string): Promise<CalculationRecord> => {
     const response = await apiClient.get<CalculationRecord>(
-      `/calculation-records/${recordId}`
+      `/calculation-records/${encodeURIComponent(recordId)}`
     );
     return response.data;
   },
@@ -81,7 +81,7 @@ export const calculationRecordApi = {
    * 删除核算记录
    */
   delete: async (recordId: string): Promise<void> => {
-    await apiClient.delete(`/calculation-records/${recordId}`);
+    await apiClient.delete(`/calculation-records/${encodeURIComponent(recordId)}`);
   },
 
   /**

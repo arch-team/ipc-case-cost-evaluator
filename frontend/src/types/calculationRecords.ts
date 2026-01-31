@@ -119,6 +119,7 @@ export interface StageCostDetail {
   get_request_cost: CostItemDetail;
   retrieval_cost?: CostItemDetail;
   transition_cost?: CostItemDetail;
+  data_transfer_cost?: CostItemDetail;
   stage_total: number;
 }
 

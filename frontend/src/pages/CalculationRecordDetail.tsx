@@ -345,11 +345,7 @@ const CalculationRecordDetail: React.FC = () => {
                 </span>
               ),
               children: (
-                <StageCostTable
-                  stages={record.stage_details}
-                  dataTransferCost={record.cost_summary.data_transfer_cost}
-                  totalCostWithTransfer={record.cost_summary.total_cost}
-                />
+                <StageCostTable stages={record.stage_details} />
               ),
             },
           ]}

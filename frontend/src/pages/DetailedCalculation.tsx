@@ -312,6 +312,8 @@ const DetailedCalculation: React.FC = () => {
         loading={saveLoading}
         onCancel={() => setSaveDialogOpen(false)}
         onSave={handleSaveRecord}
+        input={input}
+        result={detailedResult}
       />
     </div>
   );
