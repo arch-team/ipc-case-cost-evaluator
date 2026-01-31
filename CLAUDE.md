@@ -237,3 +237,10 @@ AWS 定价数据存储在 `backend/app/data/aws_pricing/` 目录下的 JSON 文�
 - [实现计划](docs/plans/2025-01-24-implementation-plan.md)
 - [详细成本核算记录设计](docs/plans/2025-01-28-calculation-records-design.md)
 - [代码地图](codemaps/) - 详细架构文档
+
+## Active Technologies
+- Python 3.11+ (后端), TypeScript 5.9+ (前端) + FastAPI, Pydantic v2, React, Ant Design (004-detailed-cost-records)
+- DynamoDB (生产), LocalStorage (开发) - 新增 `ipc_cost_calculation_records` 表 (004-detailed-cost-records)
+
+## Recent Changes
+- 004-detailed-cost-records: Added Python 3.11+ (后端), TypeScript 5.9+ (前端) + FastAPI, Pydantic v2, React, Ant Design

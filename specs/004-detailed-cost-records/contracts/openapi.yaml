@@ -1,0 +1,532 @@
+openapi: 3.0.3
+info:
+  title: 详细成本核算记录 API
+  description: IPC Case Cost Evaluator - 详细成本核算记录功能 API
+  version: 1.0.0
+  contact:
+    name: IPC Cost Evaluator Team
+
+servers:
+  - url: /api/v1
+    description: API v1
+
+tags:
+  - name: calculation-records
+    description: 核算记录管理
+  - name: calculate
+    description: 成本计算
+
+paths:
+  /defaults:
+    get:
+      tags:
+        - calculate
+      summary: 获取默认输入参数
+      description: 返回典型场景的默认输入参数值
+      operationId: getDefaults
+      responses:
+        '200':
+          description: 成功返回默认参数
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostCalculationInput'
+
+  /calculate-detailed:
+    post:
+      tags:
+        - calculate
+      summary: 实时计算详细成本
+      description: |
+        根据输入参数计算详细成本信息，返回中间指标、分阶段费用明细和汇总。
+        无需登录即可使用。
+      operationId: calculateDetailed
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CostCalculationInput'
+      responses:
+        '200':
+          description: 成功返回详细计算结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedCalculationResult'
+        '422':
+          description: 输入验证失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /calculation-records:
+    get:
+      tags:
+        - calculation-records
+      summary: 获取核算记录列表
+      description: 获取当前用户的核算记录列表，支持分页和搜索
+      operationId: listCalculationRecords
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: 页码
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: 每页数量
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: 按名称搜索
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+            enum: [created_at, name, total_cost]
+            default: created_at
+          description: 排序字段
+        - name: sort_order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: 排序方向
+      responses:
+        '200':
+          description: 成功返回记录列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalculationRecordList'
+        '401':
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - calculation-records
+      summary: 创建核算记录
+      description: 保存当前计算结果为核算记录
+      operationId: createCalculationRecord
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCalculationRecordRequest'
+      responses:
+        '201':
+          description: 成功创建记录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalculationRecord'
+        '401':
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 输入验证失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /calculation-records/{record_id}:
+    get:
+      tags:
+        - calculation-records
+      summary: 获取核算记录详情
+      description: 获取单条核算记录的完整信息
+      operationId: getCalculationRecord
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: record_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 记录 ID
+      responses:
+        '200':
+          description: 成功返回记录详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalculationRecord'
+        '401':
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 记录不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - calculation-records
+      summary: 删除核算记录
+      description: 删除指定的核算记录（硬删除，不可恢复）
+      operationId: deleteCalculationRecord
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: record_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 记录 ID
+      responses:
+        '204':
+          description: 成功删除
+        '401':
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 记录不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    CostCalculationInput:
+      type: object
+      required:
+        - functional
+        - technical
+        - pricing
+      properties:
+        functional:
+          $ref: '#/components/schemas/FunctionalDimensions'
+        technical:
+          $ref: '#/components/schemas/TechnicalDimensions'
+        pricing:
+          $ref: '#/components/schemas/PricingDimensions'
+
+    FunctionalDimensions:
+      type: object
+      required:
+        - device_count
+        - recording_mode
+        - video_quality
+        - retention_days
+        - access_pattern
+      properties:
+        device_count:
+          type: integer
+          minimum: 1
+          description: 设备数量
+        recording_mode:
+          type: string
+          enum: [continuous, event_triggered, scheduled]
+          description: 录像模式
+        video_quality:
+          type: string
+          enum: [720p, 1080p, 2k, 4k]
+          description: 视频质量
+        retention_days:
+          type: integer
+          minimum: 1
+          maximum: 365
+          description: 保留天数
+        events_per_day:
+          type: integer
+          minimum: 0
+          description: 每日事件数（事件触发模式）
+        event_duration_seconds:
+          type: integer
+          minimum: 1
+          description: 事件时长秒数
+        scheduled_hours:
+          type: integer
+          minimum: 1
+          maximum: 24
+          description: 定时录像时长（小时）
+        access_pattern:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: 回看比例
+
+    TechnicalDimensions:
+      type: object
+      required:
+        - storage_class
+        - segment_strategy
+      properties:
+        storage_class:
+          type: string
+          enum: [STANDARD, GLACIER_IR, DEEP_ARCHIVE]
+          description: 存储类型
+        segment_strategy:
+          type: string
+          enum: [FIXED_DURATION, FIXED_SIZE]
+          description: 分片策略
+        segment_seconds:
+          type: integer
+          minimum: 1
+          description: 分片时长（秒）
+        segment_size_kb:
+          type: integer
+          minimum: 1
+          description: 分片大小（KB）
+        lifecycle_policy:
+          $ref: '#/components/schemas/LifecyclePolicy'
+
+    LifecyclePolicy:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          default: false
+        stages:
+          type: array
+          items:
+            $ref: '#/components/schemas/LifecycleStage'
+
+    LifecycleStage:
+      type: object
+      required:
+        - start_day
+        - end_day
+        - storage_class
+      properties:
+        start_day:
+          type: integer
+          minimum: 1
+        end_day:
+          type: integer
+          minimum: 1
+        storage_class:
+          type: string
+
+    PricingDimensions:
+      type: object
+      required:
+        - region
+      properties:
+        region:
+          type: string
+          description: AWS 区域代码
+        discount_percent:
+          type: number
+          minimum: 0
+          maximum: 50
+          default: 0
+          description: 折扣百分比
+
+    DetailedCalculationResult:
+      type: object
+      required:
+        - summary
+        - detailed
+        - intermediate_metrics
+      properties:
+        summary:
+          $ref: '#/components/schemas/CostSummary'
+        detailed:
+          $ref: '#/components/schemas/DetailedCostBreakdown'
+        intermediate_metrics:
+          $ref: '#/components/schemas/IntermediateMetricsDetail'
+        storage_strategy:
+          type: string
+          description: 识别出的存储策略
+
+    CostSummary:
+      type: object
+      properties:
+        monthly_total:
+          type: number
+          description: 月度总成本
+        yearly_total:
+          type: number
+          description: 年度总成本
+        per_device_monthly:
+          type: number
+          description: 单设备月度成本
+
+    DetailedCostBreakdown:
+      type: object
+      description: 详细费用明细（复用现有模型）
+
+    IntermediateMetricsDetail:
+      type: object
+      properties:
+        daily_recording_seconds:
+          type: number
+        daily_data_kb:
+          type: number
+        daily_data_gb:
+          type: number
+        monthly_data_gb:
+          type: number
+        avg_storage_gb:
+          type: number
+        avg_storage_tb:
+          type: number
+        segments_per_day:
+          type: number
+        monthly_puts:
+          type: number
+        monthly_gets:
+          type: number
+        monthly_retrieval_gb:
+          type: number
+        monthly_transfer_gb:
+          type: number
+
+    CreateCalculationRecordRequest:
+      type: object
+      required:
+        - name
+        - input_data
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 记录名称
+        description:
+          type: string
+          maxLength: 500
+          description: 描述（可选）
+        input_data:
+          $ref: '#/components/schemas/CostCalculationInput'
+
+    CalculationRecord:
+      type: object
+      properties:
+        record_id:
+          type: string
+          description: 记录 ID
+        user_id:
+          type: string
+          description: 用户 ID
+        name:
+          type: string
+          description: 记录名称
+        description:
+          type: string
+          description: 描述
+        created_at:
+          type: string
+          format: date-time
+          description: 创建时间
+        storage_strategy:
+          type: string
+          description: 存储策略
+        input_params:
+          type: object
+          description: 输入参数快照
+        intermediate_metrics:
+          type: object
+          description: 中间计算指标
+        stage_details:
+          type: array
+          items:
+            type: object
+          description: 分阶段费用明细
+        cost_summary:
+          type: object
+          description: 费用汇总
+        pricing_snapshot:
+          type: object
+          description: 定价快照
+
+    CalculationRecordList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CalculationRecordSummary'
+        total:
+          type: integer
+          description: 总记录数
+        page:
+          type: integer
+          description: 当前页码
+        page_size:
+          type: integer
+          description: 每页数量
+        total_pages:
+          type: integer
+          description: 总页数
+
+    CalculationRecordSummary:
+      type: object
+      properties:
+        record_id:
+          type: string
+        name:
+          type: string
+        storage_strategy:
+          type: string
+        total_cost:
+          type: number
+        created_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: 错误信息
+
+    ValidationError:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            type: object
+            properties:
+              loc:
+                type: array
+                items:
+                  type: string
+              msg:
+                type: string
+              type:
+                type: string
