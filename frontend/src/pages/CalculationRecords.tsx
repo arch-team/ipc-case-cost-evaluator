@@ -41,25 +41,19 @@ import type {
 } from '../types/calculationRecords';
 import { AuthContext } from '../contexts/AuthContext';
 import { formatNumber } from '../utils/formatters';
+import {
+  STORAGE_STRATEGY_NAMES,
+  STORAGE_STRATEGY_COLORS,
+} from '../constants/storageStrategies';
 
 const { Title, Text } = Typography;
 const { confirm } = Modal;
 
-// 存储策略显示名称
-const storageStrategyNames: Record<StorageStrategy, string> = {
-  single_standard: 'S3 Standard',
-  single_glacier_ir: 'Glacier IR',
-  lifecycle_std_glacier: 'Standard → Glacier',
-  lifecycle_multi_stage: '多阶段生命周期',
-};
+// 存储策略显示名称（从统一数据源获取）
+const storageStrategyNames = STORAGE_STRATEGY_NAMES;
 
-// 存储策略标签颜色
-const storageStrategyColors: Record<StorageStrategy, string> = {
-  single_standard: 'blue',
-  single_glacier_ir: 'cyan',
-  lifecycle_std_glacier: 'purple',
-  lifecycle_multi_stage: 'magenta',
-};
+// 存储策略标签颜色（从统一数据源获取）
+const storageStrategyColors = STORAGE_STRATEGY_COLORS;
 
 const CalculationRecords: React.FC = () => {
   const navigate = useNavigate();

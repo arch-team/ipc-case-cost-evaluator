@@ -43,24 +43,18 @@ import StageCostTable from '../components/calculator/StageCostTable';
 import CostPieChart from '../components/calculator/CostPieChart';
 import InputParamsDisplay from '../components/calculator/InputParamsDisplay';
 import PricingSnapshotDisplay from '../components/calculator/PricingSnapshotDisplay';
+import {
+  STORAGE_STRATEGY_LABELS,
+  STORAGE_STRATEGY_COLORS,
+} from '../constants/storageStrategies';
 
 const { Title, Text } = Typography;
 
-// 存储策略显示名称
-const storageStrategyNames: Record<StorageStrategy, string> = {
-  single_standard: 'S3 Standard 单一存储',
-  single_glacier_ir: 'Glacier IR 单一存储',
-  lifecycle_std_glacier: '生命周期策略 (Standard → Glacier)',
-  lifecycle_multi_stage: '多阶段生命周期策略',
-};
+// 存储策略显示名称（从统一数据源获取）
+const storageStrategyNames = STORAGE_STRATEGY_LABELS;
 
-// 存储策略标签颜色
-const storageStrategyColors: Record<StorageStrategy, string> = {
-  single_standard: 'blue',
-  single_glacier_ir: 'cyan',
-  lifecycle_std_glacier: 'purple',
-  lifecycle_multi_stage: 'magenta',
-};
+// 存储策略标签颜色（从统一数据源获取）
+const storageStrategyColors = STORAGE_STRATEGY_COLORS;
 
 const CalculationRecordDetail: React.FC = () => {
   const navigate = useNavigate();

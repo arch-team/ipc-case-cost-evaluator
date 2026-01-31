@@ -16,6 +16,7 @@ import {
   BarChartOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { STORAGE_CLASS_METADATA } from '../constants/storageClasses';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -248,7 +249,7 @@ const Home: React.FC = () => {
                 >
                   <Statistic
                     title="支持存储类型"
-                    value={2}
+                    value={STORAGE_CLASS_METADATA.length}
                     suffix="种"
                     valueStyle={{ color: '#1890ff', fontWeight: 700 }}
                   />

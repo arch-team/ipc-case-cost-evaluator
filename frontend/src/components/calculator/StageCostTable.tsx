@@ -12,6 +12,7 @@ import type { ColumnsType } from 'antd/es/table';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import type { StageCostDetail, CostItemDetail, TierDetailSnapshot } from '../../types/calculationRecords';
 import { formatNumber } from '../../utils/formatters';
+import { getStorageClassLabel, getStorageClassColor } from '../../constants/storageClasses';
 
 const { Text } = Typography;
 
@@ -23,31 +24,6 @@ interface StageCostTableProps {
   totalCostWithTransfer?: number; // 包含传输费用的总成本
 }
 
-// 存储类型标签颜色映射
-const storageClassColors: Record<string, string> = {
-  STANDARD: 'blue',
-  GLACIER_IR: 'cyan',
-  DEEP_ARCHIVE: 'purple',
-  STANDARD_IA: 'geekblue',
-  ONEZONE_IA: 'gold',
-};
-
-// 存储类型显示名称映射
-const storageClassNames: Record<string, string> = {
-  STANDARD: 'S3 Standard',
-  GLACIER_IR: 'Glacier IR',
-  DEEP_ARCHIVE: 'Deep Archive',
-  STANDARD_IA: 'Standard IA',
-  ONEZONE_IA: 'One Zone IA',
-};
-
-// 格式化费用项为公式展示
-const formatCostFormula = (item: CostItemDetail): string => {
-  if (item.amount === 0) {
-    return '-';
-  }
-  return `${formatNumber(item.unit_price, 6)} ${item.unit_price_unit} × ${formatNumber(item.quantity, 4)} ${item.quantity_unit} = $${formatNumber(item.amount, 4)}`;
-};
 
 // 费用项详情展示组件
 const CostItemDisplay: React.FC<{ item: CostItemDetail }> = ({ item }) => {
@@ -109,8 +85,8 @@ const StageCostTable: React.FC<StageCostTableProps> = ({
       key: 'storage_class',
       width: 120,
       render: (value: string) => (
-        <Tag color={storageClassColors[value] || 'default'}>
-          {storageClassNames[value] || value}
+        <Tag color={getStorageClassColor(value, 'ant')}>
+          {getStorageClassLabel(value, 'short')}
         </Tag>
       ),
     },

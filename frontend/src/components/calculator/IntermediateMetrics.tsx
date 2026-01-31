@@ -20,16 +20,9 @@ import {
 import type { IntermediateMetricsDetail } from '../../types/calculationRecords';
 import type { CostCalculationInput } from '../../types';
 import { formatNumber } from '../../utils/formatters';
+import { formatLargeNumber, createFormulaGenerator } from '../../utils/calculationHelpers';
 
 const { Text } = Typography;
-
-// 视频质量对应的数据速率 (KB/s)
-const VIDEO_QUALITY_DATA_RATE: Record<string, number> = {
-  '720p': 125,
-  '1080p': 312.5,
-  '2K': 625,
-  '4K': 1500,
-};
 
 interface IntermediateMetricsProps {
   metrics: IntermediateMetricsDetail;
@@ -42,101 +35,8 @@ const IntermediateMetrics: React.FC<IntermediateMetricsProps> = ({
   input,
   compact = false,
 }) => {
-  // 格式化大数字
-  const formatLargeNumber = (value: number): string => {
-    if (value >= 1_000_000) {
-      return `${formatNumber(value / 1_000_000, 2)}M`;
-    }
-    if (value >= 1_000) {
-      return `${formatNumber(value / 1_000, 2)}K`;
-    }
-    return formatNumber(value, 2);
-  };
-
-  // 获取输入参数的快捷方式
-  const f = input?.functional;
-  const t = input?.technical;
-  const dataRateKb = f?.video_quality ? VIDEO_QUALITY_DATA_RATE[f.video_quality] || 312.5 : 312.5;
-
-  // 生成每日录像时长公式
-  const getDailyRecordingFormula = (): string => {
-    if (!f) return '';
-    switch (f.recording_mode) {
-      case 'event_triggered':
-        return `${f.events_per_day || 0} × ${f.event_duration_sec || 0} ÷ 3600`;
-      case 'continuous':
-        return '86400 ÷ 3600 = 24';
-      case 'scheduled':
-        return `${f.scheduled_hours || 0}`;
-      default:
-        return '';
-    }
-  };
-
-  // 生成每日数据量公式
-  const getDailyDataFormula = (): string => {
-    if (!f) return '';
-    const dailySeconds = metrics.daily_recording_seconds;
-    return `${f.device_count} × ${dataRateKb} × ${formatNumber(dailySeconds, 0)} ÷ 1024²`;
-  };
-
-  // 生成月度数据量公式
-  const getMonthlyDataFormula = (): string => {
-    return `${formatNumber(metrics.daily_data_gb, 4)} × 30`;
-  };
-
-  // 生成平均存储量公式
-  const getAvgStorageFormula = (): string => {
-    if (!f) return '';
-    return `${formatNumber(metrics.daily_data_gb, 4)} × ${f.retention_days}`;
-  };
-
-  // 生成每日分片数公式
-  const getSegmentsPerDayFormula = (): string => {
-    if (!f) return '';
-    const dailySeconds = metrics.daily_recording_seconds;
-    const segmentStrategy = t?.lifecycle_policy?.enabled ? 'fixed_duration' : (f.segment_strategy || 'fixed_duration');
-    const segmentValue = f.segment_value || 15;
-
-    if (segmentStrategy === 'fixed_duration') {
-      return `${formatNumber(dailySeconds, 0)} ÷ ${segmentValue}`;
-    }
-    if (segmentStrategy === 'fixed_size') {
-      const dailyDataKbPerDevice = (metrics.daily_data_gb * 1024 * 1024) / f.device_count;
-      return `${formatNumber(dailyDataKbPerDevice, 0)} ÷ ${segmentValue}`;
-    }
-    if (segmentStrategy === 'realtime_stream') {
-      return `${formatNumber(dailySeconds, 0)} (每秒1次)`;
-    }
-    return '';
-  };
-
-  // 生成月度 PUT 请求公式
-  const getMonthlyPutsFormula = (): string => {
-    if (!f) return '';
-    return `${f.device_count} × ${formatNumber(metrics.segments_per_day, 2)} × 30`;
-  };
-
-  // 生成月度 GET 请求公式
-  const getMonthlyGetsFormula = (): string => {
-    if (!f) return '';
-    // 时间衰减模式显示加权访问比例
-    if (metrics.access_pattern_mode === 'time_decay' && metrics.weighted_access_pattern !== undefined) {
-      return `${formatLargeNumber(metrics.monthly_puts)} × ${(metrics.weighted_access_pattern * 100).toFixed(2)}% (加权)`;
-    }
-    return `${formatLargeNumber(metrics.monthly_puts)} × ${f.access_pattern}`;
-  };
-
-  // 生成月度检索量公式
-  const getMonthlyRetrievalFormula = (): string => {
-    if (!f) return '';
-    return `${formatNumber(metrics.daily_data_gb, 4)} × 30 × ${f.access_pattern}`;
-  };
-
-  // 生成月度传输量公式
-  const getMonthlyTransferFormula = (): string => {
-    return '= 月度检索量';
-  };
+  // 创建公式生成器
+  const formulas = createFormulaGenerator(input, metrics);
 
   // 生成加权访问比例公式（时间衰减模式）
   const getWeightedAccessPatternFormula = (): string | null => {
@@ -188,7 +88,7 @@ const IntermediateMetrics: React.FC<IntermediateMetricsProps> = ({
       label: '每日录像时长',
       value: `${formatNumber(metrics.daily_recording_seconds / 3600, 2)} 小时`,
       description: getRecordingModeDesc(),
-      formula: getDailyRecordingFormula(),
+      formula: formulas.getDailyRecordingFormula(),
       icon: <ClockCircleOutlined />,
     },
     {
@@ -196,14 +96,14 @@ const IntermediateMetrics: React.FC<IntermediateMetricsProps> = ({
       value: `${formatNumber(metrics.daily_data_gb, 4)} GB`,
       subValue: `${formatNumber(metrics.daily_data_kb / 1024, 2)} MB`,
       description: '设备数 × 数据速率 × 录像秒数 ÷ 1024²',
-      formula: getDailyDataFormula(),
+      formula: formulas.getDailyDataFormula(),
       icon: <DatabaseOutlined />,
     },
     {
       label: '月度数据量',
       value: `${formatNumber(metrics.monthly_data_gb, 2)} GB`,
       description: '每日数据量 × 30天',
-      formula: getMonthlyDataFormula(),
+      formula: formulas.getMonthlyDataFormula(),
       icon: <DatabaseOutlined />,
     },
     {
@@ -212,7 +112,7 @@ const IntermediateMetrics: React.FC<IntermediateMetricsProps> = ({
         ? `${formatNumber(metrics.avg_storage_tb, 2)} TB`
         : `${formatNumber(metrics.avg_storage_gb, 2)} GB`,
       description: '每日数据量 × 保留天数',
-      formula: getAvgStorageFormula(),
+      formula: formulas.getAvgStorageFormula(),
       icon: <DatabaseOutlined />,
     },
   ];
@@ -224,14 +124,14 @@ const IntermediateMetrics: React.FC<IntermediateMetricsProps> = ({
         label: '每日分片数',
         value: formatLargeNumber(metrics.segments_per_day),
         description: getSegmentStrategyDesc(),
-        formula: getSegmentsPerDayFormula(),
+        formula: formulas.getSegmentsPerDayFormula(),
         icon: <CloudUploadOutlined />,
       },
       {
         label: '月度 PUT 请求',
         value: formatLargeNumber(metrics.monthly_puts),
         description: '设备数 × 每日分片数 × 30天',
-        formula: getMonthlyPutsFormula(),
+        formula: formulas.getMonthlyPutsFormula(),
         icon: <CloudUploadOutlined />,
       },
     ];
@@ -254,21 +154,21 @@ const IntermediateMetrics: React.FC<IntermediateMetricsProps> = ({
         description: metrics.access_pattern_mode === 'time_decay'
           ? '月度PUT × 加权访问比例'
           : '月度PUT × 访问比例',
-        formula: getMonthlyGetsFormula(),
+        formula: formulas.getMonthlyGetsFormula(),
         icon: <DownloadOutlined />,
       },
       {
         label: '月度检索量',
         value: `${formatNumber(metrics.monthly_retrieval_gb, 2)} GB`,
         description: '每日数据量 × 30天 × 访问比例',
-        formula: getMonthlyRetrievalFormula(),
+        formula: formulas.getMonthlyRetrievalFormula(),
         icon: <DownloadOutlined />,
       },
       {
         label: '月度传输量',
         value: `${formatNumber(metrics.monthly_transfer_gb, 2)} GB`,
         description: '等于月度检索量',
-        formula: getMonthlyTransferFormula(),
+        formula: '= 月度检索量',
         icon: <DownloadOutlined />,
       },
     );

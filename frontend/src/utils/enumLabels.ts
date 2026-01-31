@@ -50,14 +50,17 @@ export const segmentStrategyLabels: Record<string, string> = {
 };
 
 /**
- * 存储策略标签
+ * 存储策略标签（从统一数据源导出）
  */
-export const storageStrategyLabels: Record<string, { label: string; color: string }> = {
-  single_standard: { label: 'S3 Standard 单一存储', color: 'blue' },
-  single_glacier_ir: { label: 'Glacier IR 单一存储', color: 'cyan' },
-  lifecycle_std_glacier: { label: 'Standard → Glacier 生命周期', color: 'purple' },
-  lifecycle_multi_stage: { label: '多阶段生命周期策略', color: 'magenta' },
-};
+import {
+  STORAGE_STRATEGY_METADATA,
+  getStorageStrategyLabel as _getStorageStrategyLabel,
+  getStorageStrategyColor as _getStorageStrategyColor,
+} from '../constants/storageStrategies';
+
+export const storageStrategyLabels: Record<string, { label: string; color: string }> = Object.fromEntries(
+  STORAGE_STRATEGY_METADATA.map(m => [m.value, { label: m.labelFull, color: m.color }])
+);
 
 /**
  * AWS 区域标签（从统一数据源导出）
@@ -101,17 +104,17 @@ export function getSegmentStrategyLabel(strategy: string): string {
 }
 
 /**
- * 获取存储策略标签
+ * 获取存储策略标签（使用统一数据源）
  */
 export function getStorageStrategyLabel(strategy: string): string {
-  return storageStrategyLabels[strategy]?.label || strategy;
+  return _getStorageStrategyLabel(strategy, 'full');
 }
 
 /**
- * 获取存储策略颜色
+ * 获取存储策略颜色（使用统一数据源）
  */
 export function getStorageStrategyColor(strategy: string): string {
-  return storageStrategyLabels[strategy]?.color || 'default';
+  return _getStorageStrategyColor(strategy);
 }
 
 /**
