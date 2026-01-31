@@ -25,9 +25,9 @@
 
 **Purpose**: Project initialization, DynamoDB table creation, and configuration
 
-- [ ] T001 添加 DynamoDB 表定义到 `infra/lib/constructs/dynamodb-tables.ts`，创建 `ipc_cost_calculation_records` 表
-- [ ] T002 [P] 添加表名配置到 `backend/app/core/config.py`
-- [ ] T003 [P] 创建核算记录数据模型文件 `backend/app/models/calculation_records.py`
+- [x] T001 添加 DynamoDB 表定义到 `infra/lib/constructs/dynamodb-tables.ts`，创建 `ipc_cost_calculation_records` 表
+- [x] T002 [P] 添加表名配置到 `backend/app/core/config.py`
+- [x] T003 [P] 创建核算记录数据模型文件 `backend/app/models/calculation_records.py`
 
 ---
 
@@ -39,30 +39,30 @@
 
 ### Backend Core Models
 
-- [ ] T004 [P] 实现 `StorageStrategy` 枚举到 `backend/app/models/calculation_records.py`
-- [ ] T005 [P] 实现 `FunctionalDimensionSnapshot`, `TechnicalDimensionSnapshot`, `PricingDimensionSnapshot` 模型到 `backend/app/models/calculation_records.py`
-- [ ] T006 [P] 实现 `InputParameterSnapshot` 模型到 `backend/app/models/calculation_records.py`
-- [ ] T007 [P] 实现 `IntermediateMetricsDetail` 模型到 `backend/app/models/calculation_records.py`
-- [ ] T008 [P] 实现 `CostItemDetail`, `TierDetailSnapshot`, `StageCostDetail` 模型到 `backend/app/models/calculation_records.py`
-- [ ] T009 [P] 实现 `CostBreakdownPercent`, `CostSummaryDetail` 模型到 `backend/app/models/calculation_records.py`
-- [ ] T010 [P] 实现 `StorageClassPricing`, `DataTransferTier`, `PricingSnapshot` 模型到 `backend/app/models/calculation_records.py`
-- [ ] T011 实现 `CalculationRecord` 主模型到 `backend/app/models/calculation_records.py` (依赖 T004-T010)
+- [x] T004 [P] 实现 `StorageStrategy` 枚举到 `backend/app/models/calculation_records.py`
+- [x] T005 [P] 实现 `FunctionalDimensionSnapshot`, `TechnicalDimensionSnapshot`, `PricingDimensionSnapshot` 模型到 `backend/app/models/calculation_records.py`
+- [x] T006 [P] 实现 `InputParameterSnapshot` 模型到 `backend/app/models/calculation_records.py`
+- [x] T007 [P] 实现 `IntermediateMetricsDetail` 模型到 `backend/app/models/calculation_records.py`
+- [x] T008 [P] 实现 `CostItemDetail`, `TierDetailSnapshot`, `StageCostDetail` 模型到 `backend/app/models/calculation_records.py`
+- [x] T009 [P] 实现 `CostBreakdownPercent`, `CostSummaryDetail` 模型到 `backend/app/models/calculation_records.py`
+- [x] T010 [P] 实现 `StorageClassPricing`, `DataTransferTier`, `PricingSnapshot` 模型到 `backend/app/models/calculation_records.py`
+- [x] T011 实现 `CalculationRecord` 主模型到 `backend/app/models/calculation_records.py` (依赖 T004-T010)
 
 ### Backend Core Services
 
-- [ ] T012 为 `S3StandardCalculator` 添加 `calculate_with_details()` 方法到 `backend/app/services/calculator/s3_standard.py`
-- [ ] T013 创建 `CalculationRecordGenerator` 服务到 `backend/app/services/calculation_record_generator.py` (依赖 T011, T012)
-- [ ] T014 创建数据访问层 `CalculationRecordRepository` 到 `backend/app/db/repositories/calculation_records.py` (依赖 T011)
+- [x] T012 为 `S3StandardCalculator` 添加 `calculate_with_details()` 方法到 `backend/app/services/calculator/s3_standard.py`
+- [x] T013 创建 `CalculationRecordGenerator` 服务到 `backend/app/services/calculation_record_generator.py` (依赖 T011, T012)
+- [x] T014 创建数据访问层 `CalculationRecordRepository` 到 `backend/app/db/repositories/calculation_records.py` (依赖 T011)
 
 ### Backend API Foundation
 
-- [ ] T015 创建 API 路由文件 `backend/app/api/routes/calculation_records.py`，注册到主路由
-- [ ] T016 [P] 定义 API 请求/响应模型到 `backend/app/api/routes/calculation_records.py`
+- [x] T015 创建 API 路由文件 `backend/app/api/routes/calculation_records.py`，注册到主路由
+- [x] T016 [P] 定义 API 请求/响应模型到 `backend/app/api/routes/calculation_records.py`
 
 ### Frontend Core Types
 
-- [ ] T017 [P] 创建 TypeScript 类型定义文件 `frontend/src/types/calculationRecords.ts`
-- [ ] T018 [P] 创建 API 客户端 `frontend/src/api/calculationRecords.ts`
+- [x] T017 [P] 创建 TypeScript 类型定义文件 `frontend/src/types/calculationRecords.ts`
+- [x] T018 [P] 创建 API 客户端 `frontend/src/api/calculationRecords.ts`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
@@ -76,17 +76,17 @@
 
 ### Backend Implementation for US0
 
-- [ ] T019 [US0] 实现默认值配置 `get_default_input()` 方法到 `backend/app/services/calculation_record_generator.py`
-- [ ] T020 [US0] 实现 `GET /api/v1/defaults` 端点到 `backend/app/api/routes/calculation_records.py`
-- [ ] T021 [US0] 实现 `POST /api/v1/calculate-detailed` 端点到 `backend/app/api/routes/calculation_records.py`
+- [x] T019 [US0] 实现默认值配置 `get_default_input()` 方法到 `backend/app/services/calculation_record_generator.py`
+- [x] T020 [US0] 实现 `GET /api/v1/defaults` 端点到 `backend/app/api/routes/calculation_records.py`
+- [x] T021 [US0] 实现 `POST /api/v1/calculate-detailed` 端点到 `backend/app/api/routes/calculation_records.py`
 
 ### Frontend Implementation for US0
 
-- [ ] T022 [P] [US0] 创建详细核算预览组件 `frontend/src/components/calculator/DetailedCostPreview.tsx`
-- [ ] T023 [P] [US0] 创建中间计算指标展示组件 `frontend/src/components/calculator/IntermediateMetrics.tsx`
-- [ ] T024 [P] [US0] 创建分阶段费用表格组件 `frontend/src/components/calculator/StageCostTable.tsx`
-- [ ] T025 [US0] 集成实时预览到 Calculator 页面，添加 500ms 防抖逻辑到 `frontend/src/pages/Calculator.tsx` (依赖 T022-T024)
-- [ ] T026 [US0] 实现加载状态和错误处理到 `frontend/src/components/calculator/DetailedCostPreview.tsx`
+- [x] T022 [P] [US0] 创建详细核算预览组件 `frontend/src/components/calculator/DetailedCostPreview.tsx`
+- [x] T023 [P] [US0] 创建中间计算指标展示组件 `frontend/src/components/calculator/IntermediateMetrics.tsx`
+- [x] T024 [P] [US0] 创建分阶段费用表格组件 `frontend/src/components/calculator/StageCostTable.tsx`
+- [x] T025 [US0] 集成实时预览到 Calculator 页面，添加 500ms 防抖逻辑到 `frontend/src/pages/Calculator.tsx` (依赖 T022-T024)
+- [x] T026 [US0] 实现加载状态和错误处理到 `frontend/src/components/calculator/DetailedCostPreview.tsx`
 
 **Checkpoint**: User Story 0 完成 - 实时预览功能可独立验证
 
@@ -100,15 +100,15 @@
 
 ### Backend Implementation for US1
 
-- [ ] T027 [US1] 实现 `POST /api/v1/calculation-records` 端点到 `backend/app/api/routes/calculation_records.py`
-- [ ] T028 [US1] 实现 `create_record()` 方法到 `backend/app/db/repositories/calculation_records.py`
-- [ ] T029 [US1] 实现用户记录数量限制检查 (1000条上限) 到 `backend/app/db/repositories/calculation_records.py`
+- [x] T027 [US1] 实现 `POST /api/v1/calculation-records` 端点到 `backend/app/api/routes/calculation_records.py`
+- [x] T028 [US1] 实现 `create_record()` 方法到 `backend/app/db/repositories/calculation_records.py`
+- [x] T029 [US1] 实现用户记录数量限制检查 (1000条上限) 到 `backend/app/db/repositories/calculation_records.py`
 
 ### Frontend Implementation for US1
 
-- [ ] T030 [P] [US1] 创建保存对话框组件 `frontend/src/components/calculator/SaveRecordDialog.tsx`
-- [ ] T031 [US1] 集成保存按钮和对话框到 Calculator 页面 `frontend/src/pages/Calculator.tsx` (依赖 T030)
-- [ ] T032 [US1] 实现按钮状态控制逻辑（登录检查、计算状态、错误状态、上限检查）到 `frontend/src/pages/Calculator.tsx`
+- [x] T030 [P] [US1] 创建保存对话框组件 `frontend/src/components/calculator/SaveRecordDialog.tsx`
+- [x] T031 [US1] 集成保存按钮和对话框到 Calculator 页面 `frontend/src/pages/Calculator.tsx` (依赖 T030)
+- [x] T032 [US1] 实现按钮状态控制逻辑（登录检查、计算状态、错误状态、上限检查）到 `frontend/src/pages/Calculator.tsx`
 
 **Checkpoint**: User Story 1 完成 - 保存核算记录功能可独立验证
 
@@ -122,8 +122,8 @@
 
 ### Backend Implementation for US2
 
-- [ ] T033 [US2] 实现 `GET /api/v1/calculation-records/{record_id}` 端点到 `backend/app/api/routes/calculation_records.py`
-- [ ] T034 [US2] 实现 `get_record()` 方法到 `backend/app/db/repositories/calculation_records.py`
+- [x] T033 [US2] 实现 `GET /api/v1/calculation-records/{record_id}` 端点到 `backend/app/api/routes/calculation_records.py`
+- [x] T034 [US2] 实现 `get_record()` 方法到 `backend/app/db/repositories/calculation_records.py`
 
 ### Frontend Implementation for US2
 
@@ -146,10 +146,10 @@
 
 ### Backend Implementation for US3
 
-- [ ] T041 [US3] 实现 `GET /api/v1/calculation-records` 端点（分页、排序、搜索）到 `backend/app/api/routes/calculation_records.py`
-- [ ] T042 [US3] 实现 `list_records()` 方法到 `backend/app/db/repositories/calculation_records.py`
-- [ ] T043 [US3] 实现 `DELETE /api/v1/calculation-records/{record_id}` 端点到 `backend/app/api/routes/calculation_records.py`
-- [ ] T044 [US3] 实现 `delete_record()` 方法到 `backend/app/db/repositories/calculation_records.py`
+- [x] T041 [US3] 实现 `GET /api/v1/calculation-records` 端点（分页、排序、搜索）到 `backend/app/api/routes/calculation_records.py`
+- [x] T042 [US3] 实现 `list_records()` 方法到 `backend/app/db/repositories/calculation_records.py`
+- [x] T043 [US3] 实现 `DELETE /api/v1/calculation-records/{record_id}` 端点到 `backend/app/api/routes/calculation_records.py`
+- [x] T044 [US3] 实现 `delete_record()` 方法到 `backend/app/db/repositories/calculation_records.py`
 
 ### Frontend Implementation for US3
 
@@ -184,7 +184,7 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T054 [P] 实现 XSS 防护（名称和描述字段 HTML 转义）
+- [x] T054 [P] 实现 XSS 防护（名称和描述字段 HTML 转义）
 - [ ] T055 [P] 验证数据大小限制（200KB 安全限制）
 - [ ] T056 [P] 添加请求日志和监控
 - [ ] T057 执行 quickstart.md 验证流程
