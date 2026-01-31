@@ -300,6 +300,7 @@ const DetailedCalculation: React.FC = () => {
             loading={status === 'calculating'}
             error={error}
             previousResult={previousResult}
+            input={input}
           />
         </div>
       </div>

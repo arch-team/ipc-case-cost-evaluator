@@ -86,11 +86,7 @@ class S3GlacierCalculator(BaseCalculator):
             input_data.pricing.discount_percent,
         )
 
-        # 返回成本汇总
-        return CostSummary(
-            monthly_total=breakdown.total,
-            per_device_monthly=breakdown.total / input_data.functional.device_count,
-            breakdown=breakdown,
-            device_count=input_data.functional.device_count,
-            metrics=metrics,
+        # 使用基类辅助方法创建成本汇总
+        return self._create_cost_summary(
+            breakdown, input_data.functional.device_count, metrics
         )

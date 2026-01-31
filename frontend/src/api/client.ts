@@ -2,6 +2,7 @@
  * API 客户端
  */
 import axios from 'axios';
+import { createErrorFromResponse, ErrorCode, AppError } from '../utils/errors';
 import type {
   CostCalculationInput,
   CostSummary,
@@ -22,22 +23,6 @@ import type {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
-/**
- * 错误消息映射
- */
-const ERROR_MESSAGES: Record<number | string, string> = {
-  400: '请求参数错误',
-  401: '登录已过期，请重新登录',
-  403: '没有访问权限',
-  404: '资源不存在',
-  422: '参数验证失败',
-  500: '服务器内部错误',
-  502: '网关错误',
-  503: '服务暂时不可用',
-  504: '网关超时',
-  default: '网络请求失败，请稍后重试',
-};
-
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
@@ -55,16 +40,20 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// 响应拦截器 - 增强错误处理
+// 响应拦截器 - 使用统一的错误处理
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     // 处理网络错误（无响应）
     if (!error.response) {
-      error.message = error.code === 'ECONNABORTED'
-        ? '请求超时，请检查网络连接'
-        : '网络连接失败，请检查网络';
-      return Promise.reject(error);
+      const networkError = new AppError(
+        error.code === 'ECONNABORTED' ? ErrorCode.TIMEOUT : ErrorCode.NETWORK_ERROR,
+        error.code === 'ECONNABORTED'
+          ? '请求超时，请检查网络连接'
+          : '网络连接失败，请检查网络',
+        undefined
+      );
+      return Promise.reject(networkError);
     }
 
     const status = error.response?.status;
@@ -74,11 +63,9 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('token');
     }
 
-    // 设置友好的错误消息
-    const serverMessage = error.response?.data?.detail;
-    error.message = serverMessage || ERROR_MESSAGES[status] || ERROR_MESSAGES.default;
-
-    return Promise.reject(error);
+    // 创建结构化错误
+    const appError = createErrorFromResponse(error.response?.data, status);
+    return Promise.reject(appError);
   }
 );
 

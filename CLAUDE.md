@@ -238,6 +238,19 @@ AWS 定价数据存储在 `backend/app/data/aws_pricing/` 目录下的 JSON 文�
 - [详细成本核算记录设计](docs/plans/2025-01-28-calculation-records-design.md)
 - [代码地图](codemaps/) - 详细架构文档
 
+## 开发规则
+
+项目开发规范文件位于 `.claude/rules/` 目录：
+
+@.claude/rules/agents.md
+@.claude/rules/coding-style.md
+@.claude/rules/git-workflow.md
+@.claude/rules/hooks.md
+@.claude/rules/patterns.md
+@.claude/rules/performance.md
+@.claude/rules/security.md
+@.claude/rules/testing.md
+
 ## Active Technologies
 - Python 3.11+ (后端), TypeScript 5.9+ (前端) + FastAPI, Pydantic v2, React, Ant Design (004-detailed-cost-records)
 - DynamoDB (生产), LocalStorage (开发) - 新增 `ipc_cost_calculation_records` 表 (004-detailed-cost-records)

@@ -124,47 +124,44 @@ class StorageComparator:
             items=items,
         )
 
+    def _create_storage_input(
+        self, input_data: CostCalculationInput,
+        storage_class: StorageClass,
+        lifecycle_policy: Optional[LifecyclePolicy] = None
+    ) -> CostCalculationInput:
+        """创建特定存储类型的计算输入（统一方法）"""
+        return CostCalculationInput(
+            functional=input_data.functional.model_copy(deep=True),
+            technical=TechnicalDimensions(
+                storage_class=storage_class,
+                lifecycle_policy=lifecycle_policy,
+            ),
+            pricing=input_data.pricing.model_copy(deep=True),
+        )
+
     def _create_standard_input(
         self, input_data: CostCalculationInput
     ) -> CostCalculationInput:
         """创建 Standard 计算输入"""
-        return CostCalculationInput(
-            functional=input_data.functional.model_copy(deep=True),
-            technical=TechnicalDimensions(
-                storage_class=StorageClass.STANDARD,
-                lifecycle_policy=None,
-            ),
-            pricing=input_data.pricing.model_copy(deep=True),
-        )
+        return self._create_storage_input(input_data, StorageClass.STANDARD)
 
     def _create_glacier_input(
         self, input_data: CostCalculationInput
     ) -> CostCalculationInput:
         """创建 Glacier IR 计算输入"""
-        return CostCalculationInput(
-            functional=input_data.functional.model_copy(deep=True),
-            technical=TechnicalDimensions(
-                storage_class=StorageClass.GLACIER_IR,
-                lifecycle_policy=None,
-            ),
-            pricing=input_data.pricing.model_copy(deep=True),
-        )
+        return self._create_storage_input(input_data, StorageClass.GLACIER_IR)
 
     def _create_lifecycle_input(
         self, input_data: CostCalculationInput, transition_days: int
     ) -> CostCalculationInput:
         """创建生命周期策略计算输入"""
-        return CostCalculationInput(
-            functional=input_data.functional.model_copy(deep=True),
-            technical=TechnicalDimensions(
-                storage_class=StorageClass.STANDARD,
-                lifecycle_policy=LifecyclePolicy(
-                    enabled=True,
-                    transition_days=transition_days,
-                    target_class=StorageClass.GLACIER_IR,
-                ),
-            ),
-            pricing=input_data.pricing.model_copy(deep=True),
+        lifecycle_policy = LifecyclePolicy(
+            enabled=True,
+            transition_days=transition_days,
+            target_class=StorageClass.GLACIER_IR,
+        )
+        return self._create_storage_input(
+            input_data, StorageClass.STANDARD, lifecycle_policy
         )
 
     @staticmethod

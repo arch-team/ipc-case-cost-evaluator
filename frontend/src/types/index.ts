@@ -70,6 +70,9 @@ export interface AccessPatternPreset {
   stages: AccessPatternStage[];
 }
 
+// 分片策略
+export type SegmentStrategy = 'fixed_duration' | 'fixed_size' | 'realtime_stream';
+
 // 功能维度
 export interface FunctionalDimensions {
   device_count: number;
@@ -80,6 +83,9 @@ export interface FunctionalDimensions {
   retention_days: number;
   access_pattern: number;
   access_pattern_config?: AccessPatternConfig;  // 高级访问模式配置
+  segment_strategy?: SegmentStrategy;  // 分片策略
+  segment_value?: number;  // 分片值（秒或KB）
+  scheduled_hours?: number;  // 定时段每日小时数
 }
 
 // 技术维度

@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Optional
 from app.models.dimensions import FunctionalDimensions
 from app.models.enums import RecordingMode, SegmentStrategy, StorageClass
 from app.models.pricing import S3Pricing
-from app.models.results import IntermediateMetrics, CostBreakdown
+from app.models.results import IntermediateMetrics, CostBreakdown, CostSummary
 
 if TYPE_CHECKING:
     from app.services.pricing_service import PricingService
@@ -370,34 +370,24 @@ class BaseCalculator:
         Returns:
             费用明细
         """
-        # 应用折扣的乘数
         discount_multiplier = 1 - discount
 
-        # 计算基础费用
-        storage_cost = (
-            metrics.avg_storage_gb * pricing.get_storage_price(storage_class) * discount_multiplier
+        # 拆分为独立的计算方法，提高可读性和可测试性
+        storage_cost = self._calculate_storage_fee(
+            metrics.avg_storage_gb, pricing, storage_class, discount_multiplier
         )
-        put_cost = (
-            (metrics.monthly_puts / 1000) * pricing.get_put_price(storage_class) * discount_multiplier
+        put_cost = self._calculate_request_fee(
+            metrics.monthly_puts, pricing.get_put_price(storage_class), discount_multiplier
         )
-        get_cost = (
-            (metrics.monthly_gets / 1000) * pricing.get_get_price(storage_class) * discount_multiplier
+        get_cost = self._calculate_request_fee(
+            metrics.monthly_gets, pricing.get_get_price(storage_class), discount_multiplier
         )
-        transfer_cost = (
-            metrics.monthly_transfer_gb
-            * pricing.get_data_transfer_price(metrics.monthly_transfer_gb)
-            * discount_multiplier
+        transfer_cost = self._calculate_transfer_fee(
+            metrics.monthly_transfer_gb, pricing, discount_multiplier
         )
-
-        # 计算检索费用（IA 和 Glacier 类型都有检索费用）
-        retrieval_price = pricing.get_retrieval_price(storage_class)
-        retrieval_cost = 0.0
-        if retrieval_price > 0:
-            retrieval_cost = (
-                metrics.monthly_retrieval_gb
-                * retrieval_price
-                * discount_multiplier
-            )
+        retrieval_cost = self._calculate_retrieval_fee(
+            metrics.monthly_retrieval_gb, pricing, storage_class, discount_multiplier
+        )
 
         return CostBreakdown(
             storage_cost=storage_cost,
@@ -406,4 +396,55 @@ class BaseCalculator:
             retrieval_cost=retrieval_cost,
             data_transfer_cost=transfer_cost,
             lifecycle_cost=0.0,  # 直接使用单一存储类型时没有生命周期费用
+        )
+
+    def _calculate_storage_fee(
+        self, storage_gb: float, pricing: S3Pricing,
+        storage_class: StorageClass, multiplier: float
+    ) -> float:
+        """计算存储费用"""
+        return storage_gb * pricing.get_storage_price(storage_class) * multiplier
+
+    def _calculate_request_fee(
+        self, request_count: float, unit_price: float, multiplier: float
+    ) -> float:
+        """计算请求费用（PUT或GET）"""
+        return (request_count / 1000) * unit_price * multiplier
+
+    def _calculate_transfer_fee(
+        self, transfer_gb: float, pricing: S3Pricing, multiplier: float
+    ) -> float:
+        """计算数据传输费用"""
+        return transfer_gb * pricing.get_data_transfer_price(transfer_gb) * multiplier
+
+    def _calculate_retrieval_fee(
+        self, retrieval_gb: float, pricing: S3Pricing,
+        storage_class: StorageClass, multiplier: float
+    ) -> float:
+        """计算检索费用（仅适用于某些存储类型）"""
+        retrieval_price = pricing.get_retrieval_price(storage_class)
+        if retrieval_price > 0:
+            return retrieval_gb * retrieval_price * multiplier
+        return 0.0
+
+    def _create_cost_summary(
+        self, breakdown: CostBreakdown, device_count: int,
+        metrics: IntermediateMetrics
+    ) -> CostSummary:
+        """创建成本汇总结果（减少重复代码）
+
+        Args:
+            breakdown: 费用明细
+            device_count: 设备数量
+            metrics: 中间指标
+
+        Returns:
+            成本汇总
+        """
+        return CostSummary(
+            monthly_total=breakdown.total,
+            per_device_monthly=breakdown.total / device_count,
+            breakdown=breakdown,
+            device_count=device_count,
+            metrics=metrics,
         )

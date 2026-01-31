@@ -26,6 +26,7 @@ import {
   CalculatorOutlined,
 } from '@ant-design/icons';
 import type { DetailedCalculationResult, StorageStrategy } from '../../types/calculationRecords';
+import type { CostCalculationInput } from '../../types';
 import { formatNumber } from '../../utils/formatters';
 import IntermediateMetrics from './IntermediateMetrics';
 import StageCostTable from './StageCostTable';
@@ -38,6 +39,7 @@ interface DetailedCostPreviewProps {
   loading: boolean;
   error: string | null;
   previousResult?: DetailedCalculationResult | null; // 上次成功的结果（加载时显示）
+  input?: CostCalculationInput; // 输入参数（用于显示计算公式）
 }
 
 // 存储策略显示名称
@@ -61,6 +63,7 @@ const DetailedCostPreview: React.FC<DetailedCostPreviewProps> = ({
   loading,
   error,
   previousResult,
+  input,
 }) => {
   // 使用当前结果或上次结果
   const displayResult = result || previousResult;
@@ -218,7 +221,10 @@ const DetailedCostPreview: React.FC<DetailedCostPreviewProps> = ({
                   </span>
                 ),
                 children: (
-                  <IntermediateMetrics metrics={displayResult.intermediate_metrics} />
+                  <IntermediateMetrics
+                    metrics={displayResult.intermediate_metrics}
+                    input={input}
+                  />
                 ),
               },
             ]}
