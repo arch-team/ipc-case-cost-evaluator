@@ -2,7 +2,7 @@
   "region": "eu-west-2",
   "region_name": "Europe (London)",
   "currency": "USD",
-  "last_updated": "2026-01-29",
+  "last_updated": "2026-01-31",
   "storage_classes": {
     "STANDARD": {
       "storage_per_gb_month": 0.022,

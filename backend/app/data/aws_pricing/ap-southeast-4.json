@@ -2,7 +2,7 @@
   "region": "ap-southeast-4",
   "region_name": "Asia Pacific (Melbourne)",
   "currency": "USD",
-  "last_updated": "2026-01-29",
+  "last_updated": "2026-01-31",
   "storage_classes": {
     "STANDARD": {
       "storage_per_gb_month": 0.024,
