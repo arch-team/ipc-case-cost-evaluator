@@ -142,19 +142,17 @@ def calculate_detailed(
 
 def _convert_cost_item(item) -> CostItemDetail:
     """将 CostItem 转换为 CostItemDetail"""
-    tiers = None
-    if hasattr(item, "tiers") and item.tiers:
-        tiers = [
-            TierDetailSnapshot(
-                tier_name=t.tier_name,
-                range_start_gb=t.range_start_gb,
-                range_end_gb=t.range_end_gb,
-                unit_price=t.unit_price,
-                quantity_gb=t.quantity_gb,
-                amount=t.amount,
-            )
-            for t in item.tiers
-        ]
+    tiers = [
+        TierDetailSnapshot(
+            tier_name=t.tier_name,
+            range_start_gb=t.range_start_gb,
+            range_end_gb=t.range_end_gb,
+            unit_price=t.unit_price,
+            quantity_gb=t.quantity_gb,
+            amount=t.amount,
+        )
+        for t in getattr(item, "tiers", []) or []
+    ] if hasattr(item, "tiers") else None
 
     return CostItemDetail(
         name=item.name,
@@ -281,8 +279,6 @@ def _build_intermediate_metrics(
     config = functional.access_pattern_config
     if config and config.mode == "time_decay" and config.stages:
         access_pattern_mode = "time_decay"
-
-        # 构建阶段快照
         access_pattern_stages = [
             AccessPatternStageSnapshot(
                 start_day=stage.start_day,
@@ -296,7 +292,7 @@ def _build_intermediate_metrics(
         # 计算加权平均访问比例
         total_days = sum(s.duration_days for s in config.stages)
         weighted_sum = sum(s.access_rate * s.duration_days for s in config.stages)
-        weighted_access_pattern = weighted_sum / total_days if total_days > 0 else 0
+        weighted_access_pattern = _calculate_percentage(weighted_sum, total_days)
 
     return IntermediateMetricsDetail(
         daily_recording_seconds=daily_recording_seconds,
@@ -316,6 +312,11 @@ def _build_intermediate_metrics(
     )
 
 
+def _calculate_percentage(value: float, total: float) -> float:
+    """安全计算百分比"""
+    return value / total if total > 0 else 0
+
+
 def _build_cost_summary(
     summary: CostSummary,
     avg_storage_gb: float,
@@ -323,10 +324,6 @@ def _build_cost_summary(
     """构建费用汇总"""
     breakdown = summary.breakdown
     total = breakdown.total
-
-    # 计算费用占比
-    def safe_percent(value: float) -> float:
-        return value / total if total > 0 else 0
 
     return CostSummaryDetail(
         storage_cost=breakdown.storage_cost,
@@ -339,14 +336,14 @@ def _build_cost_summary(
         discount_amount=0,  # 折扣已经应用到各项费用中
         total_cost=total,
         cost_per_device=summary.per_device_monthly,
-        cost_per_gb=total / avg_storage_gb if avg_storage_gb > 0 else 0,
+        cost_per_gb=_calculate_percentage(total, avg_storage_gb),
         breakdown_percent=CostBreakdownPercent(
-            storage=safe_percent(breakdown.storage_cost),
-            put_requests=safe_percent(breakdown.put_request_cost),
-            get_requests=safe_percent(breakdown.get_request_cost),
-            retrieval=safe_percent(breakdown.retrieval_cost),
-            lifecycle=safe_percent(breakdown.lifecycle_cost),
-            data_transfer=safe_percent(breakdown.data_transfer_cost),
+            storage=_calculate_percentage(breakdown.storage_cost, total),
+            put_requests=_calculate_percentage(breakdown.put_request_cost, total),
+            get_requests=_calculate_percentage(breakdown.get_request_cost, total),
+            retrieval=_calculate_percentage(breakdown.retrieval_cost, total),
+            lifecycle=_calculate_percentage(breakdown.lifecycle_cost, total),
+            data_transfer=_calculate_percentage(breakdown.data_transfer_cost, total),
         ),
     )
 

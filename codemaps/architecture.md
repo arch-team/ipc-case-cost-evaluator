@@ -1,11 +1,11 @@
 # IPC Cost Evaluator - 整体架构
 
-> **Freshness**: 2026-01-26T14:30:00Z
-> **版本**: 1.1.0
+> **Freshness**: 2026-01-31T14:30:00Z
+> **版本**: 1.2.0
 
 ## 项目概述
 
-IPC Case Cost Evaluator 是一个 AWS S3 云存储成本评估系统，用于计算和对比 IPC（网络摄像头）视频监控数据的存储成本。
+IPC Case Cost Evaluator 是一个 AWS S3 云存储成本评估系统，用于计算和对比 IPC（网络摄像头）视频监控数据的存储成本。**v1.2.0 新增详细核算记录功能**，支持保存和管理完整的成本计算记录。
 
 | 属性 | 值 |
 |------|-----|
@@ -46,6 +46,14 @@ IPC Case Cost Evaluator 是一个 AWS S3 云存储成本评估系统，用于计
 │                    │ ├─ CostBreakdown │                         │
 │                    │ └─ Metrics       │                         │
 │                    └──────────────────┘                         │
+│                             │                                   │
+│                             ▼                                   │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │              Calculation Records (v1.2.0)                 │  │
+│  │  ├─ CalculationRecord (完整核算记录)                       │  │
+│  │  ├─ DetailedCalculationResult (实时预览)                   │  │
+│  │  └─ PricingSnapshot (定价快照)                             │  │
+│  └──────────────────────────────────────────────────────────┘  │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -60,6 +68,9 @@ IPC Case Cost Evaluator 是一个 AWS S3 云存储成本评估系统，用于计
 │  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐   │
 │  │   Home     │ │ Calculator │ │Evaluations │ │  Settings  │   │
 │  └────────────┘ └────────────┘ └────────────┘ └────────────┘   │
+│  ┌────────────────────────────────────────────────────────┐    │
+│  │  DetailedCalculation │ CalculationRecords (v1.2.0)     │    │
+│  └────────────────────────────────────────────────────────┘    │
 │                         │                                       │
 │              ┌──────────┴──────────┐                           │
 │              │   API Client Layer  │                           │
@@ -71,17 +82,17 @@ IPC Case Cost Evaluator 是一个 AWS S3 云存储成本评估系统，用于计
 │                      Backend (FastAPI)                          │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │                    API Routes Layer                      │   │
-│  │  /calculate │ /compare │ /scenarios │ /pricing │ ...   │   │
+│  │  /calculate │ /compare │ /scenarios │ /calculation-records │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                          │                                      │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │                   Services Layer                         │   │
-│  │  Calculator │ Comparator │ Recommender │ Pricing        │   │
+│  │  Calculator │ Comparator │ RecordGenerator │ Pricing     │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                          │                                      │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │                    Models Layer                          │   │
-│  │  Dimensions │ Results │ Pricing │ Enums │ Share         │   │
+│  │  Dimensions │ Results │ CalculationRecords │ Enums        │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                          │                                      │
 │  ┌─────────────────────────────────────────────────────────┐   │
@@ -119,6 +130,20 @@ IPC Case Cost Evaluator 是一个 AWS S3 云存储成本评估系统，用于计
 4. **费用计算**: 存储 + PUT + GET + 检索 + 传输 + 生命周期
 5. **结果返回**: CostSummary (月度/年度成本 + 费用明细)
 
+### 详细核算流程 (v1.2.0 新增)
+
+```
+用户输入 → CostCalculationInput → DetailedCalculationResult → 保存/预览
+```
+
+详细流程：
+
+1. **参数输入**: 三类维度参数 (功能/技术/价格)
+2. **实时计算**: POST `/api/v1/calculate-detailed`
+3. **结果预览**: 中间指标 + 分阶段费用 + 定价快照
+4. **保存记录**: POST `/api/v1/calculation-records` (需登录)
+5. **记录管理**: 列表查看/详情/删除
+
 ---
 
 ## 模块依赖关系
@@ -129,26 +154,33 @@ main.py
     ├── calculate.py ──────┐
     ├── compare.py ────────┤
     ├── scenarios.py ──────┤
+    ├── calculation_records.py [NEW]
     └── ...                │
                            ▼
-                services/calculator/
-                ├── base.py ◄─────────┐
-                ├── s3_standard.py ───┤ (继承)
-                ├── s3_glacier.py ────┤
-                ├── lifecycle.py ─────┘
-                ├── comparator.py
-                └── recommender.py
+                services/
+                ├── calculator/
+                │   ├── base.py ◄─────────┐
+                │   ├── s3_standard.py ───┤ (继承)
+                │   ├── s3_glacier.py ────┤
+                │   ├── lifecycle.py ─────┘
+                │   ├── comparator.py
+                │   └── recommender.py
+                │
+                └── calculation_record_generator.py [NEW]
                            │
                            ▼
                     models/
                     ├── dimensions.py
                     ├── enums.py
                     ├── pricing.py
-                    └── results.py
+                    ├── results.py
+                    └── calculation_records.py [NEW]
                            │
                            ▼
-                      data/
-                      └── aws_pricing/*.json
+                  db/repositories/
+                  ├── evaluations.py
+                  ├── shares.py
+                  └── calculation_records.py [NEW]
 ```
 
 ---
@@ -189,3 +221,6 @@ main.py
 | 定价 | `backend/app/data/aws_pricing/` | AWS 定价数据 |
 | 前端 | `frontend/src/App.tsx` | React 应用入口 |
 | 页面 | `frontend/src/pages/Calculator.tsx` | 主要计算页面 |
+| 核算 | `frontend/src/pages/DetailedCalculation.tsx` | 详细核算页面 [NEW] |
+| 记录 | `frontend/src/pages/CalculationRecords.tsx` | 核算记录列表 [NEW] |
+| 详情 | `frontend/src/pages/CalculationRecordDetail.tsx` | 记录详情页 [NEW] |

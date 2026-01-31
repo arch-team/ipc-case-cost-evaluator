@@ -29,6 +29,7 @@ import PricingForm from '../components/calculator/PricingForm';
 import DetailedCostPreview from '../components/calculator/DetailedCostPreview';
 import SaveRecordDialog from '../components/calculator/SaveRecordDialog';
 import debounce from 'lodash/debounce';
+import { STORAGE_CLASS_DEFAULTS } from '../constants/storageClasses';
 
 const { Title, Text } = Typography;
 
@@ -51,7 +52,7 @@ const DetailedCalculation: React.FC = () => {
       access_pattern: 0.1,
     },
     technical: {
-      storage_class: 'STANDARD',
+      storage_class: STORAGE_CLASS_DEFAULTS.primary,
     },
     pricing: {
       region: 'us-east-1',

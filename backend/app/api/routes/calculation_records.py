@@ -14,11 +14,6 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-logger = logging.getLogger(__name__)
-
-# 记录 JSON 大小限制（200KB）
-MAX_RECORD_JSON_SIZE = 200 * 1024
-
 from app.api.dependencies import get_current_user
 from app.models.dimensions import CostCalculationInput
 from app.models.calculation_records import (
@@ -36,6 +31,11 @@ from app.db.repositories.calculation_records import (
     CalculationRecordRepository,
     MAX_RECORDS_PER_USER,
 )
+
+logger = logging.getLogger(__name__)
+
+# 记录 JSON 大小限制（200KB）
+MAX_RECORD_JSON_SIZE = 200 * 1024
 
 
 router = APIRouter(tags=["核算记录"])
@@ -141,7 +141,6 @@ def list_records(
 )
 def create_record(
     request: CreateCalculationRecordRequest,
-    input_data: CostCalculationInput,
     current_user: dict = Depends(get_current_user),
 ):
     """创建核算记录"""
@@ -154,6 +153,13 @@ def create_record(
     # XSS 防护：转义名称和描述
     name = html.escape(request.name.strip())
     description = html.escape(request.description.strip()) if request.description else ""
+
+    # 从请求中构建 CostCalculationInput
+    input_data = CostCalculationInput(
+        functional=request.functional,
+        technical=request.technical,
+        pricing=request.pricing,
+    )
 
     try:
         # 生成核算记录

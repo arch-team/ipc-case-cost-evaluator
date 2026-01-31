@@ -1,7 +1,7 @@
 # IPC Cost Evaluator - 数据模型与 Schema
 
-> **Freshness**: 2026-01-26T14:30:00Z
-> **版本**: 1.1.0
+> **Freshness**: 2026-01-31T14:30:00Z
+> **版本**: 1.2.0
 
 ## 概述
 
@@ -349,6 +349,24 @@ class ComparisonResult(BaseModel):
 | created_at | String | 创建时间 |
 | access_count | Number | 访问次数 |
 
+### DynamoDB: CalculationRecords 表 [NEW v1.2.0]
+
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| record_id (PK) | String | 记录 ID (CALC#{timestamp}#{uuid8}) |
+| user_id | String | 用户 ID (GSI) |
+| name | String | 记录名称 |
+| description | String | 描述 |
+| storage_strategy | String | 存储策略类型 |
+| input_params | Map | 输入参数快照 |
+| intermediate_metrics | Map | 中间计算指标 |
+| stage_details | List | 分阶段费用明细 |
+| cost_summary | Map | 费用汇总 |
+| pricing_snapshot | Map | 定价数据快照 |
+| created_at | String | 创建时间 (ISO) |
+
+**限制**: 每用户最多 1000 条记录
+
 ---
 
 ## API 请求/响应 Schema
@@ -419,3 +437,170 @@ class ComparisonResult(BaseModel):
 | discount_percent | 0.0 ≤ x ≤ 50.0 |
 | segment_value | x > 0 |
 | lifecycle_policy.stages | 按 start_day 升序，无重叠 |
+
+---
+
+## 核算记录数据模型 [NEW v1.2.0]
+
+**文件**: `backend/app/models/calculation_records.py`
+
+### StorageStrategy - 存储策略枚举
+
+```python
+class StorageStrategy(str, Enum):
+    SINGLE_STANDARD = "single_standard"           # 单一 S3 Standard
+    SINGLE_GLACIER_IR = "single_glacier_ir"       # 单一 Glacier IR
+    LIFECYCLE_STANDARD_TO_GLACIER = "lifecycle_std_glacier"  # 生命周期: Standard → Glacier
+    LIFECYCLE_MULTI_STAGE = "lifecycle_multi_stage"  # 生命周期: 多阶段
+```
+
+### InputParameterSnapshot - 输入参数快照
+
+```python
+class InputParameterSnapshot(BaseModel):
+    functional: FunctionalDimensionSnapshot   # 功能维度
+    technical: TechnicalDimensionSnapshot     # 技术维度
+    pricing: PricingDimensionSnapshot         # 价格维度
+```
+
+### IntermediateMetricsDetail - 中间计算指标
+
+| 字段 | 说明 |
+|------|------|
+| daily_recording_seconds | 每日录像秒数 |
+| daily_data_gb | 每日数据量 (GB) |
+| avg_storage_gb | 平均存储量 (GB) |
+| segments_per_day | 每日分片数 |
+| monthly_puts | 月度 PUT 请求数 |
+| monthly_gets | 月度 GET 请求数 |
+| monthly_retrieval_gb | 月度检索量 (GB) |
+| monthly_transfer_gb | 月度传输量 (GB) |
+| access_pattern_mode | 访问模式 (simple/time_decay) |
+
+### StageCostDetail - 阶段费用明细
+
+| 字段 | 说明 |
+|------|------|
+| stage_index | 阶段索引 |
+| start_day / end_day | 开始/结束天数 |
+| storage_class | 存储类型 |
+| access_rate | 访问比例 |
+| storage_cost | 存储费用 (CostItemDetail) |
+| put_request_cost | PUT 请求费用 |
+| get_request_cost | GET 请求费用 |
+| retrieval_cost | 检索费用 (可选) |
+| transition_cost | 转换费用 (可选) |
+| stage_total | 阶段总费用 |
+
+### CostSummaryDetail - 费用汇总
+
+| 字段 | 说明 |
+|------|------|
+| storage_cost | 存储费用 |
+| put_request_cost | PUT 请求费用 |
+| get_request_cost | GET 请求费用 |
+| retrieval_cost | 检索费用 |
+| lifecycle_cost | 生命周期转换费用 |
+| data_transfer_cost | 数据传输费用 |
+| total_cost | 总成本 |
+| cost_per_device | 单设备成本 |
+| cost_per_gb | 单 GB 成本 |
+| breakdown_percent | 费用占比 |
+
+### PricingSnapshot - 定价快照
+
+```python
+class PricingSnapshot(BaseModel):
+    region: str                              # AWS 区域代码
+    region_name: str                         # 区域名称
+    currency: str = "USD"                    # 货币
+    snapshot_date: str                       # 快照日期
+    storage_pricing: Dict[str, StorageClassPricing]  # 各存储类型定价
+    data_transfer_tiers: List[DataTransferTier]      # 数据传输阶梯
+```
+
+### CalculationRecord - 核算记录主体
+
+```python
+class CalculationRecord(BaseModel):
+    record_id: str                           # 记录 ID
+    user_id: str                             # 用户 ID
+    name: str                                # 记录名称
+    description: str                         # 描述
+    created_at: datetime                     # 创建时间
+    storage_strategy: StorageStrategy        # 存储策略类型
+    input_params: InputParameterSnapshot     # 输入参数快照
+    intermediate_metrics: IntermediateMetricsDetail  # 中间计算指标
+    stage_details: List[StageCostDetail]     # 分阶段费用明细
+    cost_summary: CostSummaryDetail          # 费用汇总
+    pricing_snapshot: PricingSnapshot        # 定价快照
+```
+
+---
+
+## 核算记录 API Schema [NEW v1.2.0]
+
+### POST /api/v1/calculate-detailed
+
+**请求**: CostCalculationInput (同 /calculate)
+
+**响应** (DetailedCalculationResult):
+```json
+{
+  "summary": {
+    "storage_cost": 10.50,
+    "put_request_cost": 0.25,
+    "get_request_cost": 0.01,
+    "retrieval_cost": 0.00,
+    "lifecycle_cost": 0.00,
+    "data_transfer_cost": 0.30,
+    "subtotal": 11.06,
+    "discount_amount": 0.00,
+    "total_cost": 11.06,
+    "cost_per_device": 1.106,
+    "cost_per_gb": 0.0088,
+    "breakdown_percent": {...}
+  },
+  "intermediate_metrics": {...},
+  "stage_details": [...],
+  "storage_strategy": "single_standard",
+  "pricing_snapshot": {...}
+}
+```
+
+### POST /api/v1/calculation-records
+
+**请求**:
+```json
+{
+  "name": "我的核算记录",
+  "description": "测试描述",
+  "functional": {...},
+  "technical": {...},
+  "pricing": {...}
+}
+```
+
+**响应**: CalculationRecord 完整对象
+
+### GET /api/v1/calculation-records
+
+**参数**: page, page_size, search, sort_by, sort_order
+
+**响应**:
+```json
+{
+  "items": [
+    {
+      "record_id": "CALC#20260131143000#a1b2c3d4",
+      "name": "我的核算记录",
+      "storage_strategy": "single_standard",
+      "total_cost": 11.06,
+      "created_at": "2026-01-31T14:30:00Z"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "page_size": 20,
+  "total_pages": 1
+}

@@ -20,6 +20,7 @@ import type {
   TechnicalScheme,
   BatchCalculationResult,
 } from '../types';
+import { getStorageClassLabel } from '../constants/storageClasses';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
@@ -144,13 +145,8 @@ export const calculatorApi = {
 
       // 获取存储类型显示名称
       const getStorageClassName = () => {
-        if (r.technical.lifecycle_policy?.enabled) return 'Lifecycle Policy';
-
-        switch (r.technical.storage_class) {
-          case 'STANDARD': return 'S3 Standard';
-          case 'GLACIER_IR': return 'S3 Glacier IR';
-          default: return r.technical.storage_class;
-        }
+        if (r.technical.lifecycle_policy?.enabled) return '生命周期策略';
+        return getStorageClassLabel(r.technical.storage_class, 'full');
       };
       const storageClass = getStorageClassName();
 

@@ -19,6 +19,7 @@ import {
 } from '@ant-design/icons';
 import type { TechnicalScheme, TechnicalDimensions, MultiTechnicalConfig } from '../../types';
 import TechnicalForm from './TechnicalForm';
+import { STORAGE_CLASS_DEFAULTS } from '../../constants/storageClasses';
 
 const { Text } = Typography;
 
@@ -42,7 +43,7 @@ const createDefaultScheme = (index: number): TechnicalScheme => ({
   id: generateId(),
   name: DEFAULT_SCHEME_NAMES[index] || `方案 ${index + 1}`,
   technical: {
-    storage_class: index === 0 ? 'STANDARD' : 'GLACIER_IR',
+    storage_class: index === 0 ? STORAGE_CLASS_DEFAULTS.primary : STORAGE_CLASS_DEFAULTS.secondary,
   },
   enabled: true,
 });

@@ -1,7 +1,7 @@
 # IPC Cost Evaluator - 前端结构
 
-> **Freshness**: 2026-01-26T14:30:00Z
-> **版本**: 1.1.0
+> **Freshness**: 2026-01-31T14:30:00Z
+> **版本**: 1.2.0
 
 ## 目录结构
 
@@ -15,9 +15,12 @@ frontend/src/
 ├── pages/                           # 页面组件
 │   ├── Home.tsx                     # 首页/仪表板
 │   ├── Calculator.tsx               # 成本计算页面
+│   ├── DetailedCalculation.tsx      # 详细核算页面 [NEW v1.2.0]
+│   ├── CalculationRecords.tsx       # 核算记录列表 [NEW v1.2.0]
+│   ├── CalculationRecordDetail.tsx  # 核算记录详情 [NEW v1.2.0]
 │   ├── Evaluations.tsx              # 评估历史管理
 │   ├── Settings.tsx                 # 设置页面
-│   └── SharedView.tsx               # 分享链接查看页面 [NEW]
+│   └── SharedView.tsx               # 分享链接查看页面
 │
 ├── components/                      # 可复用组件
 │   ├── common/
@@ -39,6 +42,12 @@ frontend/src/
 │   │   ├── StageEditor.tsx          # 生命周期阶段编辑
 │   │   ├── ExportDialog.tsx         # 导出对话框
 │   │   ├── ShareDialog.tsx          # 分享对话框
+│   │   ├── SaveRecordDialog.tsx     # 保存记录对话框 [NEW v1.2.0]
+│   │   ├── IntermediateMetrics.tsx  # 中间指标展示 [NEW v1.2.0]
+│   │   ├── DetailedCostPreview.tsx  # 详细成本预览 [NEW v1.2.0]
+│   │   ├── StageCostTable.tsx       # 阶段费用表格 [NEW v1.2.0]
+│   │   ├── PricingSnapshotDisplay.tsx # 定价快照展示 [NEW v1.2.0]
+│   │   ├── InputParamsDisplay.tsx   # 输入参数展示 [NEW v1.2.0]
 │   │   └── index.ts                 # 计算器组件导出
 │   │
 │   ├── comparison/                  # 对比组件 [UPDATED]
@@ -61,10 +70,12 @@ frontend/src/
 │   └── formatters.ts                # 数字/货币格式化
 │
 ├── types/                           # TypeScript 类型
-│   └── index.ts                     # 统一类型定义
+│   ├── index.ts                     # 统一类型定义
+│   └── calculationRecords.ts        # 核算记录类型 [NEW v1.2.0]
 │
 └── api/                             # API 通信层
     ├── client.ts                    # Axios 客户端 (模块化)
+    ├── calculationRecords.ts        # 核算记录 API [NEW v1.2.0]
     └── index.ts                     # API 导出
 ```
 
@@ -105,7 +116,27 @@ frontend/src/
                 │   ├── <ExportDialog>
                 │   └── <ShareDialog>
                 │
-                ├── <SharedView>     # [NEW] 分享链接查看页面
+                ├── <DetailedCalculation>  # [NEW v1.2.0] 详细核算
+                │   ├── <FunctionalForm>
+                │   ├── <TechnicalForm>
+                │   ├── <PricingForm>
+                │   ├── <DetailedCostPreview>
+                │   │   ├── <IntermediateMetrics>
+                │   │   ├── <StageCostTable>
+                │   │   └── <CostPieChart>
+                │   └── <SaveRecordDialog>
+                │
+                ├── <CalculationRecords>   # [NEW v1.2.0] 记录列表
+                │   └── Table + Search/Sort/Pagination
+                │
+                ├── <CalculationRecordDetail>  # [NEW v1.2.0] 记录详情
+                │   ├── <IntermediateMetrics>
+                │   ├── <StageCostTable>
+                │   ├── <CostPieChart>
+                │   ├── <InputParamsDisplay>
+                │   └── <PricingSnapshotDisplay>
+                │
+                ├── <SharedView>     # 分享链接查看页面
                 │   └── 只读评估展示
                 │
                 ├── <Evaluations>    # 评估历史
@@ -152,7 +183,35 @@ frontend/src/
 - 主题配置
 - 用户偏好
 
-### SharedView.tsx - 分享链接查看页面 [NEW]
+### DetailedCalculation.tsx - 详细核算页面 [NEW v1.2.0]
+
+功能：
+- 三类维度参数输入
+- 实时详细成本计算
+- 中间计算指标展示
+- 分阶段费用明细
+- 定价快照展示
+- 保存核算记录
+
+### CalculationRecords.tsx - 核算记录列表 [NEW v1.2.0]
+
+功能：
+- 分页表格展示记录列表
+- 按名称搜索
+- 多字段排序 (创建时间/名称/总成本)
+- 删除记录
+
+### CalculationRecordDetail.tsx - 核算记录详情 [NEW v1.2.0]
+
+功能：
+- 费用汇总 Hero 展示
+- 中间计算指标详情
+- 分阶段费用明细
+- 费用占比饼图
+- 输入参数快照
+- 定价数据快照
+
+### SharedView.tsx - 分享链接查看页面
 
 功能：
 - 根据分享 Token 加载评估数据
@@ -200,6 +259,17 @@ frontend/src/
 | MultiSchemePanel | 多方案管理（增/删/改） |
 | ExportDialog | 导出 Excel/PDF |
 | ShareDialog | 生成分享链接 |
+| SaveRecordDialog | 保存核算记录 [NEW v1.2.0] |
+
+### 详细核算组件 [NEW v1.2.0]
+
+| 组件 | 功能 |
+|------|------|
+| IntermediateMetrics | 中间计算指标展示 (数据量/请求数/检索量) |
+| DetailedCostPreview | 详细成本预览容器 |
+| StageCostTable | 分阶段费用明细表格 |
+| PricingSnapshotDisplay | 定价数据快照展示 |
+| InputParamsDisplay | 输入参数快照展示 (三维度) |
 
 ---
 
@@ -264,6 +334,7 @@ const apiClient = axios.create({
 | evaluations.ts | `save()`, `list()`, `get()`, `update()`, `delete()` |
 | shares.ts | `create()`, `get()`, `clone()`, `delete()` |
 | export.ts | `exportExcel()`, `exportPDF()` |
+| calculationRecords.ts | `getDefaults()`, `calculateDetailed()`, `list()`, `create()`, `get()`, `delete()`, `getCount()` |
 
 ---
 
@@ -299,11 +370,13 @@ const theme = {
 
 ## 组件数量统计
 
-| 类别 | 数量 | 变更 |
+| 类别 | 数量 | 变更 (v1.2.0) |
 |------|------|------|
-| 页面组件 | 5 | +1 (SharedView) |
-| 计算器组件 | 14 | +1 (index.ts) |
-| 对比组件 | 4 | +1 (ComparisonPanel) |
+| 页面组件 | 8 | +3 (DetailedCalculation, CalculationRecords, CalculationRecordDetail) |
+| 计算器组件 | 20 | +6 (详细核算相关组件) |
+| 对比组件 | 4 | - |
 | 分享组件 | 2 | - |
 | 通用组件 | 1 | - |
-| **总计** | **26** | **+3** |
+| 类型定义 | 2 | +1 (calculationRecords.ts) |
+| API 模块 | 3 | +1 (calculationRecords.ts) |
+| **总计** | **40** | **+11** |

@@ -2,7 +2,17 @@
  * 枚举值中文标签映射
  *
  * 提供各种枚举值的中文友好显示标签，用于在 UI 中展示。
+ *
+ * 注意：存储类型和区域的标签现在从统一数据源导入，
+ * 参见 constants/storageClasses.ts 和 constants/regions.ts
  */
+
+import {
+  STORAGE_CLASS_METADATA,
+  getStorageClassLabel as _getStorageClassLabel,
+  getStorageClassColor as _getStorageClassColor,
+} from '../constants/storageClasses';
+import { REGION_NAMES_ZH } from '../constants/regions';
 
 /**
  * 录像模式标签
@@ -19,19 +29,16 @@ export const recordingModeLabels: Record<string, string> = {
 export const videoQualityLabels: Record<string, { label: string; bitrate: string }> = {
   '720p': { label: '720P 高清', bitrate: '1 Mbps' },
   '1080p': { label: '1080P 全高清', bitrate: '2.5 Mbps' },
-  '2k': { label: '2K 超清', bitrate: '5 Mbps' },
-  '4k': { label: '4K 超高清', bitrate: '12 Mbps' },
+  '2K': { label: '2K 超清', bitrate: '5 Mbps' },
+  '4K': { label: '4K 超高清', bitrate: '12 Mbps' },
 };
 
 /**
- * 存储类型标签
+ * 存储类型标签（从统一数据源导出）
  */
-export const storageClassLabels: Record<string, { label: string; color: string }> = {
-  STANDARD: { label: 'S3 Standard', color: 'blue' },
-  GLACIER_IR: { label: 'S3 Glacier IR', color: 'purple' },
-  DEEP_ARCHIVE: { label: 'S3 Deep Archive', color: 'orange' },
-  INTELLIGENT_TIERING: { label: 'S3 Intelligent-Tiering', color: 'cyan' },
-};
+export const storageClassLabels: Record<string, { label: string; color: string }> = Object.fromEntries(
+  STORAGE_CLASS_METADATA.map(m => [m.value, { label: m.label, color: m.antDesignColor }])
+);
 
 /**
  * 分片策略标签
@@ -53,27 +60,9 @@ export const storageStrategyLabels: Record<string, { label: string; color: strin
 };
 
 /**
- * AWS 区域标签
+ * AWS 区域标签（从统一数据源导出）
  */
-export const regionLabels: Record<string, string> = {
-  'us-east-1': '美国东部 (弗吉尼亚北部)',
-  'us-east-2': '美国东部 (俄亥俄)',
-  'us-west-1': '美国西部 (加利福尼亚北部)',
-  'us-west-2': '美国西部 (俄勒冈)',
-  'ap-northeast-1': '亚太地区 (东京)',
-  'ap-northeast-2': '亚太地区 (首尔)',
-  'ap-northeast-3': '亚太地区 (大阪)',
-  'ap-south-1': '亚太地区 (孟买)',
-  'ap-southeast-1': '亚太地区 (新加坡)',
-  'ap-southeast-2': '亚太地区 (悉尼)',
-  'eu-central-1': '欧洲 (法兰克福)',
-  'eu-west-1': '欧洲 (爱尔兰)',
-  'eu-west-2': '欧洲 (伦敦)',
-  'eu-west-3': '欧洲 (巴黎)',
-  'sa-east-1': '南美洲 (圣保罗)',
-  'cn-north-1': '中国 (北京)',
-  'cn-northwest-1': '中国 (宁夏)',
-};
+export const regionLabels: Record<string, string> = REGION_NAMES_ZH;
 
 /**
  * 获取录像模式标签
@@ -91,17 +80,17 @@ export function getVideoQualityLabel(quality: string): string {
 }
 
 /**
- * 获取存储类型标签
+ * 获取存储类型标签（使用统一数据源）
  */
 export function getStorageClassLabel(storageClass: string): string {
-  return storageClassLabels[storageClass]?.label || storageClass;
+  return _getStorageClassLabel(storageClass, 'full');
 }
 
 /**
- * 获取存储类型颜色
+ * 获取存储类型颜色（使用统一数据源，返回 Ant Design 颜色名）
  */
 export function getStorageClassColor(storageClass: string): string {
-  return storageClassLabels[storageClass]?.color || 'default';
+  return _getStorageClassColor(storageClass, 'ant');
 }
 
 /**

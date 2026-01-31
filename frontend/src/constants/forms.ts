@@ -2,7 +2,8 @@
  * 表单相关常量配置
  */
 
-import type { RecordingMode, VideoQuality, StorageClass } from '../types';
+import type { RecordingMode, VideoQuality } from '../types';
+import { STORAGE_CLASS_SELECT_OPTIONS } from './storageClasses';
 
 /** 录像模式选项 */
 export const RECORDING_MODE_OPTIONS: Array<{ value: RecordingMode; label: string }> = [
@@ -19,64 +20,17 @@ export const VIDEO_QUALITY_OPTIONS: Array<{
 }> = [
   { value: '720p', label: '720P (高清)', dataRate: '125 KB/s' },
   { value: '1080p', label: '1080P (全高清)', dataRate: '312.5 KB/s' },
-  { value: '2k', label: '2K (超清)', dataRate: '625 KB/s' },
-  { value: '4k', label: '4K (超高清)', dataRate: '1500 KB/s' },
+  { value: '2K', label: '2K (超清)', dataRate: '625 KB/s' },
+  { value: '4K', label: '4K (超高清)', dataRate: '1500 KB/s' },
 ];
 
 /**
  * 存储类型选项
  *
  * 注意：价格数据从后端 API 动态获取，不在此处硬编码
+ * 数据源：./storageClasses.ts
  */
-export const STORAGE_CLASS_OPTIONS: Array<{
-  value: StorageClass;
-  label: string;
-  hint: string;
-  color: string;
-}> = [
-  {
-    value: 'STANDARD',
-    label: 'S3 Standard',
-    hint: '频繁访问，毫秒级延迟',
-    color: 'blue',
-  },
-  {
-    value: 'INTELLIGENT_TIERING',
-    label: 'Intelligent-Tiering',
-    hint: '自动分层，访问模式不确定',
-    color: 'cyan',
-  },
-  {
-    value: 'STANDARD_IA',
-    label: 'Standard-IA',
-    hint: '不频繁访问，毫秒级延迟',
-    color: 'geekblue',
-  },
-  {
-    value: 'ONEZONE_IA',
-    label: 'One Zone-IA',
-    hint: '单可用区，成本更低',
-    color: 'green',
-  },
-  {
-    value: 'GLACIER_IR',
-    label: 'Glacier Instant',
-    hint: '即时检索归档，毫秒级',
-    color: 'purple',
-  },
-  {
-    value: 'GLACIER_FR',
-    label: 'Glacier Flexible',
-    hint: '灵活检索，分钟到小时',
-    color: 'volcano',
-  },
-  {
-    value: 'DEEP_ARCHIVE',
-    label: 'Deep Archive',
-    hint: '深度归档，12-48小时检索',
-    color: 'orange',
-  },
-];
+export const STORAGE_CLASS_OPTIONS = STORAGE_CLASS_SELECT_OPTIONS;
 
 /** 分片策略选项 */
 export const SEGMENT_STRATEGY_OPTIONS = [

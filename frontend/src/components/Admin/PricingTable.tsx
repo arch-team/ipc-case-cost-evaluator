@@ -14,6 +14,11 @@ import {
   DollarOutlined,
 } from '@ant-design/icons';
 import type { PricingDetailResponse } from '../../types';
+import {
+  STORAGE_CLASS_METADATA,
+  STORAGE_CLASS_LABELS,
+  STORAGE_CLASS_ANT_COLORS,
+} from '../../constants/storageClasses';
 
 const { Title, Text } = Typography;
 
@@ -23,16 +28,8 @@ interface PricingTableProps {
   comparisonSlot?: React.ReactNode;
 }
 
-// 存储类型显示名称映射（英文）
-const storageClassNames: { [key: string]: string } = {
-  STANDARD: 'S3 Standard',
-  INTELLIGENT_TIERING: 'S3 Intelligent-Tiering',
-  STANDARD_IA: 'S3 Standard-IA',
-  ONEZONE_IA: 'S3 One Zone-IA',
-  GLACIER_IR: 'S3 Glacier Instant Retrieval',
-  GLACIER_FR: 'S3 Glacier Flexible Retrieval',
-  DEEP_ARCHIVE: 'S3 Glacier Deep Archive',
-};
+// 存储类型显示名称映射（从统一数据源获取）
+const storageClassNames = STORAGE_CLASS_LABELS;
 
 // 存储类型中文名称映射
 const storageClassChineseNames: { [key: string]: string } = {
@@ -67,27 +64,11 @@ const storageClassUseCases: { [key: string]: string } = {
   DEEP_ARCHIVE: '长期保留、合规归档',
 };
 
-// 存储类型颜色映射
-const storageClassColors: { [key: string]: string } = {
-  STANDARD: 'blue',
-  INTELLIGENT_TIERING: 'geekblue',
-  STANDARD_IA: 'green',
-  ONEZONE_IA: 'lime',
-  GLACIER_IR: 'cyan',
-  GLACIER_FR: 'orange',
-  DEEP_ARCHIVE: 'purple',
-};
+// 存储类型颜色映射（从统一数据源获取）
+const storageClassColors = STORAGE_CLASS_ANT_COLORS;
 
-// 存储类型排序顺序
-const storageClassOrder: string[] = [
-  'STANDARD',
-  'INTELLIGENT_TIERING',
-  'STANDARD_IA',
-  'ONEZONE_IA',
-  'GLACIER_IR',
-  'GLACIER_FR',
-  'DEEP_ARCHIVE',
-];
+// 存储类型排序顺序（从统一数据源获取）
+const storageClassOrder: string[] = STORAGE_CLASS_METADATA.map(m => m.value);
 
 // 最小存储期限（天）
 const storageClassMinDuration: { [key: string]: string } = {

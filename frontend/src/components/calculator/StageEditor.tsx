@@ -19,6 +19,10 @@ import {
   WarningOutlined,
 } from '@ant-design/icons';
 import type { LifecycleStage, StorageClass } from '../../types';
+import {
+  STORAGE_CLASS_OPTIONS_WITH_COLOR,
+  STORAGE_CLASS_DEFAULTS,
+} from '../../constants/storageClasses';
 
 const { Text } = Typography;
 
@@ -28,15 +32,8 @@ interface StageEditorProps {
   maxDays: number;
 }
 
-const storageClassOptions = [
-  { value: 'STANDARD', label: 'S3 Standard', color: '#1890ff' },
-  { value: 'INTELLIGENT_TIERING', label: 'Intelligent-Tiering', color: '#2f54eb' },
-  { value: 'STANDARD_IA', label: 'Standard-IA', color: '#52c41a' },
-  { value: 'ONEZONE_IA', label: 'One Zone-IA', color: '#a0d911' },
-  { value: 'GLACIER_IR', label: 'Glacier IR', color: '#13c2c2' },
-  { value: 'GLACIER_FR', label: 'Glacier FR', color: '#fa8c16' },
-  { value: 'DEEP_ARCHIVE', label: 'Deep Archive', color: '#722ed1' },
-];
+// 使用统一的存储类型选项
+const storageClassOptions = STORAGE_CLASS_OPTIONS_WITH_COLOR;
 
 const StageEditor: React.FC<StageEditorProps> = ({ value, onChange, maxDays }) => {
   // 验证阶段配置
@@ -77,7 +74,7 @@ const StageEditor: React.FC<StageEditorProps> = ({ value, onChange, maxDays }) =
       const newStage: LifecycleStage = {
         start_day: 1,
         end_day: maxDays,
-        storage_class: 'STANDARD',
+        storage_class: STORAGE_CLASS_DEFAULTS.primary,
       };
       onChange([newStage]);
       return;
@@ -102,7 +99,7 @@ const StageEditor: React.FC<StageEditorProps> = ({ value, onChange, maxDays }) =
       const newStage: LifecycleStage = {
         start_day: midPoint + 1,
         end_day: maxDays,
-        storage_class: 'GLACIER_IR',
+        storage_class: STORAGE_CLASS_DEFAULTS.secondary,
       };
 
       onChange([...updatedStages, newStage]);
@@ -113,7 +110,7 @@ const StageEditor: React.FC<StageEditorProps> = ({ value, onChange, maxDays }) =
     const newStage: LifecycleStage = {
       start_day: lastStage.end_day + 1,
       end_day: maxDays,
-      storage_class: 'GLACIER_IR',
+      storage_class: STORAGE_CLASS_DEFAULTS.secondary,
     };
     onChange([...value, newStage]);
   };

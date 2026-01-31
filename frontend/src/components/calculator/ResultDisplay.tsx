@@ -14,6 +14,7 @@ import {
 import type { CostSummary, TechnicalDimensions, StorageClass, ComparisonItem } from '../../types';
 import { formatNumber } from '../../utils/formatters';
 import { getTechDescription } from '../../constants/comparison';
+import { STORAGE_CLASS_DEFAULTS } from '../../constants/storageClasses';
 import CostPieChart from './CostPieChart';
 import CostBreakdownTable from './CostBreakdownTable';
 
@@ -166,7 +167,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, schemeInfo, regio
             monthlyTotal={result.monthly_total}
             pricingMetadata={result.pricing_metadata}
             region={region}
-            storageClass={(schemeInfo?.technical.storage_class || 'STANDARD') as StorageClass}
+            storageClass={(schemeInfo?.technical.storage_class || STORAGE_CLASS_DEFAULTS.primary) as StorageClass}
             deviceCount={result.device_count}
             retentionDays={retentionDays}
             accessPattern={accessPattern}

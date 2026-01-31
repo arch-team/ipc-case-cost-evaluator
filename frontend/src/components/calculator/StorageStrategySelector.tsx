@@ -8,6 +8,11 @@ import { CheckCircleOutlined, ClockCircleOutlined, DollarOutlined } from '@ant-d
 import type { LifecycleTemplate, LifecyclePolicy, LifecycleStage } from '../../types';
 import StageEditor from './StageEditor';
 import { api } from '../../api';
+import {
+  STORAGE_CLASS_COLORS,
+  STORAGE_CLASS_DEFAULTS,
+  getStorageClassLabel,
+} from '../../constants/storageClasses';
 
 const { Text } = Typography;
 
@@ -81,7 +86,7 @@ const StorageStrategySelector: React.FC<StorageStrategySelectorProps> = ({
       onChange({
         enabled: true,
         stages: [
-          { start_day: 1, end_day: retentionDays, storage_class: 'STANDARD' },
+          { start_day: 1, end_day: retentionDays, storage_class: STORAGE_CLASS_DEFAULTS.primary },
         ],
       });
     }
@@ -155,15 +160,6 @@ const StorageStrategySelector: React.FC<StorageStrategySelectorProps> = ({
   // 渲染紧凑的阶段预览条
   const renderCompactStageBar = (stages: LifecycleStage[]) => {
     const totalDays = stages[stages.length - 1]?.end_day || 1;
-    const colors: Record<string, string> = {
-      STANDARD: '#1890ff',
-      INTELLIGENT_TIERING: '#2f54eb',
-      STANDARD_IA: '#52c41a',
-      ONEZONE_IA: '#a0d911',
-      GLACIER_IR: '#13c2c2',
-      GLACIER_FR: '#fa8c16',
-      DEEP_ARCHIVE: '#722ed1',
-    };
 
     return (
       <div className="stage-bar-compact">
@@ -172,12 +168,12 @@ const StorageStrategySelector: React.FC<StorageStrategySelectorProps> = ({
           return (
             <Tooltip
               key={index}
-              title={`${stage.start_day}-${stage.end_day}天: ${stage.storage_class.replace('_', ' ')}`}
+              title={`${stage.start_day}-${stage.end_day}天: ${getStorageClassLabel(stage.storage_class, 'short')}`}
             >
               <div
                 style={{
                   width: `${width}%`,
-                  backgroundColor: colors[stage.storage_class] || '#d9d9d9',
+                  backgroundColor: STORAGE_CLASS_COLORS[stage.storage_class] || '#d9d9d9',
                 }}
               />
             </Tooltip>

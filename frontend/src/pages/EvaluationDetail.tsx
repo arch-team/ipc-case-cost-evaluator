@@ -41,8 +41,8 @@ const recordingModeMap: Record<string, string> = {
 const videoQualityMap: Record<string, string> = {
   '720p': '720P (1Mbps)',
   '1080p': '1080P (2.5Mbps)',
-  '2k': '2K (5Mbps)',
-  '4k': '4K (12Mbps)',
+  '2K': '2K (5Mbps)',
+  '4K': '4K (12Mbps)',
 };
 
 // 存储类型映射

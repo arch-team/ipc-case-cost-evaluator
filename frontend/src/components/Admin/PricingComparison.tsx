@@ -29,22 +29,21 @@ import {
 } from '@ant-design/icons';
 import { Column } from '@ant-design/charts';
 import type { RegionInfo, PricingDetailResponse, StorageClass } from '../../types';
+import {
+  STORAGE_CLASS_METADATA,
+  STORAGE_CLASS_DEFAULTS,
+} from '../../constants/storageClasses';
 
 const { Text, Title } = Typography;
 
 // 最大可选区域数
 const MAX_REGIONS = 3;
 
-// 存储类型选项
-const STORAGE_CLASS_OPTIONS: { value: StorageClass; label: string }[] = [
-  { value: 'STANDARD', label: 'S3 Standard' },
-  { value: 'INTELLIGENT_TIERING', label: 'Intelligent-Tiering' },
-  { value: 'STANDARD_IA', label: 'Standard-IA' },
-  { value: 'ONEZONE_IA', label: 'One Zone-IA' },
-  { value: 'GLACIER_IR', label: 'Glacier IR' },
-  { value: 'GLACIER_FR', label: 'Glacier FR' },
-  { value: 'DEEP_ARCHIVE', label: 'Deep Archive' },
-];
+// 存储类型选项（从统一数据源获取）
+const STORAGE_CLASS_OPTIONS = STORAGE_CLASS_METADATA.map(m => ({
+  value: m.value,
+  label: m.labelShort,
+}));
 
 // 计费项配置
 const PRICING_ITEMS = [
@@ -85,7 +84,7 @@ const PricingComparison: React.FC<PricingComparisonProps> = ({
 }) => {
   // 状态
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
-  const [selectedStorageClass, setSelectedStorageClass] = useState<StorageClass>('STANDARD');
+  const [selectedStorageClass, setSelectedStorageClass] = useState<StorageClass>(STORAGE_CLASS_DEFAULTS.primary);
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [pricingData, setPricingData] = useState<Map<string, PricingDetailResponse>>(new Map());
   const [loading, setLoading] = useState(false);

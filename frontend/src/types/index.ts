@@ -6,7 +6,7 @@
 export type RecordingMode = 'continuous' | 'event_triggered' | 'scheduled';
 
 // 视频质量
-export type VideoQuality = '720p' | '1080p' | '2k' | '4k';
+export type VideoQuality = '720p' | '1080p' | '2K' | '4K';
 
 // 存储类型
 export type StorageClass =

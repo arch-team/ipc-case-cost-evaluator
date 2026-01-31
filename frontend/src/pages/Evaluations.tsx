@@ -31,6 +31,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { evaluationApi } from '../api/client';
 import type { Evaluation } from '../types';
+import { getStorageClassLabel, getStorageClassColor } from '../constants/storageClasses';
 
 const { Title, Text } = Typography;
 
@@ -178,8 +179,8 @@ const Evaluations: React.FC = () => {
       title: '存储类型',
       key: 'storage_class',
       render: (_: unknown, record: Evaluation) => (
-        <Tag color={record.input_data.technical.storage_class === 'STANDARD' ? 'blue' : 'purple'}>
-          {record.input_data.technical.storage_class}
+        <Tag color={getStorageClassColor(record.input_data.technical.storage_class, 'ant')}>
+          {getStorageClassLabel(record.input_data.technical.storage_class, 'short')}
         </Tag>
       ),
     },

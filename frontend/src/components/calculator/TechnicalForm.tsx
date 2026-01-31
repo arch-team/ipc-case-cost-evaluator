@@ -9,6 +9,7 @@ import { InfoCircleOutlined } from '@ant-design/icons';
 import type { TechnicalDimensions, StorageClass, LifecyclePolicy } from '../../types';
 import StorageStrategySelector from './StorageStrategySelector';
 import { STORAGE_CLASS_OPTIONS } from '../../constants/forms';
+import { STORAGE_CLASS_DEFAULTS } from '../../constants/storageClasses';
 import { usePricing, formatPrice } from '../../hooks/usePricing';
 
 const { Text } = Typography;
@@ -38,7 +39,7 @@ const TechnicalForm: React.FC<TechnicalFormProps> = ({ value, onChange, retentio
     if (policy?.enabled) {
       onChange({
         ...value,
-        storage_class: 'STANDARD',
+        storage_class: STORAGE_CLASS_DEFAULTS.primary,
         lifecycle_policy: policy,
       });
     } else {

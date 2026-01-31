@@ -2,7 +2,7 @@
   "region": "ap-east-1",
   "region_name": "Asia Pacific (Hong Kong)",
   "currency": "USD",
-  "last_updated": "2026-01-31",
+  "last_updated": "2026-02-01",
   "storage_classes": {
     "STANDARD": {
       "storage_per_gb_month": 0.023,

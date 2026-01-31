@@ -89,8 +89,8 @@ const SharedView: React.FC = () => {
     const labels: Record<string, string> = {
       '720p': '720P (高清)',
       '1080p': '1080P (全高清)',
-      '2k': '2K (超清)',
-      '4k': '4K (超高清)',
+      '2K': '2K (超清)',
+      '4K': '4K (超高清)',
     };
     return labels[quality] || quality;
   };

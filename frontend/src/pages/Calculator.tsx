@@ -24,6 +24,7 @@ import SensitivityAnalysis from '../components/calculator/SensitivityAnalysis';
 import ExportDialog from '../components/calculator/ExportDialog';
 import ShareDialog from '../components/calculator/ShareDialog';
 import debounce from 'lodash/debounce';
+import { STORAGE_CLASS_DEFAULTS } from '../constants/storageClasses';
 
 const { Title } = Typography;
 
@@ -48,7 +49,7 @@ const Calculator: React.FC = () => {
       access_pattern: 0.1,
     },
     technical: {
-      storage_class: 'STANDARD',
+      storage_class: STORAGE_CLASS_DEFAULTS.primary,
     },
     pricing: {
       region: 'ap-northeast-1',

@@ -1,7 +1,7 @@
 # IPC Cost Evaluator - 后端结构
 
-> **Freshness**: 2026-01-26T14:30:00Z
-> **版本**: 1.1.0
+> **Freshness**: 2026-01-31T14:30:00Z
+> **版本**: 1.2.0
 
 ## 目录结构
 
@@ -19,7 +19,8 @@ backend/
 │   │   ├── enums.py                 # 枚举类型
 │   │   ├── pricing.py               # AWS 定价模型
 │   │   ├── results.py               # 计算结果模型
-│   │   └── share.py                 # 分享模型
+│   │   ├── share.py                 # 分享模型
+│   │   └── calculation_records.py   # 核算记录模型 [NEW v1.2.0]
 │   │
 │   ├── api/routes/                  # API 路由
 │   │   ├── calculate.py             # 成本计算
@@ -30,7 +31,8 @@ backend/
 │   │   ├── shares.py                # 分享链接
 │   │   ├── export.py                # 导出功能
 │   │   ├── templates.py             # 生命周期模板
-│   │   └── auth.py                  # 认证
+│   │   ├── auth.py                  # 认证
+│   │   └── calculation_records.py   # 核算记录 [NEW v1.2.0]
 │   │
 │   ├── services/                    # 业务逻辑层
 │   │   ├── calculator/              # 计算引擎
@@ -43,7 +45,8 @@ backend/
 │   │   │   └── recommender.py       # 优化推荐
 │   │   ├── pricing_service.py       # 定价服务
 │   │   ├── excel_export.py          # Excel 导出
-│   │   └── auth.py                  # 认证服务
+│   │   ├── auth.py                  # 认证服务
+│   │   └── calculation_record_generator.py  # 核算记录生成器 [NEW v1.2.0]
 │   │
 │   ├── db/                          # 数据库层
 │   │   ├── client.py                # 数据库客户端
@@ -52,7 +55,8 @@ backend/
 │   │   ├── local_storage.py         # 本地存储
 │   │   └── repositories/            # 数据仓库
 │   │       ├── evaluations.py
-│   │       └── shares.py
+│   │       ├── shares.py
+│   │       └── calculation_records.py  # 核算记录仓库 [NEW v1.2.0]
 │   │
 │   └── data/                        # 数据资源
 │       ├── aws_pricing/             # AWS 定价 JSON
@@ -182,6 +186,13 @@ Stage 3: Day 366+   → DEEP_ARCHIVE
 | export | POST | `/api/v1/export/excel` | 导出 Excel |
 | templates | GET | `/api/v1/templates` | 获取生命周期模板 |
 | templates | GET | `/api/v1/templates/{id}` | 获取模板详情 |
+| calculation_records | GET | `/api/v1/defaults` | 获取默认输入参数 |
+| calculation_records | POST | `/api/v1/calculate-detailed` | 实时计算详细成本 |
+| calculation_records | GET | `/api/v1/calculation-records` | 获取核算记录列表 |
+| calculation_records | POST | `/api/v1/calculation-records` | 创建核算记录 |
+| calculation_records | GET | `/api/v1/calculation-records/{id}` | 获取记录详情 |
+| calculation_records | DELETE | `/api/v1/calculation-records/{id}` | 删除核算记录 |
+| calculation_records | GET | `/api/v1/calculation-records/count` | 获取用户记录数量 |
 
 ---
 
@@ -219,6 +230,49 @@ Stage 3: Day 366+   → DEEP_ARCHIVE
 
 ---
 
+## 核算记录模块 (v1.2.0 新增)
+
+### CalculationRecordGenerator - 核算记录生成器
+
+**文件**: `services/calculation_record_generator.py` (507行)
+
+| 方法 | 功能 |
+|------|------|
+| `get_default_input()` | 获取默认输入参数 |
+| `determine_storage_strategy()` | 判断存储策略类型 |
+| `calculate_detailed()` | 执行详细成本计算 |
+| `generate_detailed_result()` | 生成实时预览结果 |
+| `generate_calculation_record()` | 生成完整核算记录 |
+
+### CalculationRecord 模型
+
+**文件**: `models/calculation_records.py` (314行)
+
+**核心模型**:
+- `StorageStrategy` - 存储策略枚举 (4种)
+- `InputParameterSnapshot` - 输入参数快照 (三维度)
+- `IntermediateMetricsDetail` - 中间计算指标
+- `StageCostDetail` - 阶段费用明细
+- `CostSummaryDetail` - 费用汇总
+- `PricingSnapshot` - 定价数据快照
+- `CalculationRecord` - 核算记录主体
+
+### CalculationRecordRepository - 核算记录仓库
+
+**文件**: `db/repositories/calculation_records.py` (219行)
+
+| 方法 | 功能 |
+|------|------|
+| `create()` | 创建核算记录 |
+| `get()` | 获取单条记录 |
+| `list_by_user()` | 列出用户记录 (分页/搜索/排序) |
+| `delete()` | 删除记录 |
+| `count_by_user()` | 统计用户记录数量 |
+
+**限制**: 每用户最多 1000 条记录
+
+---
+
 ## 数据库层
 
 ### DynamoDB 表结构
@@ -227,13 +281,15 @@ Stage 3: Day 366+   → DEEP_ARCHIVE
 |------|------|------|
 | Evaluations | 评估记录 | evaluation_id |
 | Shares | 分享链接 | share_id |
+| CalculationRecords | 核算记录 | record_id [NEW v1.2.0] |
 
 ### Repository 模式
 
 ```
 db/repositories/
 ├── evaluations.py   # EvaluationsRepository
-└── shares.py        # SharesRepository
+├── shares.py        # SharesRepository
+└── calculation_records.py  # CalculationRecordRepository [NEW]
 ```
 
 ---
@@ -253,4 +309,8 @@ db/repositories/
 | calculator | comparator.py | 169 |
 | calculator | sensitivity.py | 259 |
 | calculator | recommender.py | 208 |
-| **总计** | | **~3,100** |
+| models | calculation_records.py | 314 |
+| services | calculation_record_generator.py | 507 |
+| routes | calculation_records.py | 285 |
+| repositories | calculation_records.py | 219 |
+| **总计** | | **~4,425** |

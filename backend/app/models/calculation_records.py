@@ -16,9 +16,15 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field, computed_field
 
+from app.models.dimensions import (
+    FunctionalDimensions,
+    TechnicalDimensions,
+    PricingDimensions,
+)
+
 
 # ============================================================
-# 存储策略枚举
+# 枚举和常量
 # ============================================================
 
 
@@ -31,7 +37,7 @@ class StorageStrategy(str, Enum):
 
 
 # ============================================================
-# 输入参数快照（三维度）
+# 输入参数快照
 # ============================================================
 
 
@@ -252,6 +258,7 @@ def generate_record_id() -> str:
 
 class CalculationRecord(BaseModel):
     """核算记录主体"""
+    # 基础信息
     record_id: str = Field(default_factory=generate_record_id, description="记录ID")
     user_id: str = Field(..., description="用户ID")
     name: str = Field(..., min_length=1, max_length=100, description="记录名称")
@@ -259,7 +266,7 @@ class CalculationRecord(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow, description="创建时间")
     storage_strategy: StorageStrategy = Field(..., description="存储策略类型")
 
-    # 嵌套实体
+    # 核心数据
     input_params: InputParameterSnapshot = Field(..., description="输入参数快照")
     intermediate_metrics: IntermediateMetricsDetail = Field(..., description="中间计算指标")
     stage_details: List[StageCostDetail] = Field(default_factory=list, description="分阶段费用明细")
@@ -273,9 +280,19 @@ class CalculationRecord(BaseModel):
 
 
 class CreateCalculationRecordRequest(BaseModel):
-    """创建核算记录请求"""
+    """创建核算记录请求
+
+    包含记录元数据（名称、描述）和完整的计算输入参数。
+    前端将所有字段扁平化发送，后端统一解析。
+    """
+    # 记录元数据
     name: str = Field(..., min_length=1, max_length=100, description="记录名称")
     description: str = Field(default="", max_length=500, description="描述")
+
+    # 计算输入参数（三维度）
+    functional: FunctionalDimensions = Field(..., description="功能维度")
+    technical: TechnicalDimensions = Field(default_factory=TechnicalDimensions, description="技术维度")
+    pricing: PricingDimensions = Field(default_factory=PricingDimensions, description="价格维度")
 
 
 class CalculationRecordSummary(BaseModel):

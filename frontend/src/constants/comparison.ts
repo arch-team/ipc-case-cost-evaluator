@@ -3,26 +3,23 @@
  */
 
 import type { ComparisonItem } from '../types';
+import {
+  STORAGE_CLASS_LABELS,
+  getStorageClassLabel,
+} from './storageClasses';
+import {
+  COST_ITEM_METADATA,
+  SCHEME_COLORS as COST_SCHEME_COLORS,
+} from './costItems';
 
-// 存储类型名称映射
-export const STORAGE_CLASS_NAMES: Record<string, string> = {
-  'STANDARD': 'S3 Standard',
-  'GLACIER_IR': 'S3 Glacier IR',
-  'DEEP_ARCHIVE': 'S3 Deep Archive',
-};
+// 存储类型名称映射（从统一数据源导出）
+export const STORAGE_CLASS_NAMES: Record<string, string> = STORAGE_CLASS_LABELS;
 
-// 方案颜色（协调的配色方案）
-export const SCHEME_COLORS = ['#5B8FF9', '#61DDAA', '#F6BD16', '#7262FD'];
+// 方案颜色（从统一数据源导出）
+export const SCHEME_COLORS = COST_SCHEME_COLORS;
 
-// 费用项配置：键名、中文名、颜色
-export const COST_ITEMS = [
-  { key: 'storage_cost', name: '存储费用', color: '#5B8FF9' },
-  { key: 'put_request_cost', name: 'PUT请求费', color: '#5AD8A6' },
-  { key: 'get_request_cost', name: 'GET请求费', color: '#F6BD16' },
-  { key: 'retrieval_cost', name: '数据检索费', color: '#E86452' },
-  { key: 'data_transfer_cost', name: '数据传输费', color: '#6DC8EC' },
-  { key: 'lifecycle_cost', name: '生命周期费', color: '#945FB9' },
-];
+// 费用项配置（从统一数据源导出）
+export const COST_ITEMS = COST_ITEM_METADATA;
 
 /**
  * 生成技术配置描述
@@ -45,13 +42,8 @@ export function getTechDescription(item: ComparisonItem): string[] {
     if (policy.stages && policy.stages.length > 0) {
       // 简洁格式：存储类型 + 持续天数
       const stageDescs = policy.stages.map(stage => {
-        // 使用简短名称
-        const shortNames: Record<string, string> = {
-          'STANDARD': 'Standard',
-          'GLACIER_IR': 'Glacier IR',
-          'DEEP_ARCHIVE': 'Deep Archive',
-        };
-        const className = shortNames[stage.storage_class] || stage.storage_class;
+        // 使用简短名称（从统一数据源获取）
+        const className = getStorageClassLabel(stage.storage_class, 'short');
         const duration = stage.end_day - stage.start_day + 1;
         return `${className} ${duration}天`;
       });
