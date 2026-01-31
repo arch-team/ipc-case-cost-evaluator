@@ -1,6 +1,6 @@
 /**
  * DynamoDB 表构造
- * 创建应用所需的三个表: users, evaluations, shares
+ * 创建应用所需的表: users, evaluations, shares, calculation_records
  */
 
 import * as cdk from 'aws-cdk-lib';
@@ -18,7 +18,7 @@ export interface DynamoDBTablesProps {
 
 /**
  * DynamoDB 表构造
- * 创建 users, evaluations, shares 三个表
+ * 创建 users, evaluations, shares, calculation_records 表
  */
 export class DynamoDBTables extends Construct {
   /** 用户表 */
@@ -27,6 +27,8 @@ export class DynamoDBTables extends Construct {
   public readonly evaluationsTable: dynamodb.Table;
   /** 分享表 */
   public readonly sharesTable: dynamodb.Table;
+  /** 核算记录表 */
+  public readonly calculationRecordsTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props: DynamoDBTablesProps) {
     super(scope, id);
@@ -70,6 +72,18 @@ export class DynamoDBTables extends Construct {
       ...commonTableProps,
       tableName: `${tablePrefix}-shares`,
       timeToLiveAttribute: 'expires_at',
+    });
+
+    // ========================================
+    // Calculation Records 表 (核算记录)
+    // ========================================
+    this.calculationRecordsTable = new dynamodb.Table(this, 'CalculationRecordsTable', {
+      ...commonTableProps,
+      tableName: `${tablePrefix}-calculation-records`,
+      sortKey: {
+        name: 'sk',
+        type: dynamodb.AttributeType.STRING,
+      },
     });
 
     // 配置全局二级索引
@@ -125,5 +139,6 @@ export class DynamoDBTables extends Construct {
     cdk.Tags.of(this.usersTable).add('Table', 'users');
     cdk.Tags.of(this.evaluationsTable).add('Table', 'evaluations');
     cdk.Tags.of(this.sharesTable).add('Table', 'shares');
+    cdk.Tags.of(this.calculationRecordsTable).add('Table', 'calculation-records');
   }
 }

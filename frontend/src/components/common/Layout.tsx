@@ -3,6 +3,7 @@
  */
 import React, { useState, useMemo, useContext } from 'react';
 import { Layout as AntLayout, Menu, Typography, Space, Breadcrumb } from 'antd';
+import type { MenuProps } from 'antd';
 import {
   CalculatorOutlined,
   HistoryOutlined,
@@ -42,7 +43,7 @@ const Layout: React.FC = () => {
 
   // 根据用户角色动态生成菜单
   const menuItems = useMemo(() => {
-    const items = [
+    const items: MenuProps['items'] = [
       {
         key: '/',
         icon: <HomeOutlined />,

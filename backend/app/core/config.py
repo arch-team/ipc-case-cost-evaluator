@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     DYNAMODB_USERS_TABLE: str = "ipc-cost-users"
     DYNAMODB_EVALUATIONS_TABLE: str = "ipc-cost-evaluations"
     DYNAMODB_SHARES_TABLE: str = "ipc-cost-shares"
+    DYNAMODB_CALCULATION_RECORDS_TABLE: str = "ipc-cost-calculation-records"
 
     # 存储配置
     # STORAGE_TYPE: 'local' 使用本地存储, 'dynamodb' 使用 DynamoDB

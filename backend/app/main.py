@@ -18,6 +18,7 @@ from app.api.routes import (
     shares,
     templates,
     admin,
+    calculation_records,
 )
 from app.models.enums import UserRole
 from app.services.auth import AuthService
@@ -140,6 +141,7 @@ def register_routers(app: FastAPI) -> None:
         shares,
         templates,
         admin,
+        calculation_records,
     ]
 
     for router_module in routers:
