@@ -1,0 +1,293 @@
+/**
+ * 详细核算页面 - 独立页面
+ *
+ * 提供完整的成本计算和详细核算功能：
+ * - 左侧：参数输入面板
+ * - 右侧：详细核算预览（中间指标、分阶段费用、费用汇总）
+ * - 支持保存核算记录
+ */
+import React, { useState, useEffect, useMemo } from 'react';
+import { Card, Typography, message, Alert, Button, Space } from 'antd';
+import {
+  CalculatorOutlined,
+  SaveOutlined,
+  LoginOutlined,
+  SyncOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+} from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import type { CostCalculationInput } from '../types';
+import type { DetailedCalculationResult } from '../types/calculationRecords';
+import { calculationRecordApi } from '../api/calculationRecords';
+import FunctionalForm from '../components/calculator/FunctionalForm';
+import TechnicalForm from '../components/calculator/TechnicalForm';
+import PricingForm from '../components/calculator/PricingForm';
+import DetailedCostPreview from '../components/calculator/DetailedCostPreview';
+import SaveRecordDialog from '../components/calculator/SaveRecordDialog';
+import debounce from 'lodash/debounce';
+
+const { Title, Text } = Typography;
+
+// 计算状态
+type CalculationStatus = 'idle' | 'calculating' | 'success' | 'error';
+
+const DetailedCalculation: React.FC = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  // 输入参数状态
+  const [input, setInput] = useState<CostCalculationInput>({
+    functional: {
+      device_count: 10,
+      recording_mode: 'event_triggered',
+      video_quality: '1080p',
+      events_per_day: 50,
+      event_duration_sec: 30,
+      retention_days: 30,
+      access_pattern: 0.1,
+    },
+    technical: {
+      storage_class: 'STANDARD',
+    },
+    pricing: {
+      region: 'us-east-1',
+      discount_percent: 0,
+    },
+  });
+
+  // 计算结果状态
+  const [detailedResult, setDetailedResult] = useState<DetailedCalculationResult | null>(null);
+  const [previousResult, setPreviousResult] = useState<DetailedCalculationResult | null>(null);
+  const [status, setStatus] = useState<CalculationStatus>('idle');
+  const [error, setError] = useState<string | null>(null);
+
+  // 对话框状态
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+
+  // 用户记录数量
+  const [userRecordCount, setUserRecordCount] = useState<number>(0);
+
+  // 加载默认参数
+  useEffect(() => {
+    const loadDefaults = async () => {
+      try {
+        const defaults = await calculationRecordApi.getDefaults();
+        setInput(defaults);
+      } catch (err) {
+        console.error('加载默认参数失败:', err);
+      }
+    };
+    loadDefaults();
+  }, []);
+
+  // 获取用户记录数量
+  useEffect(() => {
+    const fetchRecordCount = async () => {
+      if (isAuthenticated) {
+        try {
+          const countRes = await calculationRecordApi.getCount();
+          setUserRecordCount(countRes.count);
+        } catch (err) {
+          console.error('获取记录数量失败:', err);
+        }
+      }
+    };
+    fetchRecordCount();
+  }, [isAuthenticated]);
+
+  // 实时计算的防抖函数
+  const calculateDebounced = useMemo(
+    () =>
+      debounce(async (inputData: CostCalculationInput) => {
+        setStatus('calculating');
+        setError(null);
+        try {
+          const result = await calculationRecordApi.calculateDetailed(inputData);
+          if (detailedResult) {
+            setPreviousResult(detailedResult);
+          }
+          setDetailedResult(result);
+          setStatus('success');
+        } catch (err: any) {
+          console.error('计算失败:', err);
+          setError(err.response?.data?.detail || err.message || '计算失败');
+          setStatus('error');
+        }
+      }, 500),
+    [detailedResult]
+  );
+
+  // 输入变化时自动计算
+  useEffect(() => {
+    calculateDebounced(input);
+  }, [input, calculateDebounced]);
+
+  // 处理输入变化
+  const handleFunctionalChange = (functional: CostCalculationInput['functional']) => {
+    setInput((prev) => ({ ...prev, functional }));
+  };
+
+  const handleTechnicalChange = (technical: CostCalculationInput['technical']) => {
+    setInput((prev) => ({ ...prev, technical }));
+  };
+
+  const handlePricingChange = (pricing: CostCalculationInput['pricing']) => {
+    setInput((prev) => ({ ...prev, pricing }));
+  };
+
+  // 处理保存
+  const handleSave = () => {
+    if (!isAuthenticated) {
+      message.warning('请先登录后再保存核算记录');
+      return;
+    }
+    if (!detailedResult) {
+      message.warning('请等待计算完成后再保存');
+      return;
+    }
+    if (userRecordCount >= 1000) {
+      message.error('已达到记录数量上限 (1000条)，请删除旧记录后再保存');
+      return;
+    }
+    setSaveDialogOpen(true);
+  };
+
+  // 执行保存
+  const handleSaveRecord = async (name: string, description: string) => {
+    setSaveLoading(true);
+    try {
+      await calculationRecordApi.create({ name, description }, input);
+      setSaveDialogOpen(false);
+      setUserRecordCount((prev) => prev + 1);
+    } catch (err: any) {
+      throw new Error(err.response?.data?.detail || err.message || '保存失败');
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  // 渲染状态指示器
+  const renderStatusIndicator = () => {
+    switch (status) {
+      case 'calculating':
+        return (
+          <span style={{ color: '#1890ff' }}>
+            <SyncOutlined spin /> 计算中...
+          </span>
+        );
+      case 'success':
+        return (
+          <span style={{ color: '#52c41a' }}>
+            <CheckCircleOutlined /> 计算完成
+          </span>
+        );
+      case 'error':
+        return (
+          <span style={{ color: '#ff4d4f' }}>
+            <ExclamationCircleOutlined /> 计算错误
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="detailed-calculation-page">
+      {/* 页面标题 */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Title level={3} style={{ margin: 0 }}>
+            <CalculatorOutlined style={{ marginRight: 8 }} />
+            详细成本核算
+          </Title>
+          <Space>
+            {renderStatusIndicator()}
+            <Button
+              type="primary"
+              icon={<SaveOutlined />}
+              onClick={handleSave}
+              disabled={!detailedResult || status === 'calculating'}
+            >
+              保存记录
+            </Button>
+          </Space>
+        </div>
+        <Text type="secondary" style={{ marginTop: 8, display: 'block' }}>
+          输入参数后自动计算详细成本，包含中间计算指标和分阶段费用明细
+        </Text>
+      </div>
+
+      {/* 未登录提示 */}
+      {!isAuthenticated && (
+        <Alert
+          message="访客模式"
+          description={
+            <span>
+              您正在以访客身份使用，可正常计算但无法保存记录。
+              <a onClick={() => navigate('/settings')} style={{ marginLeft: 8 }}>
+                <LoginOutlined /> 登录后可保存核算记录
+              </a>
+            </span>
+          }
+          type="info"
+          showIcon
+          closable
+          style={{ marginBottom: 24 }}
+        />
+      )}
+
+      {/* 双栏布局 */}
+      <div style={{ display: 'flex', gap: 24 }}>
+        {/* 左侧：参数输入 */}
+        <div style={{ width: 400, flexShrink: 0 }}>
+          <Card title="功能维度" size="small" style={{ marginBottom: 16 }}>
+            <FunctionalForm
+              value={input.functional}
+              onChange={handleFunctionalChange}
+            />
+          </Card>
+
+          <Card title="技术维度" size="small" style={{ marginBottom: 16 }}>
+            <TechnicalForm
+              value={input.technical}
+              onChange={handleTechnicalChange}
+              retentionDays={input.functional.retention_days}
+              region={input.pricing.region}
+            />
+          </Card>
+
+          <Card title="价格维度" size="small">
+            <PricingForm
+              value={input.pricing}
+              onChange={handlePricingChange}
+            />
+          </Card>
+        </div>
+
+        {/* 右侧：详细核算预览 */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <DetailedCostPreview
+            result={detailedResult}
+            loading={status === 'calculating'}
+            error={error}
+            previousResult={previousResult}
+          />
+        </div>
+      </div>
+
+      {/* 保存对话框 */}
+      <SaveRecordDialog
+        visible={saveDialogOpen}
+        loading={saveLoading}
+        onCancel={() => setSaveDialogOpen(false)}
+        onSave={handleSaveRecord}
+      />
+    </div>
+  );
+};
+
+export default DetailedCalculation;

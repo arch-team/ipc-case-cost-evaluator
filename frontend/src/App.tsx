@@ -10,6 +10,7 @@ import { ProtectedRoute } from './components/auth';
 import Layout from './components/common/Layout';
 import Home from './pages/Home';
 import Calculator from './pages/Calculator';
+import DetailedCalculation from './pages/DetailedCalculation';
 import Evaluations from './pages/Evaluations';
 import EvaluationDetail from './pages/EvaluationDetail';
 import Settings from './pages/Settings';
@@ -64,6 +65,7 @@ const App: React.FC = () => {
             <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />
               <Route path="calculator" element={<Calculator />} />
+              <Route path="detailed-calculation" element={<DetailedCalculation />} />
               <Route
                 path="evaluations"
                 element={
