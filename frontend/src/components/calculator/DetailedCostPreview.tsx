@@ -25,7 +25,7 @@ import {
   LoadingOutlined,
   CalculatorOutlined,
 } from '@ant-design/icons';
-import type { DetailedCalculationResult, StorageStrategy } from '../../types/calculationRecords';
+import type { DetailedCalculationResult } from '../../types/calculationRecords';
 import type { CostCalculationInput } from '../../types';
 import { formatNumber } from '../../utils/formatters';
 import IntermediateMetrics from './IntermediateMetrics';

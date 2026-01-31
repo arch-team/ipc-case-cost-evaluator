@@ -18,6 +18,10 @@ import type {
   StorageClassPricing,
   DataTransferTier,
 } from '../../types/calculationRecords';
+import {
+  STORAGE_CLASS_LABELS,
+  STORAGE_CLASS_ANT_COLORS,
+} from '../../constants/storageClasses';
 
 const { Text } = Typography;
 
@@ -25,21 +29,11 @@ interface PricingSnapshotDisplayProps {
   snapshot: PricingSnapshot;
 }
 
-// 存储类型显示名称
-const storageClassNames: Record<string, string> = {
-  STANDARD: 'S3 Standard',
-  GLACIER_IR: 'S3 Glacier IR',
-  DEEP_ARCHIVE: 'S3 Deep Archive',
-  INTELLIGENT_TIERING: 'S3 Intelligent-Tiering',
-};
+// 存储类型显示名称（从统一数据源获取）
+const storageClassNames = STORAGE_CLASS_LABELS;
 
-// 存储类型标签颜色
-const storageClassColors: Record<string, string> = {
-  STANDARD: 'blue',
-  GLACIER_IR: 'purple',
-  DEEP_ARCHIVE: 'orange',
-  INTELLIGENT_TIERING: 'cyan',
-};
+// 存储类型标签颜色（从统一数据源获取）
+const storageClassColors = STORAGE_CLASS_ANT_COLORS;
 
 // 格式化价格（保留足够精度）
 const formatPrice = (price: number | undefined, unit: string): string => {

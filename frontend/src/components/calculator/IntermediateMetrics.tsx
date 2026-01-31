@@ -35,8 +35,11 @@ const IntermediateMetrics: React.FC<IntermediateMetricsProps> = ({
   input,
   compact = false,
 }) => {
+  // 功能维度简写
+  const f = input?.functional;
+
   // 创建公式生成器
-  const formulas = createFormulaGenerator(input, metrics);
+  const formulas = createFormulaGenerator(input || {}, metrics);
 
   // 生成加权访问比例公式（时间衰减模式）
   const getWeightedAccessPatternFormula = (): string | null => {

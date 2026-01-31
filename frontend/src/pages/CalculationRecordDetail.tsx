@@ -36,7 +36,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { calculationRecordApi } from '../api/calculationRecords';
-import type { CalculationRecord, StorageStrategy } from '../types/calculationRecords';
+import type { CalculationRecord } from '../types/calculationRecords';
 import { formatNumber } from '../utils/formatters';
 import IntermediateMetrics from '../components/calculator/IntermediateMetrics';
 import StageCostTable from '../components/calculator/StageCostTable';

@@ -12,7 +12,11 @@ import type { ColumnsType } from 'antd/es/table';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import type { StageCostDetail, CostItemDetail, TierDetailSnapshot } from '../../types/calculationRecords';
 import { formatNumber } from '../../utils/formatters';
-import { getStorageClassLabel, getStorageClassColor } from '../../constants/storageClasses';
+import {
+  getStorageClassLabel,
+  getStorageClassColor,
+  STORAGE_CLASS_LABELS_SHORT,
+} from '../../constants/storageClasses';
 
 const { Text } = Typography;
 
@@ -24,6 +28,14 @@ interface StageCostTableProps {
   totalCostWithTransfer?: number; // 包含传输费用的总成本
 }
 
+// 存储类型简短名称映射（从统一数据源获取）
+const storageClassNames = STORAGE_CLASS_LABELS_SHORT;
+
+// 格式化费用公式显示
+const formatCostFormula = (item: CostItemDetail): string => {
+  if (item.amount === 0) return '-';
+  return `${formatNumber(item.unit_price, 6)} ${item.unit_price_unit} × ${formatNumber(item.quantity, 4)} ${item.quantity_unit} = $${formatNumber(item.amount, 4)}`;
+};
 
 // 费用项详情展示组件
 const CostItemDisplay: React.FC<{ item: CostItemDetail }> = ({ item }) => {
