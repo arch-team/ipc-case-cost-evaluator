@@ -7,7 +7,7 @@
  * - 支持保存核算记录
  */
 import React, { useState, useEffect, useMemo } from 'react';
-import { Card, Typography, message, Alert, Button, Space } from 'antd';
+import { Card, Typography, message, Alert, Button, Space, InputNumber, Tooltip } from 'antd';
 import {
   CalculatorOutlined,
   SaveOutlined,
@@ -15,6 +15,8 @@ import {
   SyncOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
+  ClockCircleOutlined,
+  QuestionCircleOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -252,6 +254,29 @@ const DetailedCalculation: React.FC = () => {
           </Card>
 
           <Card title="技术维度" size="small" style={{ marginBottom: 16 }}>
+            {/* 保留天数 - 与 Calculator 页面保持一致 */}
+            <div style={{ marginBottom: 12, paddingBottom: 12, borderBottom: '1px dashed #e8e8e8' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <ClockCircleOutlined style={{ fontSize: 14, color: '#2563eb' }} />
+                <Text style={{ fontSize: 13 }}>默认保留天数</Text>
+                <InputNumber
+                  size="small"
+                  min={1}
+                  max={365}
+                  value={input.functional.retention_days}
+                  onChange={(days) => days && handleFunctionalChange({
+                    ...input.functional,
+                    retention_days: days,
+                  })}
+                  style={{ width: 70 }}
+                  controls={false}
+                />
+                <Text type="secondary" style={{ fontSize: 13 }}>天</Text>
+                <Tooltip title="数据保留期限，影响存储成本计算">
+                  <QuestionCircleOutlined style={{ fontSize: 12, color: '#999', cursor: 'help' }} />
+                </Tooltip>
+              </div>
+            </div>
             <TechnicalForm
               value={input.technical}
               onChange={handleTechnicalChange}
