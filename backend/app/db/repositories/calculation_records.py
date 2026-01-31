@@ -181,6 +181,23 @@ class CalculationRecordRepository:
         records = self.storage.query(self.table, "user_id", user_id)
         return len(records)
 
+    def get_batch(self, user_id: str, record_ids: List[str]) -> List[CalculationRecord]:
+        """批量获取记录
+
+        Args:
+            user_id: 用户 ID
+            record_ids: 记录 ID 列表
+
+        Returns:
+            核算记录列表（保持传入顺序）
+        """
+        records = []
+        for record_id in record_ids:
+            record = self.get(user_id=user_id, record_id=record_id)
+            if record:
+                records.append(record)
+        return records
+
     def _parse_record(self, data: Dict[str, Any]) -> CalculationRecord:
         """解析存储数据为 CalculationRecord"""
         # 移除存储层字段
