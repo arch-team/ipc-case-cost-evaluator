@@ -5,12 +5,13 @@
 - POST /calculate-detailed: 实时计算详细成本（无需登录）
 - GET /calculation-records: 获取核算记录列表（需要登录）
 - POST /calculation-records: 创建核算记录（需要登录）
+- GET /calculation-records/batch: 批量获取核算记录（需要登录，用于对比）
 - GET /calculation-records/{record_id}: 获取核算记录详情（需要登录）
 - DELETE /calculation-records/{record_id}: 删除核算记录（需要登录）
 """
 import html
 import logging
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
@@ -209,6 +210,63 @@ def create_record(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"保存失败: {str(e)}",
         )
+
+
+@router.get(
+    "/calculation-records/batch",
+    response_model=List[CalculationRecord],
+    summary="批量获取核算记录",
+    description="根据记录 ID 列表批量获取完整记录，用于对比功能。支持 2-4 条记录。",
+)
+def get_records_batch(
+    ids: str = Query(..., description="逗号分隔的记录 ID，2-4 个"),
+    current_user: dict = Depends(get_current_user),
+):
+    """批量获取核算记录"""
+    logger.info(
+        "批量获取核算记录: user_id=%s, ids=%s",
+        current_user["id"],
+        ids,
+    )
+
+    # 解析并验证 ID 列表
+    id_list = [id.strip() for id in ids.split(",") if id.strip()]
+
+    if len(id_list) < 2:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="请至少选择 2 条记录进行对比",
+        )
+
+    if len(id_list) > 4:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="最多支持 4 条记录对比",
+        )
+
+    # 检查重复 ID
+    if len(id_list) != len(set(id_list)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="记录 ID 不能重复",
+        )
+
+    # 批量获取记录
+    repo = CalculationRecordRepository()
+    records = repo.get_batch(user_id=current_user["id"], record_ids=id_list)
+
+    # 验证是否全部找到
+    if len(records) != len(id_list):
+        found_ids = {r.record_id for r in records}
+        missing_ids = [id for id in id_list if id not in found_ids]
+        logger.warning("部分记录不存在: missing=%s", missing_ids)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="部分记录不存在或无权访问",
+        )
+
+    logger.info("批量获取成功: count=%d", len(records))
+    return records
 
 
 @router.get(
