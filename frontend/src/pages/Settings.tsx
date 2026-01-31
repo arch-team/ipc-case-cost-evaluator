@@ -71,8 +71,10 @@ const useApiStatus = () => {
   useEffect(() => {
     const checkApi = async () => {
       try {
-        // 简单的 API 健康检查
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'}/health`);
+        // 简单的 API 健康检查（health 端点在根路径，不在 /api/v1 下）
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+        const healthUrl = baseUrl.replace(/\/api\/v\d+$/, '') + '/health';
+        const response = await fetch(healthUrl);
         setStatus(response.ok ? 'connected' : 'disconnected');
       } catch {
         setStatus('disconnected');
@@ -526,7 +528,7 @@ const Settings: React.FC = () => {
                       percent={editPasswordStrength.score}
                       showInfo={false}
                       strokeColor={editPasswordStrength.color}
-                      trailColor="#f0f0f0"
+                      railColor="#f0f0f0"
                       size="small"
                       style={{ flex: 1, margin: 0 }}
                     />

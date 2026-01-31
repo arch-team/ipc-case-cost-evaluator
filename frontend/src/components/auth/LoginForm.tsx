@@ -9,7 +9,7 @@
  * - 无障碍性支持
  */
 import React, { useState } from 'react';
-import { Form, Input, Button, Alert, Typography, Checkbox } from 'antd';
+import { Form, Input, Button, Alert, Typography, Checkbox, App } from 'antd';
 import { MailOutlined, LockOutlined, LoginOutlined, CheckCircleFilled } from '@ant-design/icons';
 import { authApi } from '../../api/client';
 import { useAuth } from '../../hooks/useAuth';
@@ -50,6 +50,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister }) 
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const { login } = useAuth();
+  const { message } = App.useApp();
 
   const handleSubmit = async (values: LoginFormValues) => {
     setLoading(true);
@@ -98,11 +99,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister }) 
 
       {error && (
         <Alert
-          message={error}
+          title={error}
           type="error"
           showIcon
-          closable
-          onClose={() => setError(null)}
+          closable={{ onClose: () => setError(null) }}
           style={{ marginBottom: 16, borderRadius: 8 }}
           role="alert"
         />
@@ -149,7 +149,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister }) 
         </Form.Item>
         <a
           href="#"
-          onClick={(e) => { e.preventDefault(); /* TODO: 实现忘记密码功能 */ }}
+          onClick={(e) => {
+            e.preventDefault();
+            message.info('该功能正在开发中，如需重置密码请联系管理员');
+          }}
           style={{ fontSize: 13, color: '#666' }}
         >
           忘记密码？

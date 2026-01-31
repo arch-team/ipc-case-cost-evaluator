@@ -188,7 +188,7 @@ const StorageStrategySelector: React.FC<StorageStrategySelectorProps> = ({
   }
 
   if (error) {
-    return <Alert message={error} type="error" showIcon />;
+    return <Alert title={error} type="error" showIcon />;
   }
 
   return (

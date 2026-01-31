@@ -49,8 +49,6 @@ class LifecycleCalculator(BaseCalculator):
         self._pricing: Optional[S3Pricing] = None
         self._discount: float = 0.0
 
-    # _get_pricing 方法继承自 BaseCalculator
-
     def calculate(self, input_data: CostCalculationInput) -> CostSummary:
         """计算生命周期混合策略成本
 
@@ -122,6 +120,33 @@ class LifecycleCalculator(BaseCalculator):
         stages = lifecycle.stages
 
         # 计算基础指标
+        metrics = self._calculate_base_metrics(functional)
+        total_days = stages[-1].end_day
+
+        # 计算各阶段成本
+        stage_results = self._process_stages(
+            stages, metrics, total_days, functional
+        )
+
+        # 计算其他费用项
+        get_cost_item = self._calculate_get_cost_item(
+            stages, metrics.monthly_gets, total_days,
+            functional=functional, monthly_puts=metrics.monthly_puts
+        )
+        transfer_cost_item = self._calculate_transfer_cost_item(
+            metrics.monthly_transfer_gb
+        )
+
+        # 构建详细明细和汇总
+        return self._build_results(
+            stage_results, metrics, get_cost_item,
+            transfer_cost_item, functional, stages, total_days
+        )
+
+    def _calculate_base_metrics(
+        self, functional: "FunctionalDimensions"
+    ) -> IntermediateMetrics:
+        """计算基础指标"""
         daily_data_gb = BaseCalculator.calculate_daily_data_gb(functional)
         monthly_puts = BaseCalculator.calculate_monthly_puts(functional, daily_data_gb)
         monthly_gets = BaseCalculator.calculate_monthly_gets(functional, monthly_puts)
@@ -132,64 +157,88 @@ class LifecycleCalculator(BaseCalculator):
             monthly_retrieval_gb
         )
 
-        total_days = stages[-1].end_day
+        return IntermediateMetrics(
+            daily_data_gb=daily_data_gb,
+            avg_storage_gb=0,  # 将在后续计算中更新
+            monthly_puts=monthly_puts,
+            monthly_gets=monthly_gets,
+            monthly_retrieval_gb=monthly_retrieval_gb,
+            monthly_transfer_gb=monthly_transfer_gb,
+        )
+
+    def _process_stages(
+        self,
+        stages: List[LifecycleStage],
+        metrics: IntermediateMetrics,
+        total_days: int,
+        functional: "FunctionalDimensions"
+    ) -> dict:
+        """处理所有阶段的成本计算"""
         stage_breakdowns: List[StageCostBreakdown] = []
         storage_cost_items: List[CostItem] = []
-
-        total_storage_cost = 0.0
-        total_put_cost = 0.0
-        total_get_cost = 0.0
-        total_retrieval_cost = 0.0
-        total_lifecycle_cost = 0.0
+        total_costs = {
+            "storage": 0.0,
+            "put": 0.0,
+            "retrieval": 0.0,
+            "lifecycle": 0.0
+        }
 
         for i, stage in enumerate(stages):
             stage_breakdown = self._calculate_stage_cost(
                 stage=stage,
-                daily_data_gb=daily_data_gb,
-                monthly_puts=monthly_puts,
-                monthly_gets=monthly_gets,
-                monthly_retrieval_gb=monthly_retrieval_gb,
+                daily_data_gb=metrics.daily_data_gb,
+                monthly_puts=metrics.monthly_puts,
+                monthly_gets=metrics.monthly_gets,
+                monthly_retrieval_gb=metrics.monthly_retrieval_gb,
                 total_days=total_days,
                 is_first_stage=(i == 0),
-                functional=functional,  # 传递 functional 以支持分阶段访问比例
+                functional=functional,
             )
             stage_breakdowns.append(stage_breakdown)
-
-            # 累计各项费用
-            total_storage_cost += stage_breakdown.storage_cost.amount
-            total_put_cost += stage_breakdown.request_cost.amount
-            if stage_breakdown.retrieval_cost:
-                total_retrieval_cost += stage_breakdown.retrieval_cost.amount
-            if stage_breakdown.transition_cost:
-                total_lifecycle_cost += stage_breakdown.transition_cost.amount
-
-            # 添加存储费用明细
             storage_cost_items.append(stage_breakdown.storage_cost)
 
-        # 计算 GET 请求费用（分配到各阶段，支持分阶段访问比例）
-        get_cost_item = self._calculate_get_cost_item(
-            stages, monthly_gets, total_days,
-            functional=functional, monthly_puts=monthly_puts
-        )
-        total_get_cost = get_cost_item.amount
+            # 累计费用
+            total_costs["storage"] += stage_breakdown.storage_cost.amount
+            total_costs["put"] += stage_breakdown.request_cost.amount
+            if stage_breakdown.retrieval_cost:
+                total_costs["retrieval"] += stage_breakdown.retrieval_cost.amount
+            if stage_breakdown.transition_cost:
+                total_costs["lifecycle"] += stage_breakdown.transition_cost.amount
 
-        # 计算数据传输费用（含阶梯明细）
-        transfer_cost_item = self._calculate_transfer_cost_item(monthly_transfer_gb)
+        return {
+            "breakdowns": stage_breakdowns,
+            "storage_items": storage_cost_items,
+            "totals": total_costs
+        }
 
-        # 构建详细费用明细
+    def _build_results(
+        self,
+        stage_results: dict,
+        metrics: IntermediateMetrics,
+        get_cost_item: CostItem,
+        transfer_cost_item: CostItem,
+        functional: "FunctionalDimensions",
+        stages: List[LifecycleStage],
+        total_days: int
+    ) -> Tuple[CostSummary, DetailedCostBreakdown]:
+        """构建最终结果"""
+        # 更新平均存储量
+        metrics.avg_storage_gb = metrics.daily_data_gb * total_days
+
+        # 构建详细明细
         detailed_breakdown = DetailedCostBreakdown(
-            storage_costs=storage_cost_items,
-            put_request_cost=self._create_put_cost_item(monthly_puts),
+            storage_costs=stage_results["storage_items"],
+            put_request_cost=self._create_put_cost_item(metrics.monthly_puts),
             get_request_cost=get_cost_item,
             retrieval_cost=self._create_retrieval_cost_item(
-                monthly_retrieval_gb, stages, total_days,
-                functional=functional, daily_data_gb=daily_data_gb
+                metrics.monthly_retrieval_gb, stages, total_days,
+                functional=functional, daily_data_gb=metrics.daily_data_gb
             ),
             data_transfer_cost=transfer_cost_item,
             lifecycle_cost=self._create_lifecycle_cost_item(
-                monthly_puts, stages
+                metrics.monthly_puts, stages
             ),
-            stage_breakdowns=stage_breakdowns,
+            stage_breakdowns=stage_results["breakdowns"],
             pricing_metadata=PricingMetadata(
                 source="LOCAL_FALLBACK",
                 updated_at=datetime.now(),
@@ -198,26 +247,18 @@ class LifecycleCalculator(BaseCalculator):
             ),
         )
 
+        # 构建成本分解
+        breakdown = CostBreakdown(
+            storage_cost=stage_results["totals"]["storage"],
+            put_request_cost=stage_results["totals"]["put"],
+            get_request_cost=get_cost_item.amount,
+            retrieval_cost=stage_results["totals"]["retrieval"],
+            data_transfer_cost=transfer_cost_item.amount,
+            lifecycle_cost=stage_results["totals"]["lifecycle"],
+        )
+
         # 构建汇总
         monthly_total = detailed_breakdown.total
-        breakdown = CostBreakdown(
-            storage_cost=total_storage_cost,
-            put_request_cost=total_put_cost,
-            get_request_cost=total_get_cost,
-            retrieval_cost=total_retrieval_cost,
-            data_transfer_cost=transfer_cost_item.amount,
-            lifecycle_cost=total_lifecycle_cost,
-        )
-
-        metrics = IntermediateMetrics(
-            daily_data_gb=daily_data_gb,
-            avg_storage_gb=daily_data_gb * total_days,
-            monthly_puts=monthly_puts,
-            monthly_gets=monthly_gets,
-            monthly_retrieval_gb=monthly_retrieval_gb,
-            monthly_transfer_gb=monthly_transfer_gb,
-        )
-
         summary = CostSummary(
             monthly_total=monthly_total,
             per_device_monthly=monthly_total / functional.device_count,
@@ -284,7 +325,7 @@ class LifecycleCalculator(BaseCalculator):
             storage_class, monthly_puts, is_first_stage
         )
 
-        retrieval_cost = self._calculate_stage_retrieval_cost_v2(
+        retrieval_cost = self._calculate_stage_retrieval_cost(
             storage_class, stage_retrieval_gb
         )
 
@@ -427,38 +468,9 @@ class LifecycleCalculator(BaseCalculator):
     def _calculate_stage_retrieval_cost(
         self,
         storage_class: StorageClass,
-        monthly_retrieval_gb: float,
-        day_ratio: float,
-    ) -> Optional[CostItem]:
-        """计算阶段检索费用（旧版本，按天数比例分配）"""
-        if storage_class == StorageClass.STANDARD:
-            return None
-
-        retrieval_price = self._pricing.get_retrieval_price(storage_class)
-        if retrieval_price <= 0:
-            return None
-
-        stage_retrieval_gb = monthly_retrieval_gb * day_ratio
-        retrieval_amount = stage_retrieval_gb * retrieval_price * (1 - self._discount)
-
-        return CostItem(
-            name="数据检索",
-            unit_price=retrieval_price,
-            unit_price_unit="USD/GB",
-            quantity=stage_retrieval_gb,
-            quantity_unit="GB",
-            amount=round(retrieval_amount, 4),
-        )
-
-    def _calculate_stage_retrieval_cost_v2(
-        self,
-        storage_class: StorageClass,
         stage_retrieval_gb: float,
     ) -> Optional[CostItem]:
-        """计算阶段检索费用（v2 版本，直接使用阶段检索量）
-
-        支持时间衰减访问模式，直接接收该阶段的检索量，
-        而不是通过 day_ratio 从全局检索量计算。
+        """计算阶段检索费用
 
         Args:
             storage_class: 存储类型
@@ -674,51 +686,126 @@ class LifecycleCalculator(BaseCalculator):
         functional = input_data.functional
         lifecycle = input_data.technical.lifecycle_policy
 
-        transition_days = lifecycle.transition_days
-        target_class = lifecycle.target_class
-        retention_days = functional.retention_days
+        # 计算基础指标
+        metrics = self._calculate_base_metrics(functional)
 
-        # 计算中间指标
-        daily_data_gb = BaseCalculator.calculate_daily_data_gb(functional)
-        monthly_puts = BaseCalculator.calculate_monthly_puts(functional, daily_data_gb)
-        monthly_gets = BaseCalculator.calculate_monthly_gets(functional, monthly_puts)
-        monthly_retrieval_gb = BaseCalculator.calculate_monthly_retrieval_gb(
-            daily_data_gb, functional.access_pattern
-        )
-        monthly_transfer_gb = BaseCalculator.calculate_monthly_transfer_gb(
-            monthly_retrieval_gb
+        # 计算热/冷存储天数
+        hot_days, cold_days = self._calculate_storage_days(
+            lifecycle.transition_days, functional.retention_days
         )
 
-        # 计算热/冷存储比例
+        # 计算各类成本
+        costs = self._calculate_simple_costs(
+            metrics, hot_days, cold_days,
+            lifecycle.target_class, functional.retention_days
+        )
+
+        # 更新平均存储量
+        metrics.avg_storage_gb = metrics.daily_data_gb * functional.retention_days
+
+        # 构建结果
+        breakdown = CostBreakdown(**costs)
+        monthly_total = breakdown.total
+
+        return CostSummary(
+            monthly_total=monthly_total,
+            per_device_monthly=monthly_total / functional.device_count,
+            breakdown=breakdown,
+            device_count=functional.device_count,
+            metrics=metrics,
+        )
+
+    def _calculate_storage_days(
+        self, transition_days: int, retention_days: int
+    ) -> Tuple[int, int]:
+        """计算热/冷存储天数"""
         hot_days = min(transition_days, retention_days)
         cold_days = max(0, retention_days - transition_days)
+        return hot_days, cold_days
 
-        # 计算各部分存储量
+    def _calculate_simple_costs(
+        self,
+        metrics: IntermediateMetrics,
+        hot_days: int,
+        cold_days: int,
+        target_class: StorageClass,
+        retention_days: int
+    ) -> dict:
+        """计算简单模式下的各项成本"""
+        daily_data_gb = metrics.daily_data_gb
+
+        # 存储成本
+        storage_cost = self._calculate_tiered_storage_cost(
+            daily_data_gb, hot_days, cold_days, target_class
+        )
+
+        # PUT 请求成本
+        put_cost = self._calculate_request_cost(
+            metrics.monthly_puts, "put", StorageClass.STANDARD
+        )
+
+        # GET 请求成本（按比例分配）
+        ratios = self._calculate_access_ratios(hot_days, cold_days, retention_days)
+        get_cost = self._calculate_tiered_get_cost(
+            metrics.monthly_gets, ratios, target_class
+        )
+
+        # 检索成本
+        retrieval_cost = self._calculate_cold_retrieval_cost(
+            metrics.monthly_retrieval_gb, ratios["cold"], target_class
+        )
+
+        # 数据传输成本
+        transfer_cost = self._calculate_simple_transfer_cost(
+            metrics.monthly_transfer_gb
+        )
+
+        # 生命周期转换成本
+        lifecycle_cost = self._calculate_transition_cost(
+            metrics.monthly_puts, target_class
+        )
+
+        return {
+            "storage_cost": storage_cost,
+            "put_request_cost": put_cost,
+            "get_request_cost": get_cost,
+            "retrieval_cost": retrieval_cost,
+            "data_transfer_cost": transfer_cost,
+            "lifecycle_cost": lifecycle_cost,
+        }
+
+    def _calculate_tiered_storage_cost(
+        self, daily_data_gb: float, hot_days: int,
+        cold_days: int, target_class: StorageClass
+    ) -> float:
+        """计算分层存储成本"""
         hot_storage_gb = daily_data_gb * hot_days
         cold_storage_gb = daily_data_gb * cold_days
-        avg_storage_gb = hot_storage_gb + cold_storage_gb
 
-        # 计算存储费用
-        hot_storage_cost = (
-            hot_storage_gb
-            * self._pricing.get_storage_price(StorageClass.STANDARD)
-            * (1 - self._discount)
-        )
-        cold_storage_cost = (
-            cold_storage_gb
-            * self._pricing.get_storage_price(target_class)
-            * (1 - self._discount)
-        )
-        storage_cost = hot_storage_cost + cold_storage_cost
+        hot_price = self._pricing.get_storage_price(StorageClass.STANDARD)
+        cold_price = self._pricing.get_storage_price(target_class)
 
-        # PUT 请求费用
-        put_cost = (
-            (monthly_puts / 1000)
-            * self._pricing.get_put_price(StorageClass.STANDARD)
-            * (1 - self._discount)
-        )
+        hot_cost = hot_storage_gb * hot_price * (1 - self._discount)
+        cold_cost = cold_storage_gb * cold_price * (1 - self._discount)
 
-        # GET 请求费用
+        return hot_cost + cold_cost
+
+    def _calculate_request_cost(
+        self, request_count: float, request_type: str,
+        storage_class: StorageClass
+    ) -> float:
+        """计算请求成本"""
+        if request_type == "put":
+            price = self._pricing.get_put_price(storage_class)
+        else:
+            price = self._pricing.get_get_price(storage_class)
+
+        return (request_count / 1000) * price * (1 - self._discount)
+
+    def _calculate_access_ratios(
+        self, hot_days: int, cold_days: int, retention_days: int
+    ) -> dict:
+        """计算访问比例"""
         if retention_days > 0:
             hot_ratio = hot_days / retention_days
             cold_ratio = cold_days / retention_days
@@ -726,72 +813,49 @@ class LifecycleCalculator(BaseCalculator):
             hot_ratio = 1.0
             cold_ratio = 0.0
 
-        hot_gets = monthly_gets * hot_ratio
-        cold_gets = monthly_gets * cold_ratio
+        return {"hot": hot_ratio, "cold": cold_ratio}
 
-        get_cost = (
-            (hot_gets / 1000)
-            * self._pricing.get_get_price(StorageClass.STANDARD)
-            * (1 - self._discount)
-        ) + (
-            (cold_gets / 1000)
-            * self._pricing.get_get_price(target_class)
-            * (1 - self._discount)
+    def _calculate_tiered_get_cost(
+        self, monthly_gets: float, ratios: dict,
+        target_class: StorageClass
+    ) -> float:
+        """计算分层 GET 请求成本"""
+        hot_gets = monthly_gets * ratios["hot"]
+        cold_gets = monthly_gets * ratios["cold"]
+
+        hot_cost = self._calculate_request_cost(
+            hot_gets, "get", StorageClass.STANDARD
+        )
+        cold_cost = self._calculate_request_cost(
+            cold_gets, "get", target_class
         )
 
-        # 检索费用
+        return hot_cost + cold_cost
+
+    def _calculate_cold_retrieval_cost(
+        self, monthly_retrieval_gb: float, cold_ratio: float,
+        target_class: StorageClass
+    ) -> float:
+        """计算冷存储检索成本"""
         cold_retrieval_gb = monthly_retrieval_gb * cold_ratio
-        retrieval_cost = (
-            cold_retrieval_gb
-            * self._pricing.get_retrieval_price(target_class)
-            * (1 - self._discount)
-        )
+        retrieval_price = self._pricing.get_retrieval_price(target_class)
+        return cold_retrieval_gb * retrieval_price * (1 - self._discount)
 
-        # 数据传输费用
-        transfer_cost = (
-            monthly_transfer_gb
-            * self._pricing.get_data_transfer_price(monthly_transfer_gb)
-            * (1 - self._discount)
-        )
+    def _calculate_simple_transfer_cost(
+        self, monthly_transfer_gb: float
+    ) -> float:
+        """计算简单模式的数据传输成本"""
+        transfer_price = self._pricing.get_data_transfer_price(monthly_transfer_gb)
+        return monthly_transfer_gb * transfer_price * (1 - self._discount)
 
-        # 生命周期转换费用
+    def _calculate_transition_cost(
+        self, monthly_puts: float, target_class: StorageClass
+    ) -> float:
+        """计算生命周期转换成本"""
         daily_puts = monthly_puts / 30
         monthly_transitions = daily_puts * 30
-        lifecycle_cost = (
-            (monthly_transitions / 1000)
-            * self._pricing.get_lifecycle_price(target_class)
-            * (1 - self._discount)
-        )
-
-        # 构建结果
-        breakdown = CostBreakdown(
-            storage_cost=storage_cost,
-            put_request_cost=put_cost,
-            get_request_cost=get_cost,
-            retrieval_cost=retrieval_cost,
-            data_transfer_cost=transfer_cost,
-            lifecycle_cost=lifecycle_cost,
-        )
-
-        metrics = IntermediateMetrics(
-            daily_data_gb=daily_data_gb,
-            avg_storage_gb=avg_storage_gb,
-            monthly_puts=monthly_puts,
-            monthly_gets=monthly_gets,
-            monthly_retrieval_gb=monthly_retrieval_gb,
-            monthly_transfer_gb=monthly_transfer_gb,
-        )
-
-        monthly_total = breakdown.total
-        per_device_monthly = monthly_total / functional.device_count
-
-        return CostSummary(
-            monthly_total=monthly_total,
-            per_device_monthly=per_device_monthly,
-            breakdown=breakdown,
-            device_count=functional.device_count,
-            metrics=metrics,
-        )
+        lifecycle_price = self._pricing.get_lifecycle_price(target_class)
+        return (monthly_transitions / 1000) * lifecycle_price * (1 - self._discount)
 
     def _calculate_simple_with_details(
         self, input_data: CostCalculationInput

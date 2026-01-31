@@ -137,11 +137,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
 
       {error && (
         <Alert
-          message={error}
+          title={error}
           type="error"
           showIcon
-          closable
-          onClose={() => setError(null)}
+          closable={{ onClose: () => setError(null) }}
           style={{ marginBottom: 16, borderRadius: 8 }}
           role="alert"
         />
@@ -205,7 +204,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
                 percent={password ? passwordStrength.score : 0}
                 showInfo={false}
                 strokeColor={passwordStrength.color}
-                trailColor="#f0f0f0"
+                railColor="#f0f0f0"
                 size="small"
                 style={{ flex: 1, margin: 0 }}
               />

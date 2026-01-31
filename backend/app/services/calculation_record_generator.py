@@ -409,6 +409,74 @@ def _build_pricing_snapshot(region: str) -> PricingSnapshot:
 # ============================================================
 
 
+def _build_stage_details(
+    detailed: DetailedCostBreakdown,
+    functional: FunctionalDimensions
+) -> list[StageCostDetail]:
+    """构建分阶段明细列表
+
+    Args:
+        detailed: 详细成本分解
+        functional: 功能维度
+
+    Returns:
+        分阶段明细列表
+    """
+    stage_details = []
+    if detailed.stage_breakdowns:
+        for i, stage in enumerate(detailed.stage_breakdowns):
+            stage_details.append(_convert_stage_breakdown(stage, i, functional))
+    return stage_details
+
+
+def _build_transfer_tiers(
+    detailed: DetailedCostBreakdown
+) -> list[TierDetailSnapshot]:
+    """构建数据传输阶梯明细
+
+    Args:
+        detailed: 详细成本分解
+
+    Returns:
+        数据传输阶梯列表
+    """
+    tiers = []
+    if detailed.data_transfer_cost and detailed.data_transfer_cost.tiers:
+        for tier in detailed.data_transfer_cost.tiers:
+            tiers.append(TierDetailSnapshot(
+                tier_name=tier.tier_name,
+                range_start_gb=tier.range_start_gb,
+                range_end_gb=tier.range_end_gb,
+                unit_price=tier.unit_price,
+                quantity_gb=tier.quantity_gb,
+                amount=tier.amount,
+            ))
+    return tiers
+
+
+def _generate_common_result(
+    input_data: CostCalculationInput,
+) -> tuple:
+    """生成通用计算结果组件
+
+    Args:
+        input_data: 输入参数
+
+    Returns:
+        包含所有通用组件的元组
+    """
+    # 执行计算
+    summary, detailed, strategy = calculate_detailed(input_data)
+
+    # 构建各部分
+    intermediate_metrics = _build_intermediate_metrics(summary, input_data.functional)
+    cost_summary = _build_cost_summary(summary, intermediate_metrics.avg_storage_gb)
+    pricing_snapshot = _build_pricing_snapshot(input_data.pricing.region)
+    stage_details = _build_stage_details(detailed, input_data.functional)
+
+    return summary, detailed, strategy, intermediate_metrics, cost_summary, pricing_snapshot, stage_details
+
+
 def generate_detailed_result(
     input_data: CostCalculationInput,
 ) -> DetailedCalculationResult:
@@ -420,35 +488,11 @@ def generate_detailed_result(
     Returns:
         DetailedCalculationResult: 详细计算结果
     """
-    summary, detailed, strategy = calculate_detailed(input_data)
+    (summary, detailed, strategy, intermediate_metrics,
+     cost_summary, pricing_snapshot, stage_details) = _generate_common_result(input_data)
 
-    # 构建中间指标
-    intermediate_metrics = _build_intermediate_metrics(summary, input_data.functional)
-
-    # 构建分阶段明细
-    stage_details = []
-    if detailed.stage_breakdowns:
-        for i, stage in enumerate(detailed.stage_breakdowns):
-            stage_details.append(_convert_stage_breakdown(stage, i, input_data.functional))
-
-    # 构建费用汇总
-    cost_summary = _build_cost_summary(summary, intermediate_metrics.avg_storage_gb)
-
-    # 构建定价快照
-    pricing_snapshot = _build_pricing_snapshot(input_data.pricing.region)
-
-    # 提取 DTO 阶梯数据
-    data_transfer_tiers = []
-    if detailed.data_transfer_cost and detailed.data_transfer_cost.tiers:
-        for tier in detailed.data_transfer_cost.tiers:
-            data_transfer_tiers.append(TierDetailSnapshot(
-                tier_name=tier.tier_name,
-                range_start_gb=tier.range_start_gb,
-                range_end_gb=tier.range_end_gb,
-                unit_price=tier.unit_price,
-                quantity_gb=tier.quantity_gb,
-                amount=tier.amount,
-            ))
+    # 提取数据传输阶梯
+    data_transfer_tiers = _build_transfer_tiers(detailed)
 
     return DetailedCalculationResult(
         summary=cost_summary,
@@ -477,19 +521,11 @@ def generate_calculation_record(
     Returns:
         CalculationRecord: 核算记录
     """
-    summary, detailed, strategy = calculate_detailed(input_data)
+    (summary, detailed, strategy, intermediate_metrics,
+     cost_summary, pricing_snapshot, stage_details) = _generate_common_result(input_data)
 
-    # 构建各部分
+    # 构建输入快照
     input_snapshot = _build_input_snapshot(input_data)
-    intermediate_metrics = _build_intermediate_metrics(summary, input_data.functional)
-    cost_summary = _build_cost_summary(summary, intermediate_metrics.avg_storage_gb)
-    pricing_snapshot = _build_pricing_snapshot(input_data.pricing.region)
-
-    # 构建分阶段明细
-    stage_details = []
-    if detailed.stage_breakdowns:
-        for i, stage in enumerate(detailed.stage_breakdowns):
-            stage_details.append(_convert_stage_breakdown(stage, i, input_data.functional))
 
     return CalculationRecord(
         user_id=user_id,

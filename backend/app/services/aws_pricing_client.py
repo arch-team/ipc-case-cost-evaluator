@@ -429,127 +429,115 @@ class AWSPricingClient:
         Args:
             result: 已获取的定价字典，会被原地修改
         """
-        defaults = {
-            StorageClass.STANDARD: StorageClassPricing(
-                storage_per_gb_month=0.023,
-                put_per_1000=0.005,
-                get_per_1000=0.0004,
-                retrieval_per_gb=0,
-                lifecycle_transition_per_1000=0,
-            ),
-            StorageClass.INTELLIGENT_TIERING: StorageClassPricing(
-                storage_per_gb_month=0.023,  # 频繁访问层
-                put_per_1000=0.005,
-                get_per_1000=0.0004,
-                retrieval_per_gb=0,
-                lifecycle_transition_per_1000=0,
-            ),
-            StorageClass.STANDARD_IA: StorageClassPricing(
-                storage_per_gb_month=0.0125,
-                put_per_1000=0.01,
-                get_per_1000=0.001,
-                retrieval_per_gb=0.01,
-                lifecycle_transition_per_1000=0.01,
-            ),
-            StorageClass.ONEZONE_IA: StorageClassPricing(
-                storage_per_gb_month=0.01,
-                put_per_1000=0.01,
-                get_per_1000=0.001,
-                retrieval_per_gb=0.01,
-                lifecycle_transition_per_1000=0.01,
-            ),
-            StorageClass.GLACIER_IR: StorageClassPricing(
-                storage_per_gb_month=0.004,
-                put_per_1000=0.02,
-                get_per_1000=0.01,
-                retrieval_per_gb=0.03,
-                lifecycle_transition_per_1000=0.02,
-            ),
-            StorageClass.GLACIER_FR: StorageClassPricing(
-                storage_per_gb_month=0.0036,
-                put_per_1000=0.03,
-                get_per_1000=0.0004,
-                retrieval_per_gb=0.01,  # Standard 检索
-                lifecycle_transition_per_1000=0.03,
-            ),
-            StorageClass.DEEP_ARCHIVE: StorageClassPricing(
-                storage_per_gb_month=0.00099,
-                put_per_1000=0.05,
-                get_per_1000=0.0004,
-                retrieval_per_gb=0.02,
-                lifecycle_transition_per_1000=0.05,
-            ),
-        }
-
-        for storage_class, default_pricing in defaults.items():
+        for storage_class in StorageClass:
             if storage_class not in result:
                 logger.info(f"使用默认定价: {storage_class.value}")
-                result[storage_class] = default_pricing
+                result[storage_class] = self._create_default_pricing(storage_class)
+
+    def _create_default_pricing(self, storage_class: StorageClass) -> StorageClassPricing:
+        """创建默认存储类型定价
+
+        Args:
+            storage_class: 存储类型
+
+        Returns:
+            StorageClassPricing 实例
+        """
+        return StorageClassPricing(
+            storage_per_gb_month=self._get_default_storage_price(storage_class),
+            put_per_1000=self._get_default_put_price(storage_class),
+            get_per_1000=self._get_default_get_price(storage_class),
+            retrieval_per_gb=self._get_default_retrieval_price(storage_class),
+            lifecycle_transition_per_1000=self._get_default_lifecycle_price(storage_class),
+        )
+
+    # 默认定价数据（基于 ap-northeast-1 的典型价格）
+    DEFAULT_PRICING = {
+        StorageClass.STANDARD: {
+            "storage": 0.023,
+            "put": 0.005,
+            "get": 0.0004,
+            "retrieval": 0.0,
+            "lifecycle": 0.0,
+        },
+        StorageClass.INTELLIGENT_TIERING: {
+            "storage": 0.023,
+            "put": 0.005,
+            "get": 0.0004,
+            "retrieval": 0.0,
+            "lifecycle": 0.0,
+        },
+        StorageClass.STANDARD_IA: {
+            "storage": 0.0125,
+            "put": 0.01,
+            "get": 0.001,
+            "retrieval": 0.01,
+            "lifecycle": 0.01,
+        },
+        StorageClass.ONEZONE_IA: {
+            "storage": 0.01,
+            "put": 0.01,
+            "get": 0.001,
+            "retrieval": 0.01,
+            "lifecycle": 0.01,
+        },
+        StorageClass.GLACIER_IR: {
+            "storage": 0.004,
+            "put": 0.02,
+            "get": 0.01,
+            "retrieval": 0.03,
+            "lifecycle": 0.02,
+        },
+        StorageClass.GLACIER_FR: {
+            "storage": 0.0036,
+            "put": 0.03,
+            "get": 0.0004,
+            "retrieval": 0.01,
+            "lifecycle": 0.03,
+        },
+        StorageClass.DEEP_ARCHIVE: {
+            "storage": 0.00099,
+            "put": 0.05,
+            "get": 0.0004,
+            "retrieval": 0.02,
+            "lifecycle": 0.05,
+        },
+    }
+
+    def _get_default_price(
+        self, storage_class: StorageClass, price_type: str
+    ) -> float:
+        """获取默认价格
+
+        Args:
+            storage_class: 存储类型
+            price_type: 价格类型 (storage/put/get/retrieval/lifecycle)
+
+        Returns:
+            默认价格值
+        """
+        class_pricing = self.DEFAULT_PRICING.get(storage_class, self.DEFAULT_PRICING[StorageClass.STANDARD])
+        return class_pricing.get(price_type, 0.0)
 
     def _get_default_storage_price(self, storage_class: StorageClass) -> float:
         """获取默认存储价格"""
-        defaults = {
-            StorageClass.STANDARD: 0.023,
-            StorageClass.INTELLIGENT_TIERING: 0.023,
-            StorageClass.STANDARD_IA: 0.0125,
-            StorageClass.ONEZONE_IA: 0.01,
-            StorageClass.GLACIER_IR: 0.004,
-            StorageClass.GLACIER_FR: 0.0036,
-            StorageClass.DEEP_ARCHIVE: 0.00099,
-        }
-        return defaults.get(storage_class, 0.023)
+        return self._get_default_price(storage_class, "storage")
 
     def _get_default_put_price(self, storage_class: StorageClass) -> float:
         """获取默认 PUT 请求价格"""
-        defaults = {
-            StorageClass.STANDARD: 0.005,
-            StorageClass.INTELLIGENT_TIERING: 0.005,
-            StorageClass.STANDARD_IA: 0.01,
-            StorageClass.ONEZONE_IA: 0.01,
-            StorageClass.GLACIER_IR: 0.02,
-            StorageClass.GLACIER_FR: 0.03,
-            StorageClass.DEEP_ARCHIVE: 0.05,
-        }
-        return defaults.get(storage_class, 0.005)
+        return self._get_default_price(storage_class, "put")
 
     def _get_default_get_price(self, storage_class: StorageClass) -> float:
         """获取默认 GET 请求价格"""
-        defaults = {
-            StorageClass.STANDARD: 0.0004,
-            StorageClass.INTELLIGENT_TIERING: 0.0004,
-            StorageClass.STANDARD_IA: 0.001,
-            StorageClass.ONEZONE_IA: 0.001,
-            StorageClass.GLACIER_IR: 0.01,
-            StorageClass.GLACIER_FR: 0.0004,
-            StorageClass.DEEP_ARCHIVE: 0.0004,
-        }
-        return defaults.get(storage_class, 0.0004)
+        return self._get_default_price(storage_class, "get")
 
     def _get_default_retrieval_price(self, storage_class: StorageClass) -> float:
         """获取默认检索价格 (每 GB)"""
-        defaults = {
-            StorageClass.STANDARD: 0.0,
-            StorageClass.INTELLIGENT_TIERING: 0.0,
-            StorageClass.STANDARD_IA: 0.01,
-            StorageClass.ONEZONE_IA: 0.01,
-            StorageClass.GLACIER_IR: 0.03,
-            StorageClass.GLACIER_FR: 0.01,
-            StorageClass.DEEP_ARCHIVE: 0.02,
-        }
-        return defaults.get(storage_class, 0.0)
+        return self._get_default_price(storage_class, "retrieval")
 
     def _get_default_lifecycle_price(self, storage_class: StorageClass) -> float:
         """获取默认生命周期转换价格 (每千次)"""
-        defaults = {
-            StorageClass.STANDARD: 0.0,
-            StorageClass.INTELLIGENT_TIERING: 0.0,
-            StorageClass.STANDARD_IA: 0.01,
-            StorageClass.ONEZONE_IA: 0.01,
-            StorageClass.GLACIER_IR: 0.02,
-            StorageClass.GLACIER_FR: 0.03,
-            StorageClass.DEEP_ARCHIVE: 0.05,
-        }
-        return defaults.get(storage_class, 0.0)
+        return self._get_default_price(storage_class, "lifecycle")
 
     def test_connection(self) -> bool:
         """测试 API 连接

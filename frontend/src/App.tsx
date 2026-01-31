@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ConfigProvider, theme } from 'antd';
+import { ConfigProvider, theme, App as AntApp } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/auth';
@@ -58,8 +58,9 @@ const customTheme = {
 const App: React.FC = () => {
   return (
     <ConfigProvider locale={zhCN} theme={customTheme}>
-      <AuthProvider>
-        <BrowserRouter>
+      <AntApp>
+        <AuthProvider>
+          <BrowserRouter>
           <Routes>
             {/* 分享查看页面 - 独立布局 */}
             <Route path="/shared/:token" element={<SharedView />} />
@@ -119,8 +120,9 @@ const App: React.FC = () => {
               <Route path="settings" element={<Settings />} />
             </Route>
           </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+          </BrowserRouter>
+        </AuthProvider>
+      </AntApp>
     </ConfigProvider>
   );
 };
