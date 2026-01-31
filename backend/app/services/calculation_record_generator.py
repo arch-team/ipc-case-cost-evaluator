@@ -38,6 +38,7 @@ from app.services.calculator.s3_standard import S3StandardCalculator
 from app.services.calculator.lifecycle import LifecycleCalculator
 from app.services.calculator.base import BaseCalculator
 from app.services.pricing_service import get_pricing_service
+from app.models.regions import get_region_name
 
 
 # ============================================================
@@ -196,8 +197,7 @@ def _build_input_snapshot(input_data: CostCalculationInput) -> InputParameterSna
     pricing_dim = input_data.pricing
 
     # 获取区域名称
-    pricing_service = get_pricing_service()
-    region_name = pricing_service.get_region_name(pricing_dim.region)
+    region_name = get_region_name(pricing_dim.region)
 
     lifecycle_stages = None
     if technical.lifecycle_policy and technical.lifecycle_policy.stages:
@@ -307,7 +307,7 @@ def _build_pricing_snapshot(region: str) -> PricingSnapshot:
     """构建定价快照"""
     pricing_service = get_pricing_service()
     pricing, _ = pricing_service.get_pricing(region)
-    region_name = pricing_service.get_region_name(region)
+    region_name = get_region_name(region)
 
     # 构建各存储类型定价
     storage_pricing = {}
