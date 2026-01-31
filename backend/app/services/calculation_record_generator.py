@@ -170,6 +170,7 @@ def _convert_stage_breakdown(
     index: int,
     functional: Optional[FunctionalDimensions] = None,
     stage_dto_cost: Optional[CostItemDetail] = None,
+    stage_get_cost: Optional[CostItemDetail] = None,
 ) -> StageCostDetail:
     """将 StageCostBreakdown 转换为 StageCostDetail
 
@@ -178,6 +179,7 @@ def _convert_stage_breakdown(
         index: 阶段索引
         functional: 功能维度（用于获取访问比例）
         stage_dto_cost: 该阶段的 DTO 费用明细
+        stage_get_cost: 该阶段的 GET 请求费用明细
 
     Returns:
         StageCostDetail: 转换后的阶段费用明细
@@ -187,10 +189,22 @@ def _convert_stage_breakdown(
     if functional:
         access_rate = functional.get_access_rate_for_period(stage.start_day, stage.end_day)
 
-    # 计算阶段总费用（含 DTO）
-    stage_total_with_dto = stage.stage_total
+    # 计算阶段总费用（含 DTO 和 GET）
+    stage_total_with_extras = stage.stage_total
     if stage_dto_cost:
-        stage_total_with_dto += stage_dto_cost.amount
+        stage_total_with_extras += stage_dto_cost.amount
+    if stage_get_cost:
+        stage_total_with_extras += stage_get_cost.amount
+
+    # 构建 GET 请求费用，优先使用传入的分摊值
+    get_request_cost = stage_get_cost if stage_get_cost else CostItemDetail(
+        name="GET 请求",
+        unit_price=0,
+        unit_price_unit="USD/千次",
+        quantity=0,
+        quantity_unit="千次",
+        amount=0,
+    )
 
     return StageCostDetail(
         stage_index=index,
@@ -201,18 +215,11 @@ def _convert_stage_breakdown(
         access_rate=access_rate,
         storage_cost=_convert_cost_item(stage.storage_cost),
         put_request_cost=_convert_cost_item(stage.request_cost),
-        get_request_cost=CostItemDetail(
-            name="GET 请求",
-            unit_price=0,
-            unit_price_unit="USD/千次",
-            quantity=0,
-            quantity_unit="千次",
-            amount=0,
-        ),
+        get_request_cost=get_request_cost,
         retrieval_cost=_convert_cost_item(stage.retrieval_cost) if stage.retrieval_cost else None,
         transition_cost=_convert_cost_item(stage.transition_cost) if stage.transition_cost else None,
         data_transfer_cost=stage_dto_cost,
-        stage_total=stage_total_with_dto,
+        stage_total=stage_total_with_extras,
     )
 
 
@@ -494,10 +501,82 @@ def _calculate_stage_dto_costs(
     return stage_dto_costs
 
 
+def _calculate_stage_get_costs(
+    detailed: DetailedCostBreakdown,
+    functional: FunctionalDimensions,
+    daily_data_gb: float,
+    region: str,
+) -> list[Optional[CostItemDetail]]:
+    """计算每个阶段的 GET 请求费用
+
+    采用按比例分摊策略：按各阶段的访问量权重分摊总 GET 费用。
+    访问量权重 = 该阶段访问比例 × 该阶段数据量占比
+
+    Args:
+        detailed: 详细成本分解
+        functional: 功能维度
+        daily_data_gb: 每日数据量 (GB)
+        region: AWS 区域（用于获取定价）
+
+    Returns:
+        各阶段的 GET 请求费用列表
+    """
+    if not detailed.stage_breakdowns:
+        return []
+
+    # 获取总 GET 费用
+    total_get_cost = detailed.get_request_cost.amount
+    total_get_quantity = detailed.get_request_cost.quantity
+
+    if total_get_cost == 0:
+        return [None] * len(detailed.stage_breakdowns)
+
+    # 计算每个阶段的检索量（与 DTO 分摊使用相同的方法）
+    stage_retrieval_gbs = []
+    for stage in detailed.stage_breakdowns:
+        stage_retrieval_gb = BaseCalculator.calculate_monthly_retrieval_for_period(
+            daily_data_gb, functional, stage.start_day, stage.end_day
+        )
+        stage_retrieval_gbs.append(stage_retrieval_gb)
+
+    # 计算总检索量
+    total_retrieval_gb = sum(stage_retrieval_gbs)
+
+    # 获取定价服务
+    pricing_service = get_pricing_service()
+    pricing, _ = pricing_service.get_pricing(region)
+
+    # 按比例分摊 GET 费用
+    stage_get_costs: list[Optional[CostItemDetail]] = []
+    for stage, stage_retrieval_gb in zip(detailed.stage_breakdowns, stage_retrieval_gbs):
+        if total_retrieval_gb > 0 and stage_retrieval_gb > 0:
+            # 按检索量占比分摊
+            ratio = stage_retrieval_gb / total_retrieval_gb
+            stage_get_amount = total_get_cost * ratio
+            stage_get_quantity = total_get_quantity * ratio
+
+            # 获取该阶段存储类型的 GET 单价
+            get_price = pricing.get_get_price(stage.storage_class)
+
+            stage_get_costs.append(CostItemDetail(
+                name="GET 请求",
+                unit_price=get_price,
+                unit_price_unit="USD/千次",
+                quantity=stage_get_quantity,
+                quantity_unit="千次",
+                amount=stage_get_amount,
+            ))
+        else:
+            stage_get_costs.append(None)
+
+    return stage_get_costs
+
+
 def _build_stage_details(
     detailed: DetailedCostBreakdown,
     functional: FunctionalDimensions,
     daily_data_gb: float = 0,
+    region: str = "us-east-1",
 ) -> list[StageCostDetail]:
     """构建分阶段明细列表
 
@@ -505,6 +584,7 @@ def _build_stage_details(
         detailed: 详细成本分解
         functional: 功能维度
         daily_data_gb: 每日数据量 (GB)
+        region: AWS 区域（用于获取 GET 请求定价）
 
     Returns:
         分阶段明细列表
@@ -513,10 +593,15 @@ def _build_stage_details(
     if detailed.stage_breakdowns:
         # 计算每个阶段的 DTO 费用
         stage_dto_costs = _calculate_stage_dto_costs(detailed, functional, daily_data_gb)
+        # 计算每个阶段的 GET 请求费用
+        stage_get_costs = _calculate_stage_get_costs(detailed, functional, daily_data_gb, region)
 
         for i, stage in enumerate(detailed.stage_breakdowns):
             stage_dto_cost = stage_dto_costs[i] if i < len(stage_dto_costs) else None
-            stage_details.append(_convert_stage_breakdown(stage, i, functional, stage_dto_cost))
+            stage_get_cost = stage_get_costs[i] if i < len(stage_get_costs) else None
+            stage_details.append(_convert_stage_breakdown(
+                stage, i, functional, stage_dto_cost, stage_get_cost
+            ))
     return stage_details
 
 
@@ -564,9 +649,10 @@ def _generate_common_result(
     cost_summary = _build_cost_summary(summary, intermediate_metrics.avg_storage_gb)
     pricing_snapshot = _build_pricing_snapshot(input_data.pricing.region)
 
-    # 构建分阶段明细（传入每日数据量用于 DTO 分摊计算）
+    # 构建分阶段明细（传入每日数据量用于 DTO 和 GET 分摊计算）
     daily_data_gb = intermediate_metrics.daily_data_gb
-    stage_details = _build_stage_details(detailed, input_data.functional, daily_data_gb)
+    region = input_data.pricing.region
+    stage_details = _build_stage_details(detailed, input_data.functional, daily_data_gb, region)
 
     return summary, detailed, strategy, intermediate_metrics, cost_summary, pricing_snapshot, stage_details
 

@@ -1,16 +1,16 @@
 /**
- * 设置页面 - 增强版
+ * 账户页面 - 优化版
  *
- * 功能增强:
- * - 修正页面标题与内容一致性
- * - 增强的系统信息面板（API状态、会话信息）
- * - 开发环境徽章
- * - 增强的 Tabs 动画
- * - 无障碍性支持
+ * 功能优化:
+ * - 页面标题改为"账户"，准确反映功能
+ * - 合并重复提示信息，减少视觉噪音
+ * - 系统信息移至页脚，清理主任务区域
+ * - 表单卡片居中，优化布局
+ * - 增强 Tab 切换器视觉反馈
  */
 import React, { useState, useMemo, useEffect } from 'react';
-import { Card, Typography, Tag, Row, Col, Tabs, Button, message, Modal, Form, Input, Progress, Collapse, Switch, Select } from 'antd';
-import { UserOutlined, LogoutOutlined, EditOutlined, InfoCircleOutlined, SaveOutlined, CheckCircleFilled, CloseCircleFilled, LockOutlined, SettingOutlined, BellOutlined, GlobalOutlined, ExclamationCircleOutlined, ApiOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { Card, Typography, Tag, Row, Col, Tabs, Button, message, Modal, Form, Input, Progress, Switch, Select, Divider, Space } from 'antd';
+import { UserOutlined, LogoutOutlined, EditOutlined, InfoCircleOutlined, SaveOutlined, CheckCircleFilled, CloseCircleFilled, LockOutlined, SettingOutlined, BellOutlined, GlobalOutlined, ApiOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { useAuth } from '../hooks/useAuth';
 import { authApi } from '../api/client';
 import { LoginForm, RegisterForm } from '../components/auth';
@@ -18,7 +18,7 @@ import { ROLE_LABELS } from '../types/auth';
 import type { UserUpdateRequest } from '../types/auth';
 import { REGION_SELECT_OPTIONS } from '../constants/regions';
 
-const { Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 // 样式常量
 const styles = {
@@ -100,6 +100,22 @@ const EnvBadge: React.FC = () => {
     <div className={`env-badge ${isDev ? 'dev' : 'prod'}`}>
       {isDev ? 'DEV' : 'PROD'}
     </div>
+  );
+};
+
+// 内联系统信息组件（用于页脚）
+const SystemInfoInline: React.FC = () => {
+  const apiStatus = useApiStatus();
+
+  return (
+    <Space split={<Divider type="vertical" />} className="system-info-inline">
+      <span>
+        <span className={`status-dot-inline ${apiStatus}`} />
+        API {apiStatus === 'connected' ? '已连接' : apiStatus === 'disconnected' ? '未连接' : '检查中...'}
+      </span>
+      <span>v2.0.0</span>
+      {import.meta.env.DEV && <Tag color="orange" style={{ margin: 0 }}>开发环境</Tag>}
+    </Space>
   );
 };
 
@@ -231,34 +247,25 @@ const Settings: React.FC = () => {
   // 未登录状态：居中显示登录卡片
   if (!isAuthenticated || !user) {
     return (
-      <div className="settings-page">
+      <div className="settings-page-container">
         {/* 开发环境徽章 */}
         <EnvBadge />
 
-        {/* 页面标题 - 修正为正确的标题 */}
-        <div className="settings-page-header" style={{ textAlign: 'center' }}>
-          <h1 className="settings-page-title">设置</h1>
-          <Paragraph type="secondary" style={{ margin: 0 }}>
-            请先登录以访问设置功能
-          </Paragraph>
-          <div className="settings-page-subtitle">
-            登录后可保存和管理您的评估记录
-          </div>
-        </div>
+        {/* 主内容区 - 居中 */}
+        <div className="settings-main-content">
+          {/* 页面标题 */}
+          <h1 className="settings-title">账户</h1>
 
-        {/* 登录提示 */}
-        <div style={{ maxWidth: 420, margin: '0 auto 20px' }}>
-          <div className="login-prompt-card">
-            <ExclamationCircleOutlined />
-            <div className="prompt-text">
-              设置页面需要登录才能访问完整功能
-            </div>
+          {/* 轻量提示条（合并原来的说明段落和警告框） */}
+          <div className="settings-hint">
+            <Space>
+              <InfoCircleOutlined style={{ color: '#64748b' }} />
+              <span>登录后可保存评估记录并访问更多功能</span>
+            </Space>
           </div>
-        </div>
 
-        {/* 居中的登录卡片 */}
-        <div style={{ maxWidth: 420, margin: '0 auto' }}>
-          <Card className="settings-card auth-card">
+          {/* 居中的登录卡片 */}
+          <Card className="auth-card">
             <Tabs
               activeKey={authTab}
               onChange={(key) => setAuthTab(key as 'login' | 'register')}
@@ -280,7 +287,7 @@ const Settings: React.FC = () => {
                   label: (
                     <span>
                       注册
-                      <span className="new-user-badge">新用户</span>
+                      <span className="new-user-tag">新用户</span>
                     </span>
                   ),
                   children: (
@@ -295,25 +302,10 @@ const Settings: React.FC = () => {
           </Card>
         </div>
 
-        {/* 底部系统信息 - 开发环境默认展开 */}
-        <div style={{ maxWidth: 420, margin: '24px auto 0' }}>
-          <Collapse
-            ghost
-            defaultActiveKey={import.meta.env.DEV ? ['system'] : []}
-            items={[
-              {
-                key: 'system',
-                label: (
-                  <span style={{ color: '#999', fontSize: 13 }}>
-                    <InfoCircleOutlined style={{ marginRight: 6 }} />
-                    系统信息
-                  </span>
-                ),
-                children: <SystemInfoPanel expanded={false} />,
-              },
-            ]}
-          />
-        </div>
+        {/* 页脚区 - 系统信息内联显示 */}
+        <footer className="settings-footer">
+          <SystemInfoInline />
+        </footer>
       </div>
     );
   }
@@ -326,7 +318,7 @@ const Settings: React.FC = () => {
 
       {/* 页面标题 */}
       <div className="settings-page-header">
-        <h1 className="settings-page-title-v2">设置</h1>
+        <h1 className="settings-page-title-v2">账户</h1>
         <Text type="secondary">管理您的账号和偏好设置</Text>
       </div>
 

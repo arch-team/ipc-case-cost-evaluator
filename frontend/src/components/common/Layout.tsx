@@ -7,7 +7,7 @@ import type { MenuProps } from 'antd';
 import {
   CalculatorOutlined,
   HistoryOutlined,
-  SettingOutlined,
+  UserOutlined,
   HomeOutlined,
   LeftOutlined,
   RightOutlined,
@@ -32,7 +32,7 @@ const breadcrumbNameMap: Record<string, string> = {
   '/evaluations': '评估记录',
   '/admin': '用户管理',
   '/admin/pricing': '定价管理',
-  '/settings': '设置',
+  '/settings': '账户',
 };
 
 const Layout: React.FC = () => {
@@ -98,8 +98,8 @@ const Layout: React.FC = () => {
 
     items.push({
       key: '/settings',
-      icon: <SettingOutlined />,
-      label: '设置',
+      icon: <UserOutlined />,
+      label: '账户',
     });
 
     return items;
