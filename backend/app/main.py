@@ -1,15 +1,26 @@
 """FastAPI 应用入口"""
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.api.routes import calculate, compare, scenarios, pricing, auth, evaluations, export, shares, templates, admin
+from app.api.routes import (
+    calculate,
+    compare,
+    scenarios,
+    pricing,
+    auth,
+    evaluations,
+    export,
+    shares,
+    templates,
+    admin,
+)
 from app.models.enums import UserRole
 from app.services.auth import AuthService
-
 
 logger = logging.getLogger(__name__)
 
@@ -23,22 +34,15 @@ async def lifespan(app: FastAPI):
     # 关闭时的清理操作（如需要）
 
 
-async def create_initial_admin():
-    """
-    创建初始管理员账号
-
-    从环境变量 ADMIN_EMAIL 和 ADMIN_PASSWORD 读取配置。
-    如果管理员邮箱不存在则创建，已存在则跳过。
-    """
-    if not settings.ADMIN_EMAIL or not settings.ADMIN_PASSWORD:
+async def create_initial_admin() -> None:
+    """创建初始管理员账号（如果不存在）"""
+    if not (settings.ADMIN_EMAIL and settings.ADMIN_PASSWORD):
         logger.info("未配置初始管理员环境变量，跳过创建")
         return
 
     service = AuthService()
 
-    # 检查管理员邮箱是否已存在
-    existing = service.get_user_by_email(settings.ADMIN_EMAIL)
-    if existing:
+    if service.get_user_by_email(settings.ADMIN_EMAIL):
         logger.info(f"管理员账号已存在: {settings.ADMIN_EMAIL}")
         return
 
@@ -97,60 +101,54 @@ app = FastAPI(
     redoc_url="/redoc",
     lifespan=lifespan,
     openapi_tags=[
-        {
-            "name": "认证",
-            "description": "用户注册、登录、Token 管理",
-        },
-        {
-            "name": "成本计算",
-            "description": "核心成本计算功能，公开访问",
-        },
-        {
-            "name": "方案对比",
-            "description": "多方案成本对比，公开访问",
-        },
-        {
-            "name": "评估管理",
-            "description": "评估记录的增删改查，需要 user 权限",
-        },
-        {
-            "name": "分享",
-            "description": "评估分享链接管理",
-        },
-        {
-            "name": "管理员",
-            "description": "用户管理和系统统计，需要 admin 权限",
-        },
-        {
-            "name": "定价",
-            "description": "AWS 定价信息查询，公开访问",
-        },
-        {
-            "name": "模板",
-            "description": "评估模板管理，公开访问",
-        },
+        {"name": "认证", "description": "用户注册、登录、Token 管理"},
+        {"name": "成本计算", "description": "核心成本计算功能，公开访问"},
+        {"name": "方案对比", "description": "多方案成本对比，公开访问"},
+        {"name": "评估管理", "description": "评估记录的增删改查，需要 user 权限"},
+        {"name": "分享", "description": "评估分享链接管理"},
+        {"name": "管理员", "description": "用户管理和系统统计，需要 admin 权限"},
+        {"name": "定价", "description": "AWS 定价信息查询，公开访问"},
+        {"name": "模板", "description": "评估模板管理，公开访问"},
     ],
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# 配置 CORS
+def configure_cors(app: FastAPI) -> None:
+    """配置 CORS 中间件"""
+    cors_origins_str = os.environ.get("CORS_ALLOW_ORIGINS", "*")
+    cors_origins = ["*"] if cors_origins_str == "*" else cors_origins_str.split(",")
 
-# 注册 API 路由
-app.include_router(calculate.router, prefix=settings.API_V1_PREFIX)
-app.include_router(compare.router, prefix=settings.API_V1_PREFIX)
-app.include_router(scenarios.router, prefix=settings.API_V1_PREFIX)
-app.include_router(pricing.router, prefix=settings.API_V1_PREFIX)
-app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
-app.include_router(evaluations.router, prefix=settings.API_V1_PREFIX)
-app.include_router(export.router, prefix=settings.API_V1_PREFIX)
-app.include_router(shares.router, prefix=settings.API_V1_PREFIX)
-app.include_router(templates.router, prefix=settings.API_V1_PREFIX)
-app.include_router(admin.router, prefix=settings.API_V1_PREFIX)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+
+def register_routers(app: FastAPI) -> None:
+    """注册所有 API 路由"""
+    routers = [
+        calculate,
+        compare,
+        scenarios,
+        pricing,
+        auth,
+        evaluations,
+        export,
+        shares,
+        templates,
+        admin,
+    ]
+
+    for router_module in routers:
+        app.include_router(router_module.router, prefix=settings.API_V1_PREFIX)
+
+
+# 应用配置
+configure_cors(app)
+register_routers(app)
 
 
 @app.get("/health")

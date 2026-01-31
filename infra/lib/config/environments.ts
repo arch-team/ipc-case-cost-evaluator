@@ -59,43 +59,63 @@ export interface EnvironmentConfig {
 }
 
 /**
+ * 基础配置模板
+ */
+const baseConfig = {
+  region: 'us-east-1',
+  dynamodb: {
+    pointInTimeRecovery: false,
+  },
+  lambda: {
+    timeout: 30,
+    environment: {
+      STORAGE_TYPE: 'dynamodb',
+    },
+  },
+  apiGateway: {
+    corsAllowOrigins: ['*'],
+  },
+  tags: {
+    Project: 'ipc-case-cost-evaluator',
+    ManagedBy: 'cdk',
+  },
+};
+
+/**
  * 开发环境配置
  * 用于本地开发和功能测试
  */
 export const devConfig: EnvironmentConfig = {
   envName: 'dev',
-  region: 'us-east-1',
+  region: baseConfig.region,
   appPrefix: 'ipc-cost-dev',
   stackPrefix: 'IPCCostEvaluator-Dev',
   removalPolicy: cdk.RemovalPolicy.DESTROY,
   dynamodb: {
     tablePrefix: 'ipc-cost-dev',
-    pointInTimeRecovery: false,
+    pointInTimeRecovery: baseConfig.dynamodb.pointInTimeRecovery,
   },
   lambda: {
     memorySize: 512,
-    timeout: 30,
-    reservedConcurrency: undefined, // 不限制
+    timeout: baseConfig.lambda.timeout,
+    reservedConcurrency: undefined,
     environment: {
+      ...baseConfig.lambda.environment,
       ENVIRONMENT: 'dev',
       LOG_LEVEL: 'DEBUG',
-      STORAGE_TYPE: 'dynamodb',
-      // 初始管理员账号（首次启动时自动创建）
+      SECRET_KEY: 'dev-secret-key-for-development-only-do-not-use-in-production',
       ADMIN_EMAIL: 'admin@example.com',
       ADMIN_PASSWORD: 'Admin123456',
     },
   },
   cloudfront: {
-    priceClass: 'PriceClass_100', // 最便宜，仅北美和欧洲
+    priceClass: 'PriceClass_100',
     enableLogging: false,
   },
-  apiGateway: {
-    corsAllowOrigins: ['*'], // 开发环境允许所有源
-  },
+  apiGateway: baseConfig.apiGateway,
   tags: {
+    ...baseConfig.tags,
     Environment: 'dev',
-    Project: 'ipc-case-cost-evaluator',
-    ManagedBy: 'cdk',
   },
 };
 
@@ -105,36 +125,33 @@ export const devConfig: EnvironmentConfig = {
  */
 export const stagingConfig: EnvironmentConfig = {
   envName: 'staging',
-  region: 'us-east-1',
+  region: baseConfig.region,
   appPrefix: 'ipc-cost-staging',
   stackPrefix: 'IPCCostEvaluator-Staging',
   removalPolicy: cdk.RemovalPolicy.DESTROY,
   dynamodb: {
     tablePrefix: 'ipc-cost-staging',
-    pointInTimeRecovery: false,
+    pointInTimeRecovery: baseConfig.dynamodb.pointInTimeRecovery,
   },
   lambda: {
     memorySize: 1024,
-    timeout: 30,
-    reservedConcurrency: 50, // 适中的并发限制
+    timeout: baseConfig.lambda.timeout,
+    reservedConcurrency: 50,
     environment: {
+      ...baseConfig.lambda.environment,
       ENVIRONMENT: 'staging',
       LOG_LEVEL: 'INFO',
-      STORAGE_TYPE: 'dynamodb',
+      SECRET_KEY: process.env.STAGING_SECRET_KEY || 'staging-temp-key-change-in-production',
     },
   },
   cloudfront: {
-    priceClass: 'PriceClass_100', // 控制成本
+    priceClass: 'PriceClass_100',
     enableLogging: true,
   },
-  apiGateway: {
-    // Staging 环境限制为 CloudFront 域名（部署后需更新为实际域名）
-    corsAllowOrigins: ['https://*.cloudfront.net'],
-  },
+  apiGateway: baseConfig.apiGateway,
   tags: {
+    ...baseConfig.tags,
     Environment: 'staging',
-    Project: 'ipc-case-cost-evaluator',
-    ManagedBy: 'cdk',
   },
 };
 
@@ -144,7 +161,7 @@ export const stagingConfig: EnvironmentConfig = {
  */
 export const prodConfig: EnvironmentConfig = {
   envName: 'prod',
-  region: 'us-east-1',
+  region: baseConfig.region,
   appPrefix: 'ipc-cost-prod',
   stackPrefix: 'IPCCostEvaluator-Prod',
   removalPolicy: cdk.RemovalPolicy.RETAIN,
@@ -154,26 +171,23 @@ export const prodConfig: EnvironmentConfig = {
   },
   lambda: {
     memorySize: 1024,
-    timeout: 30,
+    timeout: baseConfig.lambda.timeout,
     reservedConcurrency: 100,
     environment: {
+      ...baseConfig.lambda.environment,
       ENVIRONMENT: 'prod',
       LOG_LEVEL: 'INFO',
-      STORAGE_TYPE: 'dynamodb',
+      SECRET_KEY: process.env.PROD_SECRET_KEY || '',
     },
   },
   cloudfront: {
-    priceClass: 'PriceClass_200', // 北美、欧洲、亚洲
+    priceClass: 'PriceClass_200',
     enableLogging: true,
   },
-  apiGateway: {
-    // 生产环境限制为 CloudFront 域名（部署后需更新为实际域名）
-    corsAllowOrigins: ['https://*.cloudfront.net'],
-  },
+  apiGateway: baseConfig.apiGateway,
   tags: {
+    ...baseConfig.tags,
     Environment: 'prod',
-    Project: 'ipc-case-cost-evaluator',
-    ManagedBy: 'cdk',
   },
 };
 

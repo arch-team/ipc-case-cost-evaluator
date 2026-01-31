@@ -45,124 +45,164 @@ export class FastApiLambda extends Construct {
 
     const { config, tables } = props;
 
-    // ========================================
-    // CloudWatch Log Group
-    // ========================================
+    // 创建 CloudWatch Log Group
+    const logGroup = this.createLogGroup(config);
 
+    // 创建 Lambda 函数
+    this.function = this.createLambdaFunction(config, tables, logGroup);
+
+    // 授予 DynamoDB 权限
+    this.grantDynamoDBPermissions(tables);
+
+    // 创建 API Gateway
+    this.httpApi = this.createApiGateway(config);
+    this.apiUrl = this.httpApi.apiEndpoint;
+
+    // 应用标签
+    this.applyTags();
+  }
+
+  /**
+   * 创建 CloudWatch Log Group
+   */
+  private createLogGroup(config: EnvironmentConfig): logs.LogGroup {
     const logRetention = config.envName === 'prod'
       ? logs.RetentionDays.ONE_MONTH
       : logs.RetentionDays.ONE_WEEK;
 
-    const logGroup = new logs.LogGroup(this, 'LogGroup', {
+    return new logs.LogGroup(this, 'LogGroup', {
       logGroupName: `/aws/lambda/${config.appPrefix}-api`,
       retention: logRetention,
       removalPolicy: config.removalPolicy,
     });
+  }
 
-    // ========================================
-    // Lambda 函数
-    // ========================================
+  /**
+   * 创建 Lambda 函数
+   */
+  private createLambdaFunction(
+    config: EnvironmentConfig,
+    tables: FastApiLambdaProps['tables'],
+    logGroup: logs.LogGroup
+  ): lambda.DockerImageFunction {
+    // Docker 镜像排除列表
+    const dockerExcludes = [
+      '.venv',
+      '__pycache__',
+      '*.pyc',
+      '.pytest_cache',
+      'tests',
+      '.git',
+      '*.md',
+    ];
 
-    // 使用容器镜像
-    this.function = new lambda.DockerImageFunction(this, 'FastApiFunction', {
+    return new lambda.DockerImageFunction(this, 'FastApiFunction', {
       functionName: `${config.appPrefix}-api`,
       code: lambda.DockerImageCode.fromImageAsset(
         path.join(__dirname, '../../../backend'),
         {
           file: 'Dockerfile.lambda',
-          // 构建参数
           buildArgs: {},
-          // 排除不需要的文件
-          exclude: [
-            '.venv',
-            '__pycache__',
-            '*.pyc',
-            '.pytest_cache',
-            'tests',
-            '.git',
-            '*.md',
-          ],
+          exclude: dockerExcludes,
         }
       ),
       memorySize: config.lambda.memorySize,
       timeout: cdk.Duration.seconds(config.lambda.timeout),
-      environment: {
-        ...config.lambda.environment,
-        // DynamoDB 表名（与后端 config.py 中的变量名匹配）
-        DYNAMODB_USERS_TABLE: tables.usersTable.tableName,
-        DYNAMODB_EVALUATIONS_TABLE: tables.evaluationsTable.tableName,
-        DYNAMODB_SHARES_TABLE: tables.sharesTable.tableName,
-        // AWS 区域（AWS_REGION 是保留变量，使用 APP_REGION）
-        APP_REGION: config.region,
-      },
+      environment: this.buildLambdaEnvironment(config, tables),
       reservedConcurrentExecutions: config.lambda.reservedConcurrency,
-      // 日志配置 (使用预创建的 Log Group)
-      logGroup: logGroup,
-      // 架构
-      architecture: lambda.Architecture.ARM_64, // Graviton2，更便宜
+      logGroup,
+      architecture: lambda.Architecture.ARM_64,
     });
+  }
 
-    // ========================================
-    // IAM 权限 - DynamoDB 访问
-    // ========================================
+  /**
+   * 构建 Lambda 环境变量
+   */
+  private buildLambdaEnvironment(
+    config: EnvironmentConfig,
+    tables: FastApiLambdaProps['tables']
+  ): Record<string, string> {
+    return {
+      ...config.lambda.environment,
+      DYNAMODB_USERS_TABLE: tables.usersTable.tableName,
+      DYNAMODB_EVALUATIONS_TABLE: tables.evaluationsTable.tableName,
+      DYNAMODB_SHARES_TABLE: tables.sharesTable.tableName,
+      APP_REGION: config.region,
+      CORS_ALLOW_ORIGINS: config.apiGateway.corsAllowOrigins.join(','),
+    };
+  }
 
-    // 授予 Lambda 对 DynamoDB 表的读写权限
+  /**
+   * 授予 DynamoDB 权限
+   */
+  private grantDynamoDBPermissions(tables: FastApiLambdaProps['tables']): void {
     tables.usersTable.grantReadWriteData(this.function);
     tables.evaluationsTable.grantReadWriteData(this.function);
     tables.sharesTable.grantReadWriteData(this.function);
+  }
 
-    // ========================================
-    // API Gateway HTTP API
-    // ========================================
-
-    this.httpApi = new apigatewayv2.HttpApi(this, 'HttpApi', {
+  /**
+   * 创建 API Gateway
+   */
+  private createApiGateway(config: EnvironmentConfig): apigatewayv2.HttpApi {
+    const httpApi = new apigatewayv2.HttpApi(this, 'HttpApi', {
       apiName: `${config.appPrefix}-http-api`,
       description: `IPC Case Cost Evaluator API (${config.envName})`,
-      // CORS 配置 - 根据环境使用不同的允许源
-      corsPreflight: {
-        allowOrigins: config.apiGateway.corsAllowOrigins,
-        allowMethods: [
-          apigatewayv2.CorsHttpMethod.GET,
-          apigatewayv2.CorsHttpMethod.POST,
-          apigatewayv2.CorsHttpMethod.PUT,
-          apigatewayv2.CorsHttpMethod.DELETE,
-          apigatewayv2.CorsHttpMethod.OPTIONS,
-        ],
-        allowHeaders: [
-          'Content-Type',
-          'Authorization',
-          'X-Requested-With',
-        ],
-        maxAge: cdk.Duration.hours(1),
-      },
+      corsPreflight: this.buildCorsConfig(config),
     });
 
-    // Lambda 集成
+    // 配置路由
+    this.configureRoutes(httpApi);
+
+    return httpApi;
+  }
+
+  /**
+   * 构建 CORS 配置
+   */
+  private buildCorsConfig(config: EnvironmentConfig): apigatewayv2.CorsPreflightOptions {
+    return {
+      allowOrigins: config.apiGateway.corsAllowOrigins,
+      allowMethods: [
+        apigatewayv2.CorsHttpMethod.GET,
+        apigatewayv2.CorsHttpMethod.POST,
+        apigatewayv2.CorsHttpMethod.PUT,
+        apigatewayv2.CorsHttpMethod.DELETE,
+        apigatewayv2.CorsHttpMethod.OPTIONS,
+      ],
+      allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+      maxAge: cdk.Duration.hours(1),
+    };
+  }
+
+  /**
+   * 配置 API 路由
+   */
+  private configureRoutes(httpApi: apigatewayv2.HttpApi): void {
     const lambdaIntegration = new apigatewayv2Integrations.HttpLambdaIntegration(
       'LambdaIntegration',
       this.function
     );
 
-    // 添加路由 - 代理所有请求到 Lambda
-    this.httpApi.addRoutes({
-      path: '/{proxy+}',
-      methods: [apigatewayv2.HttpMethod.ANY],
-      integration: lambdaIntegration,
+    // 代理所有请求到 Lambda
+    const routes = [
+      { path: '/{proxy+}' },
+      { path: '/' },
+    ];
+
+    routes.forEach(route => {
+      httpApi.addRoutes({
+        path: route.path,
+        methods: [apigatewayv2.HttpMethod.ANY],
+        integration: lambdaIntegration,
+      });
     });
+  }
 
-    // 添加根路由
-    this.httpApi.addRoutes({
-      path: '/',
-      methods: [apigatewayv2.HttpMethod.ANY],
-      integration: lambdaIntegration,
-    });
-
-    // API URL
-    this.apiUrl = this.httpApi.apiEndpoint;
-
-    // ========================================
-    // 标签
-    // ========================================
+  /**
+   * 应用标签
+   */
+  private applyTags(): void {
     cdk.Tags.of(this.function).add('Component', 'api');
     cdk.Tags.of(this.httpApi).add('Component', 'api-gateway');
   }

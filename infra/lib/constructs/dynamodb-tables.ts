@@ -34,23 +34,56 @@ export class DynamoDBTables extends Construct {
     const { config } = props;
     const tablePrefix = config.dynamodb.tablePrefix;
 
-    // ========================================
-    // Users 表
-    // ========================================
-    this.usersTable = new dynamodb.Table(this, 'UsersTable', {
-      tableName: `${tablePrefix}-users`,
-      partitionKey: {
-        name: 'username',
-        type: dynamodb.AttributeType.STRING,
-      },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST, // 按需计费
+    // 通用表配置
+    const commonTableProps = {
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: config.removalPolicy,
       pointInTimeRecoverySpecification: {
         pointInTimeRecoveryEnabled: config.dynamodb.pointInTimeRecovery,
       },
+      partitionKey: {
+        name: 'pk',
+        type: dynamodb.AttributeType.STRING,
+      },
+    };
+
+    // ========================================
+    // Users 表
+    // ========================================
+    this.usersTable = new dynamodb.Table(this, 'UsersTable', {
+      ...commonTableProps,
+      tableName: `${tablePrefix}-users`,
     });
 
-    // 添加 email GSI (用于邮箱登录)
+    // ========================================
+    // Evaluations 表
+    // ========================================
+    this.evaluationsTable = new dynamodb.Table(this, 'EvaluationsTable', {
+      ...commonTableProps,
+      tableName: `${tablePrefix}-evaluations`,
+    });
+
+    // ========================================
+    // Shares 表
+    // ========================================
+    this.sharesTable = new dynamodb.Table(this, 'SharesTable', {
+      ...commonTableProps,
+      tableName: `${tablePrefix}-shares`,
+      timeToLiveAttribute: 'expires_at',
+    });
+
+    // 配置全局二级索引
+    this.configureGlobalSecondaryIndexes();
+
+    // 应用标签
+    this.applyTags();
+  }
+
+  /**
+   * 配置全局二级索引
+   */
+  private configureGlobalSecondaryIndexes(): void {
+    // Users 表: email 索引 (用于邮箱登录)
     this.usersTable.addGlobalSecondaryIndex({
       indexName: 'email-index',
       partitionKey: {
@@ -60,23 +93,7 @@ export class DynamoDBTables extends Construct {
       projectionType: dynamodb.ProjectionType.ALL,
     });
 
-    // ========================================
-    // Evaluations 表
-    // ========================================
-    this.evaluationsTable = new dynamodb.Table(this, 'EvaluationsTable', {
-      tableName: `${tablePrefix}-evaluations`,
-      partitionKey: {
-        name: 'id',
-        type: dynamodb.AttributeType.STRING,
-      },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: config.removalPolicy,
-      pointInTimeRecoverySpecification: {
-        pointInTimeRecoveryEnabled: config.dynamodb.pointInTimeRecovery,
-      },
-    });
-
-    // 添加 user_id GSI (用于查询用户的评估列表)
+    // Evaluations 表: user_id 索引 (用于查询用户的评估列表)
     this.evaluationsTable.addGlobalSecondaryIndex({
       indexName: 'user_id-index',
       partitionKey: {
@@ -90,25 +107,7 @@ export class DynamoDBTables extends Construct {
       projectionType: dynamodb.ProjectionType.ALL,
     });
 
-    // ========================================
-    // Shares 表
-    // ========================================
-    this.sharesTable = new dynamodb.Table(this, 'SharesTable', {
-      tableName: `${tablePrefix}-shares`,
-      partitionKey: {
-        name: 'share_id',
-        type: dynamodb.AttributeType.STRING,
-      },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: config.removalPolicy,
-      pointInTimeRecoverySpecification: {
-        pointInTimeRecoveryEnabled: config.dynamodb.pointInTimeRecovery,
-      },
-      // 启用 TTL (用于分享链接过期)
-      timeToLiveAttribute: 'expires_at',
-    });
-
-    // 添加 evaluation_id GSI (用于查询评估的分享列表)
+    // Shares 表: evaluation_id 索引 (用于查询评估的分享列表)
     this.sharesTable.addGlobalSecondaryIndex({
       indexName: 'evaluation_id-index',
       partitionKey: {
@@ -117,10 +116,12 @@ export class DynamoDBTables extends Construct {
       },
       projectionType: dynamodb.ProjectionType.ALL,
     });
+  }
 
-    // ========================================
-    // 标签
-    // ========================================
+  /**
+   * 应用标签
+   */
+  private applyTags(): void {
     cdk.Tags.of(this.usersTable).add('Table', 'users');
     cdk.Tags.of(this.evaluationsTable).add('Table', 'evaluations');
     cdk.Tags.of(this.sharesTable).add('Table', 'shares');
