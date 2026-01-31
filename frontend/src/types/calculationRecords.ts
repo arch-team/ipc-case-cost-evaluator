@@ -56,6 +56,14 @@ export interface InputParameterSnapshot {
 // 中间计算指标
 // ============================================================
 
+// 访问模式阶段快照
+export interface AccessPatternStageSnapshot {
+  start_day: number;
+  end_day: number;
+  access_rate: number;
+  duration_days: number;
+}
+
 export interface IntermediateMetricsDetail {
   daily_recording_seconds: number;
   daily_data_kb: number;
@@ -69,6 +77,10 @@ export interface IntermediateMetricsDetail {
   monthly_gets: number;
   monthly_retrieval_gb: number;
   monthly_transfer_gb: number;
+  // 访问模式相关指标（时间衰减模式增强）
+  access_pattern_mode?: 'simple' | 'time_decay';
+  weighted_access_pattern?: number;
+  access_pattern_stages?: AccessPatternStageSnapshot[];
 }
 
 // ============================================================
@@ -100,6 +112,8 @@ export interface StageCostDetail {
   end_day: number;
   duration_days: number;
   storage_class: string;
+  // 访问比例（时间衰减模式增强）
+  access_rate?: number;
   storage_cost: CostItemDetail;
   put_request_cost: CostItemDetail;
   get_request_cost: CostItemDetail;
@@ -213,6 +227,7 @@ export interface DetailedCalculationResult {
   stage_details: StageCostDetail[];
   storage_strategy: StorageStrategy;
   pricing_snapshot: PricingSnapshot;
+  data_transfer_tiers?: TierDetailSnapshot[];
 }
 
 export interface RecordCountResponse {

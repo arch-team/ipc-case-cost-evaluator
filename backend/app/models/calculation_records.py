@@ -76,6 +76,14 @@ class InputParameterSnapshot(BaseModel):
 # ============================================================
 
 
+class AccessPatternStageSnapshot(BaseModel):
+    """访问模式阶段快照"""
+    start_day: int = Field(..., ge=1, description="开始天数")
+    end_day: int = Field(..., ge=1, description="结束天数")
+    access_rate: float = Field(..., ge=0, le=1, description="访问比例")
+    duration_days: int = Field(..., ge=1, description="持续天数")
+
+
 class IntermediateMetricsDetail(BaseModel):
     """详细中间计算指标"""
 
@@ -98,6 +106,13 @@ class IntermediateMetricsDetail(BaseModel):
     # 检索和传输指标
     monthly_retrieval_gb: float = Field(default=0, description="月度检索量 (GB)")
     monthly_transfer_gb: float = Field(default=0, description="月度传输量 (GB)")
+
+    # 访问模式相关指标（时间衰减模式增强）
+    access_pattern_mode: str = Field(default="simple", description="访问模式: simple 或 time_decay")
+    weighted_access_pattern: Optional[float] = Field(default=None, description="加权平均访问比例 (time_decay 模式)")
+    access_pattern_stages: Optional[List[AccessPatternStageSnapshot]] = Field(
+        default=None, description="访问模式各阶段配置快照 (time_decay 模式)"
+    )
 
 
 # ============================================================
@@ -133,6 +148,9 @@ class StageCostDetail(BaseModel):
     end_day: int = Field(..., ge=1, description="结束天数")
     duration_days: int = Field(..., ge=1, description="持续天数")
     storage_class: str = Field(..., description="存储类型")
+
+    # 访问比例（时间衰减模式增强）
+    access_rate: float = Field(default=0.0, ge=0, le=1, description="该阶段的访问比例")
 
     # 费用明细项
     storage_cost: CostItemDetail = Field(..., description="存储费用")
@@ -290,3 +308,7 @@ class DetailedCalculationResult(BaseModel):
     stage_details: List[StageCostDetail] = Field(default_factory=list, description="分阶段费用明细")
     storage_strategy: StorageStrategy = Field(..., description="存储策略类型")
     pricing_snapshot: PricingSnapshot = Field(..., description="定价快照")
+    data_transfer_tiers: List[TierDetailSnapshot] = Field(
+        default_factory=list,
+        description="数据传输阶梯明细"
+    )

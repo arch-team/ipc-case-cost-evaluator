@@ -15,6 +15,7 @@ import {
   ClockCircleOutlined,
   DownloadOutlined,
   QuestionCircleOutlined,
+  StarOutlined,
 } from '@ant-design/icons';
 import type { IntermediateMetricsDetail } from '../../types/calculationRecords';
 import type { CostCalculationInput } from '../../types';
@@ -119,6 +120,10 @@ const IntermediateMetrics: React.FC<IntermediateMetricsProps> = ({
   // 生成月度 GET 请求公式
   const getMonthlyGetsFormula = (): string => {
     if (!f) return '';
+    // 时间衰减模式显示加权访问比例
+    if (metrics.access_pattern_mode === 'time_decay' && metrics.weighted_access_pattern !== undefined) {
+      return `${formatLargeNumber(metrics.monthly_puts)} × ${(metrics.weighted_access_pattern * 100).toFixed(2)}% (加权)`;
+    }
     return `${formatLargeNumber(metrics.monthly_puts)} × ${f.access_pattern}`;
   };
 
@@ -131,6 +136,20 @@ const IntermediateMetrics: React.FC<IntermediateMetricsProps> = ({
   // 生成月度传输量公式
   const getMonthlyTransferFormula = (): string => {
     return '= 月度检索量';
+  };
+
+  // 生成加权访问比例公式（时间衰减模式）
+  const getWeightedAccessPatternFormula = (): string | null => {
+    const stages = metrics.access_pattern_stages;
+    if (!stages || stages.length === 0) return null;
+
+    const parts = stages.map(s =>
+      `${s.duration_days}天×${(s.access_rate * 100).toFixed(0)}%`
+    );
+    const totalDays = stages.reduce((sum, s) => sum + s.duration_days, 0);
+    const weighted = metrics.weighted_access_pattern || 0;
+
+    return `(${parts.join(' + ')}) ÷ ${totalDays}天 = ${(weighted * 100).toFixed(2)}%`;
   };
 
   // 获取录像模式说明
@@ -198,44 +217,67 @@ const IntermediateMetrics: React.FC<IntermediateMetricsProps> = ({
     },
   ];
 
+  // 构建请求数指标列表
+  const buildRequestMetrics = () => {
+    const baseMetrics = [
+      {
+        label: '每日分片数',
+        value: formatLargeNumber(metrics.segments_per_day),
+        description: getSegmentStrategyDesc(),
+        formula: getSegmentsPerDayFormula(),
+        icon: <CloudUploadOutlined />,
+      },
+      {
+        label: '月度 PUT 请求',
+        value: formatLargeNumber(metrics.monthly_puts),
+        description: '设备数 × 每日分片数 × 30天',
+        formula: getMonthlyPutsFormula(),
+        icon: <CloudUploadOutlined />,
+      },
+    ];
+
+    // 时间衰减模式：在 GET 请求前插入加权访问比例指标
+    if (metrics.access_pattern_mode === 'time_decay' && metrics.weighted_access_pattern !== undefined) {
+      baseMetrics.push({
+        label: '加权访问比例',
+        value: `${(metrics.weighted_access_pattern * 100).toFixed(2)}%`,
+        description: '各阶段访问比例的加权平均',
+        formula: getWeightedAccessPatternFormula() || '',
+        icon: <StarOutlined style={{ color: '#faad14' }} />,
+      });
+    }
+
+    baseMetrics.push(
+      {
+        label: '月度 GET 请求',
+        value: formatLargeNumber(metrics.monthly_gets),
+        description: metrics.access_pattern_mode === 'time_decay'
+          ? '月度PUT × 加权访问比例'
+          : '月度PUT × 访问比例',
+        formula: getMonthlyGetsFormula(),
+        icon: <DownloadOutlined />,
+      },
+      {
+        label: '月度检索量',
+        value: `${formatNumber(metrics.monthly_retrieval_gb, 2)} GB`,
+        description: '每日数据量 × 30天 × 访问比例',
+        formula: getMonthlyRetrievalFormula(),
+        icon: <DownloadOutlined />,
+      },
+      {
+        label: '月度传输量',
+        value: `${formatNumber(metrics.monthly_transfer_gb, 2)} GB`,
+        description: '等于月度检索量',
+        formula: getMonthlyTransferFormula(),
+        icon: <DownloadOutlined />,
+      },
+    );
+
+    return baseMetrics;
+  };
+
   // 请求数指标
-  const requestMetrics = [
-    {
-      label: '每日分片数',
-      value: formatLargeNumber(metrics.segments_per_day),
-      description: getSegmentStrategyDesc(),
-      formula: getSegmentsPerDayFormula(),
-      icon: <CloudUploadOutlined />,
-    },
-    {
-      label: '月度 PUT 请求',
-      value: formatLargeNumber(metrics.monthly_puts),
-      description: '设备数 × 每日分片数 × 30天',
-      formula: getMonthlyPutsFormula(),
-      icon: <CloudUploadOutlined />,
-    },
-    {
-      label: '月度 GET 请求',
-      value: formatLargeNumber(metrics.monthly_gets),
-      description: '月度PUT × 访问比例',
-      formula: getMonthlyGetsFormula(),
-      icon: <DownloadOutlined />,
-    },
-    {
-      label: '月度检索量',
-      value: `${formatNumber(metrics.monthly_retrieval_gb, 2)} GB`,
-      description: '每日数据量 × 30天 × 访问比例',
-      formula: getMonthlyRetrievalFormula(),
-      icon: <DownloadOutlined />,
-    },
-    {
-      label: '月度传输量',
-      value: `${formatNumber(metrics.monthly_transfer_gb, 2)} GB`,
-      description: '等于月度检索量',
-      formula: getMonthlyTransferFormula(),
-      icon: <DownloadOutlined />,
-    },
-  ];
+  const requestMetrics = buildRequestMetrics();
 
   // 渲染说明和公式
   const renderFormulaBlock = (description?: string, formula?: string) => {

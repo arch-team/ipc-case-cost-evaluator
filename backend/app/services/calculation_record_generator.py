@@ -24,6 +24,7 @@ from app.models.calculation_records import (
     TechnicalDimensionSnapshot,
     PricingDimensionSnapshot,
     IntermediateMetricsDetail,
+    AccessPatternStageSnapshot,
     StageCostDetail,
     CostItemDetail,
     TierDetailSnapshot,
@@ -166,14 +167,33 @@ def _convert_cost_item(item) -> CostItemDetail:
     )
 
 
-def _convert_stage_breakdown(stage, index: int) -> StageCostDetail:
-    """将 StageCostBreakdown 转换为 StageCostDetail"""
+def _convert_stage_breakdown(
+    stage,
+    index: int,
+    functional: Optional[FunctionalDimensions] = None,
+) -> StageCostDetail:
+    """将 StageCostBreakdown 转换为 StageCostDetail
+
+    Args:
+        stage: 阶段费用明细
+        index: 阶段索引
+        functional: 功能维度（用于获取访问比例）
+
+    Returns:
+        StageCostDetail: 转换后的阶段费用明细
+    """
+    # 获取该阶段的访问比例
+    access_rate = 0.0
+    if functional:
+        access_rate = functional.get_access_rate_for_period(stage.start_day, stage.end_day)
+
     return StageCostDetail(
         stage_index=index,
         start_day=stage.start_day,
         end_day=stage.end_day,
         duration_days=stage.duration_days,
         storage_class=stage.storage_class.value if hasattr(stage.storage_class, "value") else str(stage.storage_class),
+        access_rate=access_rate,
         storage_cost=_convert_cost_item(stage.storage_cost),
         put_request_cost=_convert_cost_item(stage.request_cost),
         get_request_cost=CostItemDetail(
@@ -253,6 +273,31 @@ def _build_intermediate_metrics(
     avg_storage_tb = avg_storage_gb / 1024
     segments_per_day = BaseCalculator.calculate_segments_per_day(functional, daily_data_gb)
 
+    # 处理访问模式相关指标
+    access_pattern_mode = "simple"
+    weighted_access_pattern = None
+    access_pattern_stages = None
+
+    config = functional.access_pattern_config
+    if config and config.mode == "time_decay" and config.stages:
+        access_pattern_mode = "time_decay"
+
+        # 构建阶段快照
+        access_pattern_stages = [
+            AccessPatternStageSnapshot(
+                start_day=stage.start_day,
+                end_day=stage.end_day,
+                access_rate=stage.access_rate,
+                duration_days=stage.duration_days,
+            )
+            for stage in config.stages
+        ]
+
+        # 计算加权平均访问比例
+        total_days = sum(s.duration_days for s in config.stages)
+        weighted_sum = sum(s.access_rate * s.duration_days for s in config.stages)
+        weighted_access_pattern = weighted_sum / total_days if total_days > 0 else 0
+
     return IntermediateMetricsDetail(
         daily_recording_seconds=daily_recording_seconds,
         daily_data_kb=daily_data_kb,
@@ -265,6 +310,9 @@ def _build_intermediate_metrics(
         monthly_gets=metrics.monthly_gets if metrics else 0,
         monthly_retrieval_gb=metrics.monthly_retrieval_gb if metrics else 0,
         monthly_transfer_gb=metrics.monthly_transfer_gb if metrics else 0,
+        access_pattern_mode=access_pattern_mode,
+        weighted_access_pattern=weighted_access_pattern,
+        access_pattern_stages=access_pattern_stages,
     )
 
 
@@ -384,7 +432,7 @@ def generate_detailed_result(
     stage_details = []
     if detailed.stage_breakdowns:
         for i, stage in enumerate(detailed.stage_breakdowns):
-            stage_details.append(_convert_stage_breakdown(stage, i))
+            stage_details.append(_convert_stage_breakdown(stage, i, input_data.functional))
 
     # 构建费用汇总
     cost_summary = _build_cost_summary(summary, intermediate_metrics.avg_storage_gb)
@@ -392,12 +440,26 @@ def generate_detailed_result(
     # 构建定价快照
     pricing_snapshot = _build_pricing_snapshot(input_data.pricing.region)
 
+    # 提取 DTO 阶梯数据
+    data_transfer_tiers = []
+    if detailed.data_transfer_cost and detailed.data_transfer_cost.tiers:
+        for tier in detailed.data_transfer_cost.tiers:
+            data_transfer_tiers.append(TierDetailSnapshot(
+                tier_name=tier.tier_name,
+                range_start_gb=tier.range_start_gb,
+                range_end_gb=tier.range_end_gb,
+                unit_price=tier.unit_price,
+                quantity_gb=tier.quantity_gb,
+                amount=tier.amount,
+            ))
+
     return DetailedCalculationResult(
         summary=cost_summary,
         intermediate_metrics=intermediate_metrics,
         stage_details=stage_details,
         storage_strategy=strategy,
         pricing_snapshot=pricing_snapshot,
+        data_transfer_tiers=data_transfer_tiers,
     )
 
 
@@ -430,7 +492,7 @@ def generate_calculation_record(
     stage_details = []
     if detailed.stage_breakdowns:
         for i, stage in enumerate(detailed.stage_breakdowns):
-            stage_details.append(_convert_stage_breakdown(stage, i))
+            stage_details.append(_convert_stage_breakdown(stage, i, input_data.functional))
 
     return CalculationRecord(
         user_id=user_id,

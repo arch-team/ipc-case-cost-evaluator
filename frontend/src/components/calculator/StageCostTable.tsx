@@ -10,7 +10,7 @@ import React from 'react';
 import { Table, Typography, Tag, Space, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { InfoCircleOutlined } from '@ant-design/icons';
-import type { StageCostDetail, CostItemDetail } from '../../types/calculationRecords';
+import type { StageCostDetail, CostItemDetail, TierDetailSnapshot } from '../../types/calculationRecords';
 import { formatNumber } from '../../utils/formatters';
 
 const { Text } = Typography;
@@ -18,6 +18,9 @@ const { Text } = Typography;
 interface StageCostTableProps {
   stages: StageCostDetail[];
   compact?: boolean; // 紧凑模式
+  dataTransferCost?: number; // 数据传输费用（全局费用，不按阶段分）
+  dataTransferTiers?: TierDetailSnapshot[]; // 数据传输阶梯明细
+  totalCostWithTransfer?: number; // 包含传输费用的总成本
 }
 
 // 存储类型标签颜色映射
@@ -72,7 +75,13 @@ const CostItemDisplay: React.FC<{ item: CostItemDetail }> = ({ item }) => {
   );
 };
 
-const StageCostTable: React.FC<StageCostTableProps> = ({ stages, compact = false }) => {
+const StageCostTable: React.FC<StageCostTableProps> = ({
+  stages,
+  compact = false,
+  dataTransferCost,
+  dataTransferTiers,
+  totalCostWithTransfer,
+}) => {
   // 表格列定义
   const columns: ColumnsType<StageCostDetail> = [
     {
@@ -106,6 +115,22 @@ const StageCostTable: React.FC<StageCostTableProps> = ({ stages, compact = false
       ),
     },
     {
+      title: '访问比例',
+      dataIndex: 'access_rate',
+      key: 'access_rate',
+      width: 90,
+      render: (value: number | undefined) => {
+        if (value === undefined || value === 0) {
+          return <Text type="secondary">-</Text>;
+        }
+        return (
+          <Text style={{ color: '#722ed1' }}>
+            {(value * 100).toFixed(1)}%
+          </Text>
+        );
+      },
+    },
+    {
       title: '存储费用',
       dataIndex: 'storage_cost',
       key: 'storage_cost',
@@ -116,6 +141,13 @@ const StageCostTable: React.FC<StageCostTableProps> = ({ stages, compact = false
       title: 'PUT 请求',
       dataIndex: 'put_request_cost',
       key: 'put_request_cost',
+      width: 120,
+      render: (item: CostItemDetail) => <CostItemDisplay item={item} />,
+    },
+    {
+      title: 'GET 请求',
+      dataIndex: 'get_request_cost',
+      key: 'get_request_cost',
       width: 120,
       render: (item: CostItemDetail) => <CostItemDisplay item={item} />,
     },
@@ -174,9 +206,16 @@ const StageCostTable: React.FC<StageCostTableProps> = ({ stages, compact = false
       key: 'duration',
       width: 80,
       render: (_, record) => (
-        <Text type="secondary" style={{ fontSize: 12 }}>
-          {record.duration_days} 天
-        </Text>
+        <div>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {record.duration_days} 天
+          </Text>
+          {record.access_rate !== undefined && record.access_rate > 0 && (
+            <div style={{ fontSize: 11, color: '#722ed1' }}>
+              访问: {(record.access_rate * 100).toFixed(1)}%
+            </div>
+          )}
+        </div>
       ),
     },
     {
@@ -186,6 +225,7 @@ const StageCostTable: React.FC<StageCostTableProps> = ({ stages, compact = false
         const items = [
           { label: '存储', value: record.storage_cost.amount },
           { label: 'PUT', value: record.put_request_cost.amount },
+          { label: 'GET', value: record.get_request_cost.amount },
           record.retrieval_cost && { label: '检索', value: record.retrieval_cost.amount },
           record.transition_cost && { label: '转换', value: record.transition_cost.amount },
         ].filter(Boolean);
@@ -234,6 +274,12 @@ const StageCostTable: React.FC<StageCostTableProps> = ({ stages, compact = false
           <Text>{formatCostFormula(record.put_request_cost)}</Text>
         </div>
 
+        {/* GET 请求费用详情 */}
+        <div>
+          <Text type="secondary">GET 请求: </Text>
+          <Text>{formatCostFormula(record.get_request_cost)}</Text>
+        </div>
+
         {/* 检索费用详情 */}
         {record.retrieval_cost && (
           <div>
@@ -271,12 +317,53 @@ const StageCostTable: React.FC<StageCostTableProps> = ({ stages, compact = false
         }
         footer={() => (
           <div style={{ textAlign: 'right' }}>
-            <Text type="secondary" style={{ marginRight: 16 }}>
-              月度总费用:
-            </Text>
-            <Text strong style={{ fontSize: 16, color: '#1890ff' }}>
-              ${formatNumber(totalCost, 4)}
-            </Text>
+            <div style={{ marginBottom: 4 }}>
+              <Text type="secondary" style={{ marginRight: 16 }}>
+                阶段费用小计:
+              </Text>
+              <Text style={{ fontSize: 14 }}>
+                ${formatNumber(totalCost, 4)}
+              </Text>
+            </div>
+            {dataTransferCost !== undefined && dataTransferCost > 0 && (
+              <div style={{ marginBottom: 4 }}>
+                <Text type="secondary" style={{ marginRight: 16 }}>
+                  数据传输出站 (DTO):
+                </Text>
+                <Text style={{ fontSize: 14 }}>
+                  ${formatNumber(dataTransferCost, 4)}
+                </Text>
+                {/* DTO 阶梯明细 */}
+                {dataTransferTiers && dataTransferTiers.length > 0 && (
+                  <div style={{ fontSize: 12, color: '#666', marginTop: 4, textAlign: 'left', paddingLeft: 16 }}>
+                    {dataTransferTiers.map((tier, idx) => (
+                      <div key={idx} style={{ marginBottom: 2 }}>
+                        └─ {tier.tier_name}: {formatNumber(tier.quantity_gb, 2)} GB × ${formatNumber(tier.unit_price, 4)}/GB = ${formatNumber(tier.amount, 4)}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {totalCostWithTransfer !== undefined ? (
+              <div style={{ borderTop: '1px dashed #d9d9d9', paddingTop: 8, marginTop: 4 }}>
+                <Text type="secondary" style={{ marginRight: 16 }}>
+                  月度总费用:
+                </Text>
+                <Text strong style={{ fontSize: 16, color: '#1890ff' }}>
+                  ${formatNumber(totalCostWithTransfer, 4)}
+                </Text>
+              </div>
+            ) : (
+              <div>
+                <Text type="secondary" style={{ marginRight: 16 }}>
+                  月度总费用:
+                </Text>
+                <Text strong style={{ fontSize: 16, color: '#1890ff' }}>
+                  ${formatNumber(totalCost, 4)}
+                </Text>
+              </div>
+            )}
           </div>
         )}
       />

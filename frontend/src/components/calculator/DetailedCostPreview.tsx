@@ -187,13 +187,13 @@ const DetailedCostPreview: React.FC<DetailedCostPreviewProps> = ({
               </Col>
               <Col xs={24} md={8}>
                 <Row gutter={8}>
-                  <Col span={12}>
+                  <Col span={8}>
                     <div style={{ fontSize: 11, opacity: 0.7 }}>存储费用</div>
                     <div style={{ fontSize: 13 }}>
                       ${formatNumber(displayResult.summary.storage_cost, 2)}
                     </div>
                   </Col>
-                  <Col span={12}>
+                  <Col span={8}>
                     <div style={{ fontSize: 11, opacity: 0.7 }}>请求费用</div>
                     <div style={{ fontSize: 13 }}>
                       ${formatNumber(
@@ -201,6 +201,12 @@ const DetailedCostPreview: React.FC<DetailedCostPreviewProps> = ({
                         displayResult.summary.get_request_cost,
                         2
                       )}
+                    </div>
+                  </Col>
+                  <Col span={8}>
+                    <div style={{ fontSize: 11, opacity: 0.7 }}>传输费用</div>
+                    <div style={{ fontSize: 13 }}>
+                      ${formatNumber(displayResult.summary.data_transfer_cost, 2)}
                     </div>
                   </Col>
                 </Row>
@@ -247,7 +253,12 @@ const DetailedCostPreview: React.FC<DetailedCostPreviewProps> = ({
                   </span>
                 ),
                 children: (
-                  <StageCostTable stages={displayResult.stage_details} />
+                  <StageCostTable
+                    stages={displayResult.stage_details}
+                    dataTransferCost={displayResult.summary.data_transfer_cost}
+                    dataTransferTiers={displayResult.data_transfer_tiers}
+                    totalCostWithTransfer={displayResult.summary.total_cost}
+                  />
                 ),
               },
             ]}
