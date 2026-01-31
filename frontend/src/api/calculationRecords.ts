@@ -93,6 +93,18 @@ export const calculationRecordApi = {
     );
     return response.data;
   },
+
+  /**
+   * 批量获取核算记录（用于对比）
+   * @param ids 记录 ID 数组（2-4 个）
+   */
+  getBatch: async (ids: string[]): Promise<CalculationRecord[]> => {
+    const response = await apiClient.get<CalculationRecord[]>(
+      '/calculation-records/batch',
+      { params: { ids: ids.join(',') } }
+    );
+    return response.data;
+  },
 };
 
 export default calculationRecordApi;
