@@ -91,7 +91,7 @@ const CostItem: React.FC<CostItemProps> = ({ label, icon, item, color }) => {
         fontWeight: 500,
         color: hasValue ? color : '#bfbfbf',
       }}>
-        {hasValue ? `$${formatNumber(item.amount, 2)}` : '-'}
+        {hasValue ? `$${formatNumber(item.amount, 4)}` : '-'}
       </span>
     </div>
   );

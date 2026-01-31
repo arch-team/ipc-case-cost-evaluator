@@ -504,19 +504,22 @@ def _calculate_stage_dto_costs(
 def _calculate_stage_get_costs(
     detailed: DetailedCostBreakdown,
     functional: FunctionalDimensions,
-    daily_data_gb: float,
+    monthly_puts: float,
+    total_days: int,
     region: str,
+    discount: float = 0.0,
 ) -> list[Optional[CostItemDetail]]:
     """计算每个阶段的 GET 请求费用
 
-    采用按比例分摊策略：按各阶段的访问量权重分摊总 GET 费用。
-    访问量权重 = 该阶段访问比例 × 该阶段数据量占比
+    为每个阶段独立计算：GET请求数 × 该阶段存储类型的单价
 
     Args:
         detailed: 详细成本分解
         functional: 功能维度
-        daily_data_gb: 每日数据量 (GB)
+        monthly_puts: 月度 PUT 请求数
+        total_days: 总保留天数
         region: AWS 区域（用于获取定价）
+        discount: 折扣比例
 
     Returns:
         各阶段的 GET 请求费用列表
@@ -524,50 +527,34 @@ def _calculate_stage_get_costs(
     if not detailed.stage_breakdowns:
         return []
 
-    # 获取总 GET 费用
-    total_get_cost = detailed.get_request_cost.amount
-    total_get_quantity = detailed.get_request_cost.quantity
-
-    if total_get_cost == 0:
-        return [None] * len(detailed.stage_breakdowns)
-
-    # 计算每个阶段的检索量（与 DTO 分摊使用相同的方法）
-    stage_retrieval_gbs = []
-    for stage in detailed.stage_breakdowns:
-        stage_retrieval_gb = BaseCalculator.calculate_monthly_retrieval_for_period(
-            daily_data_gb, functional, stage.start_day, stage.end_day
-        )
-        stage_retrieval_gbs.append(stage_retrieval_gb)
-
-    # 计算总检索量
-    total_retrieval_gb = sum(stage_retrieval_gbs)
-
     # 获取定价服务
     pricing_service = get_pricing_service()
     pricing, _ = pricing_service.get_pricing(region)
+    discount_multiplier = 1 - discount
 
-    # 按比例分摊 GET 费用
+    # 为每个阶段独立计算 GET 请求费用
     stage_get_costs: list[Optional[CostItemDetail]] = []
-    for stage, stage_retrieval_gb in zip(detailed.stage_breakdowns, stage_retrieval_gbs):
-        if total_retrieval_gb > 0 and stage_retrieval_gb > 0:
-            # 按检索量占比分摊
-            ratio = stage_retrieval_gb / total_retrieval_gb
-            stage_get_amount = total_get_cost * ratio
-            stage_get_quantity = total_get_quantity * ratio
+    for stage in detailed.stage_breakdowns:
+        # 使用正确的方法计算该阶段的 GET 请求数
+        stage_gets = BaseCalculator.calculate_monthly_gets_for_period(
+            functional, monthly_puts, stage.start_day, stage.end_day, total_days
+        )
 
-            # 获取该阶段存储类型的 GET 单价
-            get_price = pricing.get_get_price(stage.storage_class)
+        # 获取该阶段存储类型的 GET 单价
+        get_price = pricing.get_get_price(stage.storage_class)
 
-            stage_get_costs.append(CostItemDetail(
-                name="GET 请求",
-                unit_price=get_price,
-                unit_price_unit="USD/千次",
-                quantity=stage_get_quantity,
-                quantity_unit="千次",
-                amount=stage_get_amount,
-            ))
-        else:
-            stage_get_costs.append(None)
+        # 独立计算费用：GET请求数（千次） × 单价
+        stage_get_quantity = stage_gets / 1000
+        stage_get_amount = stage_get_quantity * get_price * discount_multiplier
+
+        stage_get_costs.append(CostItemDetail(
+            name="GET 请求",
+            unit_price=get_price,
+            unit_price_unit="USD/千次",
+            quantity=round(stage_get_quantity, 6),
+            quantity_unit="千次",
+            amount=round(stage_get_amount, 6),
+        ))
 
     return stage_get_costs
 
@@ -576,7 +563,10 @@ def _build_stage_details(
     detailed: DetailedCostBreakdown,
     functional: FunctionalDimensions,
     daily_data_gb: float = 0,
+    monthly_puts: float = 0,
+    total_days: int = 0,
     region: str = "us-east-1",
+    discount: float = 0.0,
 ) -> list[StageCostDetail]:
     """构建分阶段明细列表
 
@@ -584,7 +574,10 @@ def _build_stage_details(
         detailed: 详细成本分解
         functional: 功能维度
         daily_data_gb: 每日数据量 (GB)
+        monthly_puts: 月度 PUT 请求数
+        total_days: 总保留天数
         region: AWS 区域（用于获取 GET 请求定价）
+        discount: 折扣比例
 
     Returns:
         分阶段明细列表
@@ -593,8 +586,10 @@ def _build_stage_details(
     if detailed.stage_breakdowns:
         # 计算每个阶段的 DTO 费用
         stage_dto_costs = _calculate_stage_dto_costs(detailed, functional, daily_data_gb)
-        # 计算每个阶段的 GET 请求费用
-        stage_get_costs = _calculate_stage_get_costs(detailed, functional, daily_data_gb, region)
+        # 计算每个阶段的 GET 请求费用（独立计算每个阶段）
+        stage_get_costs = _calculate_stage_get_costs(
+            detailed, functional, monthly_puts, total_days, region, discount
+        )
 
         for i, stage in enumerate(detailed.stage_breakdowns):
             stage_dto_cost = stage_dto_costs[i] if i < len(stage_dto_costs) else None
@@ -649,10 +644,15 @@ def _generate_common_result(
     cost_summary = _build_cost_summary(summary, intermediate_metrics.avg_storage_gb)
     pricing_snapshot = _build_pricing_snapshot(input_data.pricing.region)
 
-    # 构建分阶段明细（传入每日数据量用于 DTO 和 GET 分摊计算）
+    # 构建分阶段明细（传入每日数据量用于 DTO 分摊，monthly_puts 和 total_days 用于 GET 独立计算）
     daily_data_gb = intermediate_metrics.daily_data_gb
+    monthly_puts = intermediate_metrics.monthly_puts
+    total_days = input_data.functional.retention_days
     region = input_data.pricing.region
-    stage_details = _build_stage_details(detailed, input_data.functional, daily_data_gb, region)
+    discount = input_data.pricing.discount_percent
+    stage_details = _build_stage_details(
+        detailed, input_data.functional, daily_data_gb, monthly_puts, total_days, region, discount
+    )
 
     return summary, detailed, strategy, intermediate_metrics, cost_summary, pricing_snapshot, stage_details
 
