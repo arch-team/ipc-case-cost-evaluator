@@ -1,14 +1,16 @@
 /**
  * 费用明细内容组件
- * 从 ResultDisplay 提取，支持表格/图表视图切换
+ * 从 ResultDisplay 提取，支持表格/图表视图切换，可折叠
  */
 import React, { useState } from 'react';
-import { Segmented } from 'antd';
-import { PieChartOutlined, TableOutlined } from '@ant-design/icons';
+import { Collapse, Segmented, Typography } from 'antd';
+import { PieChartOutlined, TableOutlined, ProfileOutlined } from '@ant-design/icons';
 import type { CostSummary, TechnicalDimensions, StorageClass } from '../../types';
 import { STORAGE_CLASS_DEFAULTS } from '../../constants/storageClasses';
 import CostPieChart from './CostPieChart';
 import CostBreakdownTable from './CostBreakdownTable';
+
+const { Text } = Typography;
 
 interface SchemeInfo {
   id: string;
@@ -35,10 +37,11 @@ const BreakdownContent: React.FC<BreakdownContentProps> = ({
 }) => {
   const [breakdownView, setBreakdownView] = useState<BreakdownViewType>('table');
 
-  return (
-    <div className="breakdown-content">
-      {/* 视图切换 */}
-      <div className="breakdown-content-header">
+  // 渲染表格或图表内容
+  const renderContent = () => (
+    <>
+      {/* 视图切换按钮 */}
+      <div className="breakdown-view-switcher">
         <Segmented
           value={breakdownView}
           onChange={(value) => setBreakdownView(value as BreakdownViewType)}
@@ -101,7 +104,27 @@ const BreakdownContent: React.FC<BreakdownContentProps> = ({
           <CostPieChart breakdown={result.breakdown} />
         </div>
       )}
-    </div>
+    </>
+  );
+
+  return (
+    <Collapse
+      className="breakdown-content-collapse"
+      defaultActiveKey={['breakdown']}
+      expandIconPosition="start"
+      items={[
+        {
+          key: 'breakdown',
+          label: (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <ProfileOutlined style={{ color: 'var(--color-primary)' }} />
+              <Text strong>费用明细</Text>
+            </div>
+          ),
+          children: renderContent(),
+        },
+      ]}
+    />
   );
 };
 

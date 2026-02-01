@@ -1,22 +1,18 @@
 /**
  * 结果展示组件 - 决策摘要区域
- * 优化版本：Hero 区域 + 副指标栏 + 费用明细 + 使用量指标（可折叠）
- * 包含完整的推荐方案信息展示
+ * 重构版本：蓝色渐变 Hero 卡片 + 关键指标栏 + 计算过程折叠 + 费用明细
  */
 import React from 'react';
-import { Statistic, Button, Typography, Collapse, Tag } from 'antd';
-import {
-  DownloadOutlined,
-  DollarOutlined,
-  DownOutlined,
-  CheckCircleOutlined,
-} from '@ant-design/icons';
-import type { CostSummary, TechnicalDimensions, ComparisonItem } from '../../types';
-import { formatNumber } from '../../utils/formatters';
-import { getTechDescription } from '../../constants/comparison';
+import { Button, Typography } from 'antd';
+import { DownloadOutlined, DollarOutlined } from '@ant-design/icons';
+import type { CostSummary, TechnicalDimensions, CostCalculationInput } from '../../types';
+import type { IntermediateMetricsDetail } from '../../types/calculationRecords';
+import CostHeroCard from './CostHeroCard';
+import MetricSummaryBar from './MetricSummaryBar';
+import CalculationDetailsCollapse from './CalculationDetailsCollapse';
 import BreakdownContent from './BreakdownContent';
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 // 方案信息
 interface SchemeInfo {
@@ -27,11 +23,13 @@ interface SchemeInfo {
 
 interface ResultDisplayProps {
   result: CostSummary;
-  schemeInfo?: SchemeInfo;  // 当前显示结果对应的方案信息
-  isRecommended?: boolean;  // 当前方案是否为推荐方案
-  region?: string;          // 区域（用于费用明细）
-  retentionDays?: number;   // 保留天数（用于费用明细）
-  accessPattern?: number;   // 访问模式（用于费用明细）
+  schemeInfo?: SchemeInfo;
+  isRecommended?: boolean;
+  region?: string;
+  retentionDays?: number;
+  accessPattern?: number;
+  input?: CostCalculationInput;
+  intermediateMetrics?: IntermediateMetricsDetail;
   onExport?: () => void;
 }
 
@@ -42,23 +40,31 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
   region = 'us-east-1',
   retentionDays,
   accessPattern,
+  input,
+  intermediateMetrics,
   onExport,
 }) => {
-  // 获取方案技术描述（使用统一的 getTechDescription 函数）
-  const getSchemeDescriptionLines = (): string[] => {
-    if (!schemeInfo) return [];
-    // 构造一个临时的 ComparisonItem 对象以复用 getTechDescription
-    const tempItem: ComparisonItem = {
-      name: schemeInfo.name,
-      storage_class: schemeInfo.technical.storage_class,
-      monthly_cost: 0,
-      yearly_cost: 0,
-      vs_baseline: 0,
-      is_recommended: false,
-      technical: schemeInfo.technical,
+  // 从 result.metrics 构造 IntermediateMetricsDetail（如果未提供 intermediateMetrics）
+  const metricsDetail: IntermediateMetricsDetail | null = React.useMemo(() => {
+    if (intermediateMetrics) return intermediateMetrics;
+    if (!result.metrics) return null;
+
+    // 基于 UsageMetrics 构造基础的 IntermediateMetricsDetail
+    const m = result.metrics;
+    return {
+      daily_recording_seconds: 0, // 这些值需要从 input 计算，暂时设为 0
+      daily_data_kb: m.daily_data_gb * 1024 * 1024,
+      daily_data_gb: m.daily_data_gb,
+      monthly_data_gb: m.daily_data_gb * 30,
+      avg_storage_gb: m.avg_storage_gb,
+      avg_storage_tb: m.avg_storage_gb / 1024,
+      segments_per_day: 0,
+      monthly_puts: m.monthly_puts,
+      monthly_gets: m.monthly_gets,
+      monthly_retrieval_gb: m.monthly_retrieval_gb,
+      monthly_transfer_gb: m.monthly_transfer_gb,
     };
-    return getTechDescription(tempItem);
-  };
+  }, [intermediateMetrics, result.metrics]);
 
   return (
     <div>
@@ -75,70 +81,29 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
         )}
       </div>
 
-      {/* Hero 区域 - 单设备月均费用 */}
-      <div className="result-hero" data-testid="result-hero">
-        {/* 方案标识 */}
-        {schemeInfo && (
-          <div className="result-hero-scheme" data-testid="result-scheme-badge">
-            <Tag color="blue" style={{ fontSize: 14, padding: '4px 12px' }}>
-              {schemeInfo.name}
-            </Tag>
-            {isRecommended && (
-              <Tag
-                color="green"
-                icon={<CheckCircleOutlined />}
-                className="result-recommended-badge"
-              >
-                推荐方案
-              </Tag>
-            )}
-            <div style={{ marginLeft: 8, display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-              {getSchemeDescriptionLines().map((line, idx) => (
-                <Text key={idx} type="secondary" style={{ fontSize: idx === 0 ? 13 : 12, lineHeight: 1.4 }}>
-                  {line}
-                </Text>
-              ))}
-            </div>
-          </div>
-        )}
-        <div className="result-hero-label">单设备月均费用</div>
-        <div className="result-hero-value">
-          <span>$</span>
-          {formatNumber(result.per_device_monthly, 4)}
-        </div>
-      </div>
+      {/* Hero 区域 - 蓝色渐变卡片 */}
+      <CostHeroCard
+        result={result}
+        breakdown={result.breakdown}
+        schemeInfo={schemeInfo}
+        isRecommended={isRecommended}
+      />
 
-      {/* 副指标栏 - 月度/年度/设备数 */}
-      <div className="result-secondary-stats" data-testid="result-secondary-stats">
-        <div className="result-secondary-card">
-          <Statistic
-            title="月度总费用"
-            value={result.monthly_total}
-            precision={2}
-            prefix="$"
-            valueStyle={{ color: '#2563eb' }}
-          />
-        </div>
-        <div className="result-secondary-card">
-          <Statistic
-            title="年度总费用"
-            value={result.yearly_total}
-            precision={2}
-            prefix="$"
-            valueStyle={{ color: '#16a34a' }}
-          />
-        </div>
-        <div className="result-secondary-card">
-          <Statistic
-            title="设备数量"
-            value={result.device_count}
-            suffix="台"
-          />
-        </div>
-      </div>
+      {/* 关键指标栏 */}
+      {result.metrics && (
+        <MetricSummaryBar metrics={result.metrics} />
+      )}
 
-      {/* 费用明细区域 */}
-      <div className="result-breakdown-section" style={{ marginTop: 24 }}>
+      {/* 计算过程折叠面板 */}
+      {metricsDetail && (
+        <CalculationDetailsCollapse
+          metrics={metricsDetail}
+          input={input}
+        />
+      )}
+
+      {/* 费用明细区域（可折叠） */}
+      <div style={{ marginTop: 24 }}>
         <BreakdownContent
           result={result}
           schemeInfo={schemeInfo}
@@ -147,65 +112,6 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
           accessPattern={accessPattern}
         />
       </div>
-
-      {/* 使用量指标 - 可折叠面板 */}
-      {result.metrics && (
-        <Collapse
-          className="result-metrics-collapse"
-          expandIcon={({ isActive }) => (
-            <DownOutlined rotate={isActive ? 180 : 0} style={{ fontSize: 12 }} />
-          )}
-          items={[
-            {
-              key: 'metrics',
-              label: (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <Text strong>使用量指标</Text>
-                  <span className="result-metrics-summary">
-                    <span className="result-metrics-summary-item">
-                      存储 {formatNumber(result.metrics.avg_storage_gb)} GB
-                    </span>
-                    <span className="result-metrics-summary-item">
-                      PUT 请求 {result.metrics.monthly_puts.toLocaleString()} 次
-                    </span>
-                    <span className="result-metrics-summary-item">
-                      传输 {formatNumber(result.metrics.monthly_transfer_gb)} GB
-                    </span>
-                  </span>
-                </div>
-              ),
-              children: (
-                <div className="result-secondary-stats" style={{ marginBottom: 0 }}>
-                  <div className="result-secondary-card">
-                    <Statistic
-                      title="月度存储量"
-                      value={result.metrics.avg_storage_gb}
-                      precision={2}
-                      suffix="GB"
-                    />
-                  </div>
-                  <div className="result-secondary-card">
-                    <Statistic
-                      title="月度 PUT 请求"
-                      value={result.metrics.monthly_puts}
-                      precision={0}
-                      suffix="次"
-                    />
-                  </div>
-                  <div className="result-secondary-card">
-                    <Statistic
-                      title="月度数据传输"
-                      value={result.metrics.monthly_transfer_gb}
-                      precision={2}
-                      suffix="GB"
-                    />
-                  </div>
-                </div>
-              ),
-            },
-          ]}
-        />
-      )}
     </div>
   );
 };

@@ -373,7 +373,23 @@ body {
 }
 
 /* 费用明细内容组件 */
-.breakdown-content-header {
+/* 费用明细折叠面板 */
+.breakdown-content-collapse {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+}
+
+.breakdown-content-collapse .ant-collapse-header {
+  padding: 14px 16px !important;
+}
+
+.breakdown-content-collapse .ant-collapse-content-box {
+  padding: 16px !important;
+}
+
+/* 视图切换按钮 */
+.breakdown-view-switcher {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 16px;
@@ -2580,5 +2596,269 @@ body {
   .auth-tabs .ant-tabs-tab {
     padding: 10px 16px !important;
     font-size: 14px;
+  }
+}
+
+/* ============================================
+   费用摘要 Hero 卡片样式
+   ============================================ */
+
+.cost-hero-card {
+  background: linear-gradient(135deg, #1890ff 0%, #4096ff 100%);
+  border-radius: var(--radius-medium);
+  padding: 24px 32px;
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(24, 144, 255, 0.25);
+  margin-bottom: var(--spacing-card-gap);
+}
+
+.cost-hero-card-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 32px;
+}
+
+.cost-hero-card-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.cost-hero-card-right {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 160px;
+}
+
+/* 标签区 */
+.cost-hero-card-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cost-hero-storage-tag {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: #fff !important;
+  font-size: 13px;
+  padding: 4px 12px;
+  border-radius: 4px;
+}
+
+.cost-hero-recommended-tag {
+  font-size: 13px !important;
+  padding: 4px 10px !important;
+}
+
+/* 主指标 */
+.cost-hero-card-main {
+  margin-bottom: 16px;
+}
+
+.cost-hero-card-label {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 4px;
+}
+
+.cost-hero-card-value {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #fff;
+  letter-spacing: -1px;
+}
+
+.cost-hero-card-currency {
+  font-size: 32px;
+  font-weight: 400;
+  margin-right: 4px;
+}
+
+/* 副指标 */
+.cost-hero-card-secondary {
+  display: flex;
+  gap: 24px;
+}
+
+.cost-hero-secondary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cost-hero-secondary-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.cost-hero-secondary-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff !important;
+}
+
+/* 迷你饼图 */
+.cost-hero-pie-container {
+  width: 140px;
+  height: 140px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.cost-hero-pie-empty {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+}
+
+.cost-hero-pie-title {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ============================================
+   关键指标摘要栏样式
+   ============================================ */
+
+.metric-summary-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: var(--spacing-card-gap);
+}
+
+.metric-summary-item {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all var(--transition-normal);
+}
+
+.metric-summary-item:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.metric-summary-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.metric-summary-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.metric-summary-label {
+  font-size: 12px;
+  color: var(--color-text-secondary) !important;
+  white-space: nowrap;
+}
+
+.metric-summary-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary) !important;
+  white-space: nowrap;
+}
+
+/* ============================================
+   计算过程折叠面板样式
+   ============================================ */
+
+.calculation-details-collapse {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  margin-bottom: var(--spacing-card-gap);
+}
+
+.calculation-details-collapse .ant-collapse-header {
+  padding: 14px 16px !important;
+}
+
+.calculation-details-collapse .ant-collapse-content-box {
+  padding: 16px !important;
+}
+
+.calculation-details-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.calculation-details-card {
+  border: 1px solid var(--color-border-light);
+}
+
+.calculation-details-card:hover {
+  border-color: var(--color-border-light);
+  box-shadow: none;
+}
+
+/* ============================================
+   响应式调整 - 新组件
+   ============================================ */
+
+@media (max-width: 992px) {
+  .cost-hero-card-content {
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .cost-hero-card-right {
+    align-self: center;
+  }
+
+  .metric-summary-bar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .cost-hero-card {
+    padding: 20px;
+  }
+
+  .cost-hero-card-value {
+    font-size: 36px;
+  }
+
+  .cost-hero-card-currency {
+    font-size: 24px;
+  }
+
+  .cost-hero-card-secondary {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .metric-summary-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-summary-item {
+    padding: 12px;
+  }
+
+  .metric-summary-value {
+    font-size: 16px;
   }
 }

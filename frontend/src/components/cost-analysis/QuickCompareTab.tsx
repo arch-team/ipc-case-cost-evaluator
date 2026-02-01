@@ -309,7 +309,7 @@ const QuickCompareTab: React.FC<QuickCompareTabProps> = ({
       <Spin spinning={status === 'calculating'} tip="计算中...">
         {result && (
           <>
-            {/* 区域1：决策摘要 - Hero 区域 + 副指标栏 + 费用明细 + 使用量指标 */}
+            {/* 区域1：决策摘要 - Hero 卡片 + 关键指标栏 + 计算过程 + 费用明细 */}
             <ResultDisplay
               result={result}
               schemeInfo={currentSchemeResult ? {
@@ -321,6 +321,7 @@ const QuickCompareTab: React.FC<QuickCompareTabProps> = ({
               region={input.pricing.region}
               retentionDays={input.functional.retention_days}
               accessPattern={input.functional.access_pattern}
+              input={input}
               onExport={handleExport}
             />
 
