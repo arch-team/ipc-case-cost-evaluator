@@ -58,21 +58,18 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
     return (events_per_day || 0) * (event_duration_sec || 0);
   }, [input?.functional]);
 
-  // 计算每日分片数
+  // 计算每日分片数 - 从后端返回的 monthly_puts 反推，确保一致性
   const segmentsPerDay = React.useMemo(() => {
-    if (!input?.functional || !result.metrics?.daily_data_gb) return 0;
-    const { segment_strategy, segment_value } = input.functional;
-    const dailyDataKb = result.metrics.daily_data_gb * 1024 * 1024;
+    if (!input?.functional || !result.metrics) return 0;
+    const { device_count } = input.functional;
 
-    if (segment_strategy === 'fixed_size') {
-      // 按大小分片：日数据量 / 分片大小
-      const segmentSizeKb = segment_value || 5120; // 默认 5MB
-      return Math.ceil(dailyDataKb / segmentSizeKb);
+    // 从 monthly_puts 反推：monthly_puts = device_count × segments_per_day × 30
+    if (result.metrics.monthly_puts && device_count > 0) {
+      return result.metrics.monthly_puts / device_count / 30;
     }
-    // fixed_duration 或默认：按时间分片
-    const segmentSeconds = segment_value || 60; // 默认 60 秒
-    return Math.ceil(dailyRecordingSeconds / segmentSeconds);
-  }, [input?.functional, result.metrics?.daily_data_gb, dailyRecordingSeconds]);
+
+    return 0;
+  }, [input?.functional, result.metrics]);
 
   // 从 result.metrics 构造 IntermediateMetricsDetail（如果未提供 intermediateMetrics）
   const metricsDetail: IntermediateMetricsDetail | null = React.useMemo(() => {

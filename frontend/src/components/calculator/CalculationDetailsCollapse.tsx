@@ -202,7 +202,7 @@ const CalculationDetailsCollapse: React.FC<CalculationDetailsCollapseProps> = ({
         label: '月度传输量',
         value: `${formatNumber(metrics.monthly_transfer_gb, 2)} GB`,
         description: '等于月度检索量',
-        formula: '= 月度检索量',
+        formula: '月度检索量',
         icon: <DownloadOutlined />,
       },
     );
