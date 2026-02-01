@@ -23,18 +23,23 @@ interface Props {
 }
 
 const RecordComparisonChart: React.FC<Props> = ({ records }) => {
-  // 构建图表数据 - 包含颜色字段
-  const chartData = records.flatMap((record, idx) => [
-    { record: record.name, category: '存储', value: record.cost_summary.storage_cost, recordColor: RECORD_COLORS[idx] },
-    { record: record.name, category: 'PUT请求', value: record.cost_summary.put_request_cost, recordColor: RECORD_COLORS[idx] },
-    { record: record.name, category: 'GET请求', value: record.cost_summary.get_request_cost, recordColor: RECORD_COLORS[idx] },
-    { record: record.name, category: '检索', value: record.cost_summary.retrieval_cost, recordColor: RECORD_COLORS[idx] },
-    { record: record.name, category: '转换', value: record.cost_summary.lifecycle_cost, recordColor: RECORD_COLORS[idx] },
-    { record: record.name, category: '传输', value: record.cost_summary.data_transfer_cost, recordColor: RECORD_COLORS[idx] },
-  ]);
+  // 构建记录名称到索引的映射
+  const recordIndexMap: Record<string, number> = {};
+  records.forEach((record, idx) => {
+    recordIndexMap[record.name] = idx;
+  });
 
-  // 按记录顺序提取颜色数组（转为普通数组）
-  const colorPalette: string[] = records.map((_, idx) => String(RECORD_COLORS[idx]));
+  // 构建图表数据 - 包含 recordIndex 字段用于颜色映射
+  const chartData = records.flatMap((record, idx) => {
+    return [
+      { record: record.name, category: '存储', value: record.cost_summary.storage_cost, recordIndex: idx },
+      { record: record.name, category: 'PUT请求', value: record.cost_summary.put_request_cost, recordIndex: idx },
+      { record: record.name, category: 'GET请求', value: record.cost_summary.get_request_cost, recordIndex: idx },
+      { record: record.name, category: '检索', value: record.cost_summary.retrieval_cost, recordIndex: idx },
+      { record: record.name, category: '转换', value: record.cost_summary.lifecycle_cost, recordIndex: idx },
+      { record: record.name, category: '传输', value: record.cost_summary.data_transfer_cost, recordIndex: idx },
+    ];
+  });
 
   const config = {
     data: chartData,
@@ -42,24 +47,37 @@ const RecordComparisonChart: React.FC<Props> = ({ records }) => {
     yField: 'value',
     seriesField: 'record',
     isGroup: true,
-    columnStyle: { radius: [4, 4, 0, 0] },
+    // 使用 style.fill 回调根据 recordIndex 设置颜色
+    style: {
+      radiusTopLeft: 4,
+      radiusTopRight: 4,
+      fill: (d: { recordIndex: number }) => RECORD_COLORS[d.recordIndex] || RECORD_COLORS[0],
+    },
     label: {
-      position: 'top' as const,
-      formatter: (datum: { value: number }) => `$${datum.value.toFixed(2)}`,
+      text: (d: { value: number }) => `$${d.value.toFixed(2)}`,
+      textBaseline: 'bottom' as const,
       style: { fontSize: 10 },
     },
-    yAxis: {
-      label: { formatter: (v: string) => `$${v}` },
+    axis: {
+      y: {
+        labelFormatter: (v: number) => `$${v}`,
+      },
     },
-    legend: { position: 'top' as const },
+    legend: {
+      color: {
+        position: 'top' as const,
+      },
+    },
     tooltip: {
-      formatter: (datum: { record: string; value: number }) => ({
-        name: datum.record,
-        value: `$${datum.value.toFixed(4)}`,
-      }),
+      title: (d: { record: string }) => d.record,
+      items: [
+        {
+          field: 'value',
+          name: '费用',
+          valueFormatter: (v: number) => `$${v.toFixed(4)}`,
+        },
+      ],
     },
-    // 颜色数组，按 seriesField 的唯一值顺序分配
-    color: [...colorPalette],
   };
 
   // 计算总成本相关数据
