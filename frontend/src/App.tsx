@@ -20,6 +20,7 @@ import SharedView from './pages/SharedView';
 import AdminPage from './pages/AdminPage';
 import UserManagementPage from './pages/admin/UserManagementPage';
 import SystemMonitor from './pages/admin/SystemMonitor';
+import PricingPage from './pages/PricingPage';
 
 // 企业级稳重风格主题配置
 const customTheme = {
@@ -71,6 +72,9 @@ const App: React.FC = () => {
 
               {/* 新版路由：成本分析（合并页面） */}
               <Route path="cost-analysis" element={<CostAnalysis />} />
+
+              {/* 公开路由：AWS服务定价（游客可访问） */}
+              <Route path="pricing" element={<PricingPage />} />
 
               {/* 新版路由：历史记录（统一入口） */}
               <Route

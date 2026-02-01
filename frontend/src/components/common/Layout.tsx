@@ -30,6 +30,7 @@ const { Title, Text } = Typography;
 const breadcrumbNameMap: Record<string, string> = {
   '/': '首页',
   '/cost-analysis': '成本分析',
+  '/pricing': 'AWS服务定价',
   '/history': '历史记录',
   '/calculation-records/comparison': '记录对比',
   '/admin': '用户管理',
@@ -65,6 +66,15 @@ const Layout: React.FC = () => {
         label: '成本分析',
       },
     ];
+
+    // AWS服务定价 - 仅非管理员用户显示（管理员在管理中心已有定价管理）
+    if (!isAdmin) {
+      items.push({
+        key: '/pricing',
+        icon: <DollarOutlined />,
+        label: 'AWS服务定价',
+      });
+    }
 
     // 历史记录 - 根据登录状态显示不同样式
     if (isUser) {
