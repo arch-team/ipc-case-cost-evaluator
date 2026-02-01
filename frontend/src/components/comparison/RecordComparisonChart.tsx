@@ -23,21 +23,18 @@ interface Props {
 }
 
 const RecordComparisonChart: React.FC<Props> = ({ records }) => {
-  // 构建记录名称到索引的映射
-  const recordIndexMap: Record<string, number> = {};
-  records.forEach((record, idx) => {
-    recordIndexMap[record.name] = idx;
-  });
+  // 使用 record_id 作为唯一标识符（避免同名记录被合并）
+  const recordIds = records.map((r) => r.record_id);
 
-  // 构建图表数据 - 包含 recordIndex 字段用于颜色映射
-  const chartData = records.flatMap((record, idx) => {
+  // 构建图表数据 - 使用 record_id 作为 colorField 的值
+  const chartData = records.flatMap((record) => {
     return [
-      { record: record.name, category: '存储', value: record.cost_summary.storage_cost, recordIndex: idx },
-      { record: record.name, category: 'PUT请求', value: record.cost_summary.put_request_cost, recordIndex: idx },
-      { record: record.name, category: 'GET请求', value: record.cost_summary.get_request_cost, recordIndex: idx },
-      { record: record.name, category: '检索', value: record.cost_summary.retrieval_cost, recordIndex: idx },
-      { record: record.name, category: '转换', value: record.cost_summary.lifecycle_cost, recordIndex: idx },
-      { record: record.name, category: '传输', value: record.cost_summary.data_transfer_cost, recordIndex: idx },
+      { recordId: record.record_id, recordName: record.name, category: '存储', value: record.cost_summary.storage_cost },
+      { recordId: record.record_id, recordName: record.name, category: 'PUT请求', value: record.cost_summary.put_request_cost },
+      { recordId: record.record_id, recordName: record.name, category: 'GET请求', value: record.cost_summary.get_request_cost },
+      { recordId: record.record_id, recordName: record.name, category: '检索', value: record.cost_summary.retrieval_cost },
+      { recordId: record.record_id, recordName: record.name, category: '转换', value: record.cost_summary.lifecycle_cost },
+      { recordId: record.record_id, recordName: record.name, category: '传输', value: record.cost_summary.data_transfer_cost },
     ];
   });
 
@@ -45,17 +42,25 @@ const RecordComparisonChart: React.FC<Props> = ({ records }) => {
     data: chartData,
     xField: 'category',
     yField: 'value',
-    seriesField: 'record',
-    isGroup: true,
-    // 使用 style.fill 回调根据 recordIndex 设置颜色
+    colorField: 'recordId', // 使用唯一 ID 区分颜色
+    // 使用 transform dodgeX 实现分组柱状图（@ant-design/charts 2.x 推荐方式）
+    transform: [{ type: 'dodgeX' }],
+    scale: {
+      color: {
+        type: 'ordinal' as const,
+        domain: recordIds,
+        range: [...RECORD_COLORS].slice(0, records.length),
+      },
+    },
     style: {
       radiusTopLeft: 4,
       radiusTopRight: 4,
-      fill: (d: { recordIndex: number }) => RECORD_COLORS[d.recordIndex] || RECORD_COLORS[0],
+      maxWidth: 40,
     },
     label: {
       text: (d: { value: number }) => `$${d.value.toFixed(2)}`,
-      textBaseline: 'bottom' as const,
+      position: 'top' as const,
+      dy: -4,
       style: { fontSize: 10 },
     },
     axis: {
@@ -63,13 +68,9 @@ const RecordComparisonChart: React.FC<Props> = ({ records }) => {
         labelFormatter: (v: number) => `$${v}`,
       },
     },
-    legend: {
-      color: {
-        position: 'top' as const,
-      },
-    },
+    legend: false, // 下方已有月度总成本图例，隐藏重复图例
     tooltip: {
-      title: (d: { record: string }) => d.record,
+      title: (d: { recordName: string }) => d.recordName, // 显示可读名称
       items: [
         {
           field: 'value',
