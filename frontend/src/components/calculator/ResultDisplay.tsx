@@ -1,22 +1,18 @@
 /**
- * 结果展示组件
- * 优化版本：三层信息架构，Hero 区域突出单设备成本
+ * 结果展示组件 - 决策摘要区域
+ * 优化版本：Hero 区域 + 副指标栏 + 使用量指标（可折叠）
+ * 费用明细已移至 ResultTabs 组件中
  */
-import React, { useState } from 'react';
-import { Statistic, Button, Typography, Segmented, Collapse, Tag } from 'antd';
+import React from 'react';
+import { Statistic, Button, Typography, Collapse, Tag } from 'antd';
 import {
   DownloadOutlined,
   DollarOutlined,
-  PieChartOutlined,
-  TableOutlined,
   DownOutlined,
 } from '@ant-design/icons';
-import type { CostSummary, TechnicalDimensions, StorageClass, ComparisonItem } from '../../types';
+import type { CostSummary, TechnicalDimensions, ComparisonItem } from '../../types';
 import { formatNumber } from '../../utils/formatters';
 import { getTechDescription } from '../../constants/comparison';
-import { STORAGE_CLASS_DEFAULTS } from '../../constants/storageClasses';
-import CostPieChart from './CostPieChart';
-import CostBreakdownTable from './CostBreakdownTable';
 
 const { Title, Text } = Typography;
 
@@ -30,21 +26,10 @@ interface SchemeInfo {
 interface ResultDisplayProps {
   result: CostSummary;
   schemeInfo?: SchemeInfo;  // 当前显示结果对应的方案信息
-  region: string;  // AWS 区域（用于获取定价）
-  // 功能参数（用于显示公式中的具体数值）
-  retentionDays?: number;
-  accessPattern?: number;
   onExport?: () => void;
 }
 
-type BreakdownViewType = 'chart' | 'table';
-
-const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, schemeInfo, region, retentionDays, accessPattern, onExport }) => {
-  const [breakdownView, setBreakdownView] = useState<BreakdownViewType>('table');
-
-  // 使用共用格式化函数 formatNumber
-  // 从 ../../utils/formatters 导入
-
+const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, schemeInfo, onExport }) => {
   // 获取方案技术描述（使用统一的 getTechDescription 函数）
   const getSchemeDescriptionLines = (): string[] => {
     if (!schemeInfo) return [];
@@ -127,74 +112,6 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, schemeInfo, regio
             suffix="台"
           />
         </div>
-      </div>
-
-      {/* 费用明细区域 - Tab 切换 */}
-      <div className="result-breakdown-section" data-testid="result-breakdown-section">
-        <div className="result-breakdown-header">
-          <span className="result-breakdown-title">费用构成</span>
-          <Segmented
-            value={breakdownView}
-            onChange={(value) => setBreakdownView(value as BreakdownViewType)}
-            options={[
-              {
-                label: (
-                  <span>
-                    <TableOutlined style={{ marginRight: 4 }} />
-                    表格
-                  </span>
-                ),
-                value: 'table',
-              },
-              {
-                label: (
-                  <span>
-                    <PieChartOutlined style={{ marginRight: 4 }} />
-                    图表
-                  </span>
-                ),
-                value: 'chart',
-              },
-            ]}
-          />
-        </div>
-
-        {/* 根据选择显示表格或图表 */}
-        {breakdownView === 'table' ? (
-          <CostBreakdownTable
-            breakdown={result.breakdown}
-            metrics={result.metrics}
-            monthlyTotal={result.monthly_total}
-            pricingMetadata={result.pricing_metadata}
-            region={region}
-            storageClass={(schemeInfo?.technical.storage_class || STORAGE_CLASS_DEFAULTS.primary) as StorageClass}
-            deviceCount={result.device_count}
-            retentionDays={retentionDays}
-            accessPattern={accessPattern}
-            detailedBreakdown={result.detailed_breakdown ? {
-              storageCosts: result.detailed_breakdown.storage_costs?.map(c => ({
-                name: c.name,
-                unitPrice: c.unit_price,
-                unitPriceUnit: c.unit_price_unit,
-                quantity: c.quantity,
-                quantityUnit: c.quantity_unit,
-                amount: c.amount,
-              })),
-              dataTransferTiers: result.detailed_breakdown.data_transfer_tiers?.map(t => ({
-                tierName: t.tier_name,
-                rangeStartGb: t.range_start_gb,
-                rangeEndGb: t.range_end_gb,
-                unitPrice: t.unit_price,
-                quantityGb: t.quantity_gb,
-                amount: t.amount,
-              })),
-            } : undefined}
-          />
-        ) : (
-          <div style={{ padding: '16px 0' }}>
-            <CostPieChart breakdown={result.breakdown} />
-          </div>
-        )}
       </div>
 
       {/* 使用量指标 - 可折叠面板 */}

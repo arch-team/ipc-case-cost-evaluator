@@ -3,7 +3,7 @@
  * 左侧参数输入区 (400px) + 右侧结果展示区 (自适应)
  */
 import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
-import { Card, Empty, Spin, Typography, Badge, message } from 'antd';
+import { Empty, Spin, Typography, Badge, message } from 'antd';
 import { DollarOutlined, SyncOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -20,8 +20,7 @@ import { calculatorApi } from '../api/client';
 import { createInitialMultiConfig } from '../components/calculator/MultiSchemePanel';
 import InputPanel from '../components/calculator/InputPanel';
 import ResultDisplay from '../components/calculator/ResultDisplay';
-import ComparisonPanel from '../components/comparison/ComparisonPanel';
-import SensitivityAnalysis from '../components/calculator/SensitivityAnalysis';
+import ResultTabs from '../components/calculator/ResultTabs';
 import ExportDialog from '../components/calculator/ExportDialog';
 import ShareDialog from '../components/calculator/ShareDialog';
 import debounce from 'lodash/debounce';
@@ -293,7 +292,7 @@ const Calculator: React.FC = () => {
       <Spin spinning={status === 'calculating'} tip="计算中...">
         {result && (
           <>
-            {/* 费用汇总卡片 */}
+            {/* 区域1：决策摘要 - Hero 区域 + 副指标栏 + 使用量指标 */}
             <ResultDisplay
               result={result}
               schemeInfo={currentSchemeResult ? {
@@ -301,34 +300,22 @@ const Calculator: React.FC = () => {
                 name: currentSchemeResult.schemeName,
                 technical: currentSchemeResult.technical,
               } : undefined}
-              region={input.pricing.region}
-              retentionDays={input.functional.retention_days}
-              accessPattern={input.functional.access_pattern}
               onExport={handleExport}
             />
 
-            {/* 方案对比 */}
-            {comparison && (
-              <div style={{ marginTop: 24 }}>
-                <ComparisonPanel
-                  comparison={comparison}
-                  metrics={result.metrics}
-                  deviceCount={result.device_count}
-                  region={input.pricing.region}
-                />
-              </div>
-            )}
-
-            {/* 敏感度分析 */}
-            <div style={{ marginTop: 24 }}>
-              <Card className="sensitivity-card">
-                <SensitivityAnalysis
-                  input={input}
-                  baselineCost={result.monthly_total}
-                  onApplyValue={handleApplySensitivityValue}
-                />
-              </Card>
-            </div>
+            {/* 区域2：详细分析 Tab - 费用明细 / 方案对比 / 敏感度分析 */}
+            <ResultTabs
+              result={result}
+              comparison={comparison}
+              input={input}
+              region={input.pricing.region}
+              schemeInfo={currentSchemeResult ? {
+                id: currentSchemeResult.schemeId,
+                name: currentSchemeResult.schemeName,
+                technical: currentSchemeResult.technical,
+              } : undefined}
+              onApplySensitivityValue={handleApplySensitivityValue}
+            />
           </>
         )}
       </Spin>

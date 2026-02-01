@@ -7,7 +7,7 @@
  * - 不保存记录
  */
 import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
-import { Card, Empty, Spin, Badge, message } from 'antd';
+import { Empty, Spin, Badge, message } from 'antd';
 import { SyncOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -24,8 +24,7 @@ import { calculatorApi } from '../../api/client';
 import { createInitialMultiConfig } from '../calculator/MultiSchemePanel';
 import InputPanel from '../calculator/InputPanel';
 import ResultDisplay from '../calculator/ResultDisplay';
-import ComparisonPanel from '../comparison/ComparisonPanel';
-import SensitivityAnalysis from '../calculator/SensitivityAnalysis';
+import ResultTabs from '../calculator/ResultTabs';
 import ExportDialog from '../calculator/ExportDialog';
 import ShareDialog from '../calculator/ShareDialog';
 import debounce from 'lodash/debounce';
@@ -279,7 +278,7 @@ const QuickCompareTab: React.FC<QuickCompareTabProps> = ({
       <Spin spinning={status === 'calculating'} tip="计算中...">
         {result && (
           <>
-            {/* 费用汇总卡片 */}
+            {/* 区域1：决策摘要 - Hero 区域 + 副指标栏 + 使用量指标 */}
             <ResultDisplay
               result={result}
               schemeInfo={currentSchemeResult ? {
@@ -287,34 +286,22 @@ const QuickCompareTab: React.FC<QuickCompareTabProps> = ({
                 name: currentSchemeResult.schemeName,
                 technical: currentSchemeResult.technical,
               } : undefined}
-              region={input.pricing.region}
-              retentionDays={input.functional.retention_days}
-              accessPattern={input.functional.access_pattern}
               onExport={handleExport}
             />
 
-            {/* 方案对比 */}
-            {comparison && (
-              <div style={{ marginTop: 24 }}>
-                <ComparisonPanel
-                  comparison={comparison}
-                  metrics={result.metrics}
-                  deviceCount={result.device_count}
-                  region={input.pricing.region}
-                />
-              </div>
-            )}
-
-            {/* 敏感度分析 */}
-            <div style={{ marginTop: 24 }}>
-              <Card className="sensitivity-card">
-                <SensitivityAnalysis
-                  input={input}
-                  baselineCost={result.monthly_total}
-                  onApplyValue={handleApplySensitivityValue}
-                />
-              </Card>
-            </div>
+            {/* 区域2：详细分析 Tab - 费用明细 / 方案对比 / 敏感度分析 */}
+            <ResultTabs
+              result={result}
+              comparison={comparison}
+              input={input}
+              region={input.pricing.region}
+              schemeInfo={currentSchemeResult ? {
+                id: currentSchemeResult.schemeId,
+                name: currentSchemeResult.schemeName,
+                technical: currentSchemeResult.technical,
+              } : undefined}
+              onApplySensitivityValue={handleApplySensitivityValue}
+            />
           </>
         )}
       </Spin>
