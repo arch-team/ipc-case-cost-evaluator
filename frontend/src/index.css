@@ -904,6 +904,37 @@ body {
   border: none !important;
 }
 
+/* 方案列头点击切换样式 */
+.comparison-scheme-header {
+  transition: all 0.2s ease;
+  border-radius: var(--radius-small);
+  margin: -4px;
+}
+
+.comparison-scheme-header:hover {
+  background: var(--color-bg-hover);
+}
+
+.comparison-scheme-header-selected {
+  background: var(--color-primary-bg);
+  border: 1px solid var(--color-primary);
+}
+
+/* 推荐方案徽章样式 */
+.result-recommended-badge {
+  font-size: 13px !important;
+  padding: 4px 10px !important;
+  margin-left: 8px;
+}
+
+/* 费用明细区域样式 */
+.result-breakdown-section {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-medium);
+  padding: 16px;
+  border: 1px solid var(--color-border);
+}
+
 /* ============================================
    维度表单 - 紧凑版
    ============================================ */

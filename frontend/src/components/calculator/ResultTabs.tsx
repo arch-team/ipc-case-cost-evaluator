@@ -1,11 +1,11 @@
 /**
  * 结果详细分析 Tab 容器组件
- * 整合费用明细、方案对比、敏感度分析三个视图
+ * 整合方案对比和敏感度分析两个视图
+ * 费用明细已移至 ResultDisplay 组件中
  */
 import React, { useState } from 'react';
 import { Tabs, Card } from 'antd';
 import {
-  PieChartOutlined,
   SwapOutlined,
   SlidersOutlined,
 } from '@ant-design/icons';
@@ -16,7 +16,6 @@ import type {
   TechnicalDimensions,
   UsageMetrics,
 } from '../../types';
-import BreakdownContent from './BreakdownContent';
 import ComparisonPanel from '../comparison/ComparisonPanel';
 import SensitivityAnalysis from './SensitivityAnalysis';
 
@@ -33,6 +32,8 @@ interface ResultTabsProps {
   region: string;
   schemeInfo?: SchemeInfo;
   metrics?: UsageMetrics;
+  selectedSchemeIndex?: number;  // 当前选中的方案索引
+  onSchemeSelect?: (index: number) => void;  // 方案切换回调
   onApplySensitivityValue?: (field: string, value: string | number) => void;
 }
 
@@ -41,30 +42,13 @@ const ResultTabs: React.FC<ResultTabsProps> = ({
   comparison,
   input,
   region,
-  schemeInfo,
+  selectedSchemeIndex = 0,
+  onSchemeSelect,
   onApplySensitivityValue,
 }) => {
-  const [activeKey, setActiveKey] = useState('breakdown');
+  const [activeKey, setActiveKey] = useState('comparison');
 
   const items = [
-    {
-      key: 'breakdown',
-      label: (
-        <span>
-          <PieChartOutlined />
-          费用明细
-        </span>
-      ),
-      children: (
-        <BreakdownContent
-          result={result}
-          schemeInfo={schemeInfo}
-          region={region}
-          retentionDays={input.functional.retention_days}
-          accessPattern={input.functional.access_pattern}
-        />
-      ),
-    },
     {
       key: 'comparison',
       label: (
@@ -79,6 +63,8 @@ const ResultTabs: React.FC<ResultTabsProps> = ({
           metrics={result.metrics}
           deviceCount={result.device_count}
           region={region}
+          selectedSchemeIndex={selectedSchemeIndex}
+          onSchemeSelect={onSchemeSelect}
         />
       ) : (
         <div className="result-tabs-empty">暂无方案对比数据</div>

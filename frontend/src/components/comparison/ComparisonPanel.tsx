@@ -63,6 +63,8 @@ interface Props {
   metrics?: UsageMetrics;
   deviceCount: number;
   region: string;
+  selectedSchemeIndex?: number;  // 当前选中的方案索引
+  onSchemeSelect?: (index: number) => void;  // 方案切换回调
 }
 
 // 表格行类型
@@ -74,7 +76,14 @@ interface TableRow extends Partial<CostRowConfig> {
   isSummary?: boolean;
 }
 
-const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount, region }) => {
+const ComparisonPanel: React.FC<Props> = ({
+  comparison,
+  metrics,
+  deviceCount,
+  region,
+  selectedSchemeIndex = 0,
+  onSchemeSelect,
+}) => {
   const [viewMode, setViewMode] = useState<'table' | 'chart'>('table');
   const [chartMode, setChartMode] = useState<'total' | 'breakdown'>('total');
 
@@ -154,9 +163,13 @@ const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount, re
         },
       ],
     },
-    ...comparison.items.map((item) => ({
+    ...comparison.items.map((item, schemeIndex) => ({
       title: (
-        <div style={{ textAlign: 'center' }}>
+        <div
+          className={`comparison-scheme-header ${selectedSchemeIndex === schemeIndex ? 'comparison-scheme-header-selected' : ''}`}
+          style={{ textAlign: 'center', cursor: onSchemeSelect ? 'pointer' : 'default', padding: '4px 8px' }}
+          onClick={() => onSchemeSelect?.(schemeIndex)}
+        >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <span>{item.name}</span>
             {item.is_recommended && (
@@ -170,6 +183,11 @@ const ComparisonPanel: React.FC<Props> = ({ comparison, metrics, deviceCount, re
               {line}
             </div>
           ))}
+          {onSchemeSelect && (
+            <div style={{ fontSize: 10, color: selectedSchemeIndex === schemeIndex ? 'var(--color-primary)' : 'var(--color-text-tertiary)', marginTop: 4 }}>
+              {selectedSchemeIndex === schemeIndex ? '▼ 当前查看' : '点击切换'}
+            </div>
+          )}
         </div>
       ),
       children: [

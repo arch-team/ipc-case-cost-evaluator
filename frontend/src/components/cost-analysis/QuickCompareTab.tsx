@@ -14,7 +14,6 @@ import { useAuth } from '../../hooks/useAuth';
 import LoginPrompt from '../auth/LoginPrompt';
 import type {
   CostCalculationInput,
-  CostSummary,
   ComparisonResult,
   MultiTechnicalConfig,
   VideoQuality,
@@ -54,10 +53,20 @@ const QuickCompareTab: React.FC<QuickCompareTabProps> = ({
   const [useMultiScheme] = useState<boolean>(true);
 
   // 计算结果状态
-  const [result, setResult] = useState<CostSummary | null>(null);
-  const [currentSchemeResult, setCurrentSchemeResult] = useState<BatchCalculationResult | null>(null);
+  const [allResults, setAllResults] = useState<BatchCalculationResult[]>([]);  // 所有方案结果
+  const [selectedSchemeIndex, setSelectedSchemeIndex] = useState<number>(0);   // 当前选中方案索引
   const [comparison, setComparison] = useState<ComparisonResult | null>(null);
   const [status, setStatus] = useState<CalculationStatus>('idle');
+
+  // 派生当前选中方案的计算结果
+  const currentSchemeResult = useMemo(() => {
+    return allResults[selectedSchemeIndex] ?? null;
+  }, [allResults, selectedSchemeIndex]);
+
+  // 派生当前方案的 CostSummary（用于兼容现有组件）
+  const result = useMemo(() => {
+    return currentSchemeResult?.result ?? null;
+  }, [currentSchemeResult]);
 
   // 对话框状态
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
@@ -80,7 +89,7 @@ const QuickCompareTab: React.FC<QuickCompareTabProps> = ({
     }
   }, [location.state, onInputChange]);
 
-  // 实时计算的防抖函数 - 单方案模式
+  // 实时计算的防抖函数 - 单方案模式（保留兼容性，转换为 allResults 格式）
   const calculateSingleDebounced = useMemo(
     () =>
       debounce(async (inputData: CostCalculationInput) => {
@@ -90,11 +99,20 @@ const QuickCompareTab: React.FC<QuickCompareTabProps> = ({
             calculatorApi.calculate(inputData),
             calculatorApi.compare(inputData),
           ]);
-          setResult(calcResult);
+          // 转换为 allResults 格式以保持状态一致
+          setAllResults([{
+            schemeId: 'single',
+            schemeName: '当前方案',
+            result: calcResult,
+            technical: inputData.technical,
+            retention_days: inputData.functional.retention_days,
+          }]);
+          setSelectedSchemeIndex(0);
           setComparison(compResult);
           setStatus('success');
         } catch (error) {
           devLog.error('计算失败:', error);
+          setAllResults([]);
           setStatus('error');
         }
       }, 500),
@@ -113,16 +131,19 @@ const QuickCompareTab: React.FC<QuickCompareTabProps> = ({
             config.schemes
           );
           setComparison(compResult);
-          if (results.length > 0) {
-            setResult(results[0].result);
-            setCurrentSchemeResult(results[0]);
+          setAllResults(results);
+
+          // 自动选择推荐方案（成本最低）
+          if (compResult && compResult.items.length > 0) {
+            const recommendedIndex = compResult.items.findIndex(item => item.is_recommended);
+            setSelectedSchemeIndex(recommendedIndex >= 0 ? recommendedIndex : 0);
           } else {
-            setResult(null);
-            setCurrentSchemeResult(null);
+            setSelectedSchemeIndex(0);
           }
           setStatus('success');
         } catch (error) {
           devLog.error('批量计算失败:', error);
+          setAllResults([]);
           setStatus('error');
         }
       }, 500),
@@ -146,6 +167,13 @@ const QuickCompareTab: React.FC<QuickCompareTabProps> = ({
   // 处理多方案配置变化
   const handleMultiConfigChange = (config: MultiTechnicalConfig) => {
     setMultiConfig(config);
+  };
+
+  // 处理方案切换
+  const handleSchemeSelect = (index: number) => {
+    if (index >= 0 && index < allResults.length) {
+      setSelectedSchemeIndex(index);
+    }
   };
 
   // 处理敏感度分析中的值应用
@@ -274,11 +302,14 @@ const QuickCompareTab: React.FC<QuickCompareTabProps> = ({
       );
     }
 
+    // 判断当前方案是否为推荐方案
+    const isCurrentRecommended = comparison?.items[selectedSchemeIndex]?.is_recommended ?? false;
+
     return (
       <Spin spinning={status === 'calculating'} tip="计算中...">
         {result && (
           <>
-            {/* 区域1：决策摘要 - Hero 区域 + 副指标栏 + 使用量指标 */}
+            {/* 区域1：决策摘要 - Hero 区域 + 副指标栏 + 费用明细 + 使用量指标 */}
             <ResultDisplay
               result={result}
               schemeInfo={currentSchemeResult ? {
@@ -286,10 +317,14 @@ const QuickCompareTab: React.FC<QuickCompareTabProps> = ({
                 name: currentSchemeResult.schemeName,
                 technical: currentSchemeResult.technical,
               } : undefined}
+              isRecommended={isCurrentRecommended}
+              region={input.pricing.region}
+              retentionDays={input.functional.retention_days}
+              accessPattern={input.functional.access_pattern}
               onExport={handleExport}
             />
 
-            {/* 区域2：详细分析 Tab - 费用明细 / 方案对比 / 敏感度分析 */}
+            {/* 区域2：详细分析 Tab - 方案对比 / 敏感度分析 */}
             <ResultTabs
               result={result}
               comparison={comparison}
@@ -300,6 +335,8 @@ const QuickCompareTab: React.FC<QuickCompareTabProps> = ({
                 name: currentSchemeResult.schemeName,
                 technical: currentSchemeResult.technical,
               } : undefined}
+              selectedSchemeIndex={selectedSchemeIndex}
+              onSchemeSelect={handleSchemeSelect}
               onApplySensitivityValue={handleApplySensitivityValue}
             />
           </>

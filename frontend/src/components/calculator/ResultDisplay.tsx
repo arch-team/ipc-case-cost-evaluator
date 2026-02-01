@@ -1,7 +1,7 @@
 /**
  * 结果展示组件 - 决策摘要区域
- * 优化版本：Hero 区域 + 副指标栏 + 使用量指标（可折叠）
- * 费用明细已移至 ResultTabs 组件中
+ * 优化版本：Hero 区域 + 副指标栏 + 费用明细 + 使用量指标（可折叠）
+ * 包含完整的推荐方案信息展示
  */
 import React from 'react';
 import { Statistic, Button, Typography, Collapse, Tag } from 'antd';
@@ -9,10 +9,12 @@ import {
   DownloadOutlined,
   DollarOutlined,
   DownOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons';
 import type { CostSummary, TechnicalDimensions, ComparisonItem } from '../../types';
 import { formatNumber } from '../../utils/formatters';
 import { getTechDescription } from '../../constants/comparison';
+import BreakdownContent from './BreakdownContent';
 
 const { Title, Text } = Typography;
 
@@ -26,10 +28,22 @@ interface SchemeInfo {
 interface ResultDisplayProps {
   result: CostSummary;
   schemeInfo?: SchemeInfo;  // 当前显示结果对应的方案信息
+  isRecommended?: boolean;  // 当前方案是否为推荐方案
+  region?: string;          // 区域（用于费用明细）
+  retentionDays?: number;   // 保留天数（用于费用明细）
+  accessPattern?: number;   // 访问模式（用于费用明细）
   onExport?: () => void;
 }
 
-const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, schemeInfo, onExport }) => {
+const ResultDisplay: React.FC<ResultDisplayProps> = ({
+  result,
+  schemeInfo,
+  isRecommended = false,
+  region = 'us-east-1',
+  retentionDays,
+  accessPattern,
+  onExport,
+}) => {
   // 获取方案技术描述（使用统一的 getTechDescription 函数）
   const getSchemeDescriptionLines = (): string[] => {
     if (!schemeInfo) return [];
@@ -69,6 +83,15 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, schemeInfo, onExp
             <Tag color="blue" style={{ fontSize: 14, padding: '4px 12px' }}>
               {schemeInfo.name}
             </Tag>
+            {isRecommended && (
+              <Tag
+                color="green"
+                icon={<CheckCircleOutlined />}
+                className="result-recommended-badge"
+              >
+                推荐方案
+              </Tag>
+            )}
             <div style={{ marginLeft: 8, display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start' }}>
               {getSchemeDescriptionLines().map((line, idx) => (
                 <Text key={idx} type="secondary" style={{ fontSize: idx === 0 ? 13 : 12, lineHeight: 1.4 }}>
@@ -112,6 +135,17 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, schemeInfo, onExp
             suffix="台"
           />
         </div>
+      </div>
+
+      {/* 费用明细区域 */}
+      <div className="result-breakdown-section" style={{ marginTop: 24 }}>
+        <BreakdownContent
+          result={result}
+          schemeInfo={schemeInfo}
+          region={region}
+          retentionDays={retentionDays}
+          accessPattern={accessPattern}
+        />
       </div>
 
       {/* 使用量指标 - 可折叠面板 */}
