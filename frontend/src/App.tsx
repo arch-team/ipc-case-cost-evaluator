@@ -15,6 +15,7 @@ import Evaluations from './pages/Evaluations';
 import EvaluationDetail from './pages/EvaluationDetail';
 import CalculationRecords from './pages/CalculationRecords';
 import CalculationRecordDetail from './pages/CalculationRecordDetail';
+import RecordComparison from './pages/RecordComparison';
 import Settings from './pages/Settings';
 import SharedView from './pages/SharedView';
 import AdminPage from './pages/AdminPage';
@@ -90,6 +91,14 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute minRole="user">
                     <CalculationRecords />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="calculation-records/comparison"
+                element={
+                  <ProtectedRoute minRole="user">
+                    <RecordComparison />
                   </ProtectedRoute>
                 }
               />
