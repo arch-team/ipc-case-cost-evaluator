@@ -25,6 +25,7 @@ export interface FastApiLambdaProps {
     usersTable: dynamodb.ITable;
     evaluationsTable: dynamodb.ITable;
     sharesTable: dynamodb.ITable;
+    calculationRecordsTable: dynamodb.ITable;
   };
 }
 
@@ -127,6 +128,7 @@ export class FastApiLambda extends Construct {
       DYNAMODB_USERS_TABLE: tables.usersTable.tableName,
       DYNAMODB_EVALUATIONS_TABLE: tables.evaluationsTable.tableName,
       DYNAMODB_SHARES_TABLE: tables.sharesTable.tableName,
+      DYNAMODB_CALCULATION_RECORDS_TABLE: tables.calculationRecordsTable.tableName,
       APP_REGION: config.region,
       CORS_ALLOW_ORIGINS: config.apiGateway.corsAllowOrigins.join(','),
     };
@@ -139,6 +141,7 @@ export class FastApiLambda extends Construct {
     tables.usersTable.grantReadWriteData(this.function);
     tables.evaluationsTable.grantReadWriteData(this.function);
     tables.sharesTable.grantReadWriteData(this.function);
+    tables.calculationRecordsTable.grantReadWriteData(this.function);
   }
 
   /**

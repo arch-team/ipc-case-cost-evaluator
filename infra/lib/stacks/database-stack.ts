@@ -59,6 +59,12 @@ export class DatabaseStack extends cdk.Stack {
       exportName: `${config.appPrefix}-shares-table`,
     });
 
+    new cdk.CfnOutput(this, 'CalculationRecordsTableName', {
+      value: this.tables.calculationRecordsTable.tableName,
+      description: 'Calculation Records DynamoDB Table Name',
+      exportName: `${config.appPrefix}-calculation-records-table`,
+    });
+
     // ========================================
     // 标签
     // ========================================

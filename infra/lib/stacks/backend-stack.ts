@@ -20,6 +20,7 @@ export interface BackendStackProps extends cdk.StackProps {
     usersTable: dynamodb.ITable;
     evaluationsTable: dynamodb.ITable;
     sharesTable: dynamodb.ITable;
+    calculationRecordsTable: dynamodb.ITable;
   };
 }
 
