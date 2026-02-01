@@ -29,6 +29,7 @@ const breadcrumbNameMap: Record<string, string> = {
   '/calculator': '成本计算',
   '/detailed-calculation': '详细核算',
   '/calculation-records': '核算记录',
+  '/calculation-records/comparison': '记录对比',
   '/evaluations': '评估记录',
   '/admin': '用户管理',
   '/admin/pricing': '定价管理',
