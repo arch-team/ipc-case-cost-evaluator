@@ -5,7 +5,7 @@
  * - 详细成本核算（中间指标、分阶段费用）
  * - 保存核算记录功能
  */
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, Typography, message, Button, Space, InputNumber, Tooltip } from 'antd';
 import {
   SaveOutlined,
@@ -56,6 +56,12 @@ const DetailedEvalTab: React.FC<DetailedEvalTabProps> = ({
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
 
+  // 使用 ref 追踪最新的 detailedResult，避免 useMemo 依赖循环
+  const detailedResultRef = useRef(detailedResult);
+  useEffect(() => {
+    detailedResultRef.current = detailedResult;
+  }, [detailedResult]);
+
   // 用户记录数量
   const [userRecordCount, setUserRecordCount] = useState<number>(0);
 
@@ -75,6 +81,7 @@ const DetailedEvalTab: React.FC<DetailedEvalTabProps> = ({
   }, [isAuthenticated]);
 
   // 实时计算的防抖函数
+  // 使用 ref 而非 state 作为依赖，避免无限循环
   const calculateDebounced = useMemo(
     () =>
       debounce(async (inputData: CostCalculationInput) => {
@@ -82,8 +89,8 @@ const DetailedEvalTab: React.FC<DetailedEvalTabProps> = ({
         setError(null);
         try {
           const result = await calculationRecordApi.calculateDetailed(inputData);
-          if (detailedResult) {
-            setPreviousResult(detailedResult);
+          if (detailedResultRef.current) {
+            setPreviousResult(detailedResultRef.current);
           }
           setDetailedResult(result);
           setStatus('success');
@@ -96,7 +103,7 @@ const DetailedEvalTab: React.FC<DetailedEvalTabProps> = ({
           setStatus('error');
         }
       }, 500),
-    [detailedResult]
+    [] // 空依赖数组，防抖函数只创建一次
   );
 
   // 输入变化时自动计算
