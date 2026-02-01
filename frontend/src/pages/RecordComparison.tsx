@@ -28,6 +28,7 @@ import {
   PricingComparison,
 } from '../components/comparison';
 import { RECORD_COLORS } from '../utils/comparisonHelpers';
+import { parseIdList, handleApiError } from '../utils/errorHandlers';
 
 const { Title, Text } = Typography;
 
@@ -37,12 +38,9 @@ const RecordComparison: React.FC = () => {
   const authContext = useContext(AuthContext);
   const isLoggedIn = !!authContext?.user;
 
-  // 解析 URL 参数（需要解码，因为 ID 可能包含 # 等特殊字符）
+  // 解析 URL 参数
   const idsParam = searchParams.get('ids') || '';
-  const ids = idsParam
-    .split(',')
-    .filter((id) => id.trim())
-    .map((id) => decodeURIComponent(id.trim()));
+  const ids = parseIdList(idsParam);
 
   // 数据状态
   const [records, setRecords] = useState<CalculationRecord[]>([]);
@@ -70,8 +68,8 @@ const RecordComparison: React.FC = () => {
         const data = await calculationRecordApi.getBatch(ids);
         setRecords(data);
       } catch (err: unknown) {
-        const axiosError = err as { response?: { data?: { detail?: string } } };
-        setError(axiosError.response?.data?.detail || '获取记录失败');
+        const detail = handleApiError(err, '获取记录失败');
+        setError(detail);
       } finally {
         setLoading(false);
       }

@@ -44,6 +44,7 @@ import type {
 } from '../types/calculationRecords';
 import { AuthContext } from '../contexts/AuthContext';
 import { formatNumber } from '../utils/formatters';
+import { handleApiError, encodeIdList } from '../utils/errorHandlers';
 import {
   STORAGE_STRATEGY_NAMES,
   STORAGE_STRATEGY_COLORS,
@@ -104,17 +105,8 @@ const CalculationRecords: React.FC = () => {
       setRecords(response.items);
       setTotal(response.total);
     } catch (err: unknown) {
-      const axiosError = err as { response?: { status?: number; data?: { detail?: string } } };
-      const status = axiosError.response?.status;
-
-      if (status === 401) {
-        message.warning('请先登录');
-        navigate('/settings');
-      } else {
-        const detail = axiosError.response?.data?.detail || '获取核算记录失败';
-        setError(detail);
-        message.error(detail);
-      }
+      const detail = handleApiError(err, '获取核算记录失败', navigate);
+      setError(detail);
     } finally {
       setLoading(false);
     }
@@ -186,9 +178,7 @@ const CalculationRecords: React.FC = () => {
   // 跳转对比页面
   const handleCompare = () => {
     if (selectedIds.length >= 2 && selectedIds.length <= 4) {
-      // 对 ID 进行 URL 编码，避免 # 等特殊字符问题
-      const encodedIds = selectedIds.map((id) => encodeURIComponent(id)).join(',');
-      navigate(`/calculation-records/comparison?ids=${encodedIds}`);
+      navigate(`/calculation-records/comparison?ids=${encodeIdList(selectedIds)}`);
     }
   };
 

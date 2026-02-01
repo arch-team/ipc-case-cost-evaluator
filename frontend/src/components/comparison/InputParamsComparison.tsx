@@ -5,33 +5,17 @@ import React from 'react';
 import { Row, Col, Table, Typography, Tag } from 'antd';
 import type { CalculationRecord } from '../../types/calculationRecords';
 import { RECORD_COLORS, areValuesEqual } from '../../utils/comparisonHelpers';
+import {
+  getRecordingModeName,
+  getVideoQualityName,
+  getSegmentStrategyName,
+} from '../../constants/displayNames';
 
 const { Title, Text } = Typography;
 
 interface Props {
   records: CalculationRecord[];
 }
-
-// 录像模式显示名称
-const RECORDING_MODE_NAMES: Record<string, string> = {
-  event_triggered: '事件触发',
-  continuous: '7x24 连续',
-  scheduled: '定时录像',
-};
-
-// 视频质量显示名称
-const VIDEO_QUALITY_NAMES: Record<string, string> = {
-  '2k': '2K (2560x1440)',
-  '1080p': '1080P (1920x1080)',
-  '720p': '720P (1280x720)',
-  '480p': '480P (854x480)',
-};
-
-// 分片策略显示名称
-const SEGMENT_STRATEGY_NAMES: Record<string, string> = {
-  time_based: '按时间分片',
-  size_based: '按大小分片',
-};
 
 interface ParamRow {
   key: string;
@@ -50,16 +34,12 @@ const InputParamsComparison: React.FC<Props> = ({ records }) => {
     {
       key: 'recording_mode',
       label: '录像模式',
-      getValue: (r) =>
-        RECORDING_MODE_NAMES[r.input_params.functional.recording_mode] ||
-        r.input_params.functional.recording_mode,
+      getValue: (r) => getRecordingModeName(r.input_params.functional.recording_mode),
     },
     {
       key: 'video_quality',
       label: '视频质量',
-      getValue: (r) =>
-        VIDEO_QUALITY_NAMES[r.input_params.functional.video_quality] ||
-        r.input_params.functional.video_quality,
+      getValue: (r) => getVideoQualityName(r.input_params.functional.video_quality),
     },
     {
       key: 'retention_days',
@@ -100,9 +80,7 @@ const InputParamsComparison: React.FC<Props> = ({ records }) => {
     {
       key: 'segment_strategy',
       label: '分片策略',
-      getValue: (r) =>
-        SEGMENT_STRATEGY_NAMES[r.input_params.technical.segment_strategy] ||
-        r.input_params.technical.segment_strategy,
+      getValue: (r) => getSegmentStrategyName(r.input_params.technical.segment_strategy),
     },
     {
       key: 'segment_seconds',

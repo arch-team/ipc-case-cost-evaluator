@@ -231,34 +231,29 @@ def get_records_batch(
 
     # 解析并验证 ID 列表
     id_list = [id.strip() for id in ids.split(",") if id.strip()]
+    unique_ids = list(dict.fromkeys(id_list))  # 保持顺序的去重
 
-    if len(id_list) < 2:
+    # 验证数量范围
+    if len(unique_ids) < 2:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="请至少选择 2 条记录进行对比",
         )
 
-    if len(id_list) > 4:
+    if len(unique_ids) > 4:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="最多支持 4 条记录对比",
         )
 
-    # 检查重复 ID
-    if len(id_list) != len(set(id_list)):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="记录 ID 不能重复",
-        )
-
     # 批量获取记录
     repo = CalculationRecordRepository()
-    records = repo.get_batch(user_id=current_user["id"], record_ids=id_list)
+    records = repo.get_batch(user_id=current_user["id"], record_ids=unique_ids)
 
     # 验证是否全部找到
-    if len(records) != len(id_list):
+    if len(records) != len(unique_ids):
         found_ids = {r.record_id for r in records}
-        missing_ids = [id for id in id_list if id not in found_ids]
+        missing_ids = [id for id in unique_ids if id not in found_ids]
         logger.warning("部分记录不存在: missing=%s", missing_ids)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
