@@ -2,14 +2,15 @@
  * 费用汇总对比表格组件
  */
 import React from 'react';
-import { Table, Typography, Tag } from 'antd';
+import { Typography, Tag } from 'antd';
 import type { CalculationRecord } from '../../types/calculationRecords';
-import { RECORD_COLORS, getValueColor } from '../../utils/comparisonHelpers';
+import { getValueColor } from '../../utils/comparisonHelpers';
 import { formatNumber } from '../../utils/formatters';
 import {
   STORAGE_STRATEGY_NAMES,
   STORAGE_STRATEGY_COLORS,
 } from '../../constants/storageStrategies';
+import ComparisonTable, { type ComparisonRow } from './ComparisonTable';
 
 const { Text } = Typography;
 
@@ -17,17 +18,14 @@ interface Props {
   records: CalculationRecord[];
 }
 
-interface RowData {
-  key: string;
-  label: string;
+interface CostRow extends ComparisonRow<string | number> {
   isNumeric: boolean;
   isCost: boolean;
-  values: (string | number)[];
 }
 
 const CostSummaryComparison: React.FC<Props> = ({ records }) => {
   // 定义对比行
-  const rows: RowData[] = [
+  const rows: CostRow[] = [
     {
       key: 'name',
       label: '记录名称',
@@ -107,82 +105,41 @@ const CostSummaryComparison: React.FC<Props> = ({ records }) => {
     },
   ];
 
-  // 动态列
-  const columns = [
-    {
-      title: '对比项',
-      dataIndex: 'label',
-      key: 'label',
-      width: 160,
-      fixed: 'left' as const,
-      render: (text: string) => <Text strong>{text}</Text>,
-    },
-    ...records.map((record, idx) => ({
-      title: (
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            backgroundColor: RECORD_COLORS[idx],
-            display: 'inline-block',
-            marginRight: 8,
-          }} />
-          {record.name}
-        </div>
-      ),
-      dataIndex: `value_${idx}`,
-      key: `value_${idx}`,
-      align: 'right' as const,
-      render: (_: unknown, row: RowData) => {
-        const value = row.values[idx];
+  // 自定义单元格渲染
+  const renderCell = (value: string | number, row: ComparisonRow<string | number>) => {
+    const costRow = row as CostRow;
+    // 存储策略特殊处理
+    if (costRow.key === 'strategy') {
+      const strategy = value as string;
+      return (
+        <Tag color={STORAGE_STRATEGY_COLORS[strategy]}>
+          {STORAGE_STRATEGY_NAMES[strategy] || strategy}
+        </Tag>
+      );
+    }
 
-        // 存储策略特殊处理
-        if (row.key === 'strategy') {
-          const strategy = value as string;
-          return (
-            <Tag color={STORAGE_STRATEGY_COLORS[strategy]}>
-              {STORAGE_STRATEGY_NAMES[strategy] || strategy}
-            </Tag>
-          );
-        }
+    // 非数值直接显示
+    if (!costRow.isNumeric) {
+      return <Text>{value}</Text>;
+    }
 
-        // 非数值直接显示
-        if (!row.isNumeric) {
-          return <Text>{value}</Text>;
-        }
+    // 数值类型：计算颜色
+    const numValue = value as number;
+    const allNumValues = costRow.values as number[];
+    const color = costRow.isCost ? getValueColor(numValue, allNumValues, true) : undefined;
 
-        // 数值类型：计算颜色
-        const numValue = value as number;
-        const allNumValues = row.values as number[];
-        const color = row.isCost ? getValueColor(numValue, allNumValues, true) : undefined;
-
-        return (
-          <Text style={{ color }} strong={!!color}>
-            ${formatNumber(numValue, 4)}
-          </Text>
-        );
-      },
-    })),
-  ];
-
-  // 构建表格数据
-  const dataSource = rows.map((row) => ({
-    ...row,
-    ...records.reduce((acc, _, idx) => ({
-      ...acc,
-      [`value_${idx}`]: row.values[idx],
-    }), {}),
-  }));
+    return (
+      <Text style={{ color }} strong={!!color}>
+        ${formatNumber(numValue, 4)}
+      </Text>
+    );
+  };
 
   return (
-    <Table
-      dataSource={dataSource}
-      columns={columns}
-      pagination={false}
-      size="small"
-      bordered
-      scroll={{ x: 'max-content' }}
+    <ComparisonTable
+      dataSource={rows}
+      recordNames={records.map((r) => r.name)}
+      renderCell={renderCell}
     />
   );
 };

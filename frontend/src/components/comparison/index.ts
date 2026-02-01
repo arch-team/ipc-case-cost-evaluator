@@ -14,3 +14,7 @@ export { default as MetricsComparison } from './MetricsComparison';
 export { default as StageDetailsComparison } from './StageDetailsComparison';
 export { default as InputParamsComparison } from './InputParamsComparison';
 export { default as PricingComparison } from './PricingComparison';
+
+// 通用组件
+export { default as ComparisonTable } from './ComparisonTable';
+export type { ComparisonRow } from './ComparisonTable';
