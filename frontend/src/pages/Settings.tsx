@@ -14,7 +14,6 @@ import { UserOutlined, LogoutOutlined, EditOutlined, InfoCircleOutlined, SaveOut
 import { useAuth } from '../hooks/useAuth';
 import { authApi } from '../api/client';
 import { LoginForm, RegisterForm } from '../components/auth';
-import { ROLE_LABELS } from '../types/auth';
 import type { UserUpdateRequest } from '../types/auth';
 import { REGION_SELECT_OPTIONS } from '../constants/regions';
 

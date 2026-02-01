@@ -79,10 +79,10 @@ const CalculationRecordDetail: React.FC = () => {
 
         if (status === 404) {
           message.error('记录不存在');
-          navigate('/calculation-records');
+          navigate('/history');
         } else if (status === 403) {
           message.error('无权访问此记录');
-          navigate('/calculation-records');
+          navigate('/history');
         } else if (status === 401) {
           message.warning('请先登录');
           navigate('/settings');
@@ -131,12 +131,12 @@ const CalculationRecordDetail: React.FC = () => {
       },
     };
 
-    navigate('/detailed-calculation', {
+    navigate('/cost-analysis?tab=detailed', {
       state: {
         loadFromRecord: inputData,
       },
     });
-    message.success('已加载配置到详细核算页面');
+    message.success('已加载配置到详细评估');
   };
 
   // 将费用汇总转换为 CostPieChart 需要的格式
@@ -171,7 +171,7 @@ const CalculationRecordDetail: React.FC = () => {
           type="error"
           showIcon
           action={
-            <Button onClick={() => navigate('/calculation-records')}>
+            <Button onClick={() => navigate('/history')}>
               返回列表
             </Button>
           }
@@ -193,7 +193,7 @@ const CalculationRecordDetail: React.FC = () => {
         <div style={{ marginBottom: 24 }}>
           <Button
             icon={<ArrowLeftOutlined />}
-            onClick={() => navigate('/calculation-records')}
+            onClick={() => navigate('/history')}
           >
             返回列表
           </Button>

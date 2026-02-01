@@ -53,3 +53,27 @@ export function getVideoQualityName(quality: string): string {
 export function getSegmentStrategyName(strategy: string): string {
   return SEGMENT_STRATEGY_NAMES[strategy] || strategy;
 }
+
+/**
+ * 页面/功能模块显示名称
+ * 用于统一管理导航、面包屑等 UI 元素的命名
+ */
+export const PAGE_NAMES = {
+  // 成本分析模块
+  costAnalysis: '成本分析',
+  quickCompare: '快速对比',
+  detailedEval: '详细评估',
+  // 历史记录模块
+  historyRecords: '历史记录',
+  detailedRecords: '详细评估记录',
+  legacyRecords: '旧版评估',
+} as const;
+
+/**
+ * 功能描述文案
+ */
+export const FEATURE_DESCRIPTIONS = {
+  quickCompare: '实时对比多种存储方案，快速了解成本差异',
+  detailedEval: '深入分析成本构成，支持保存评估记录',
+  historyEmpty: '还没有保存的评估记录，前往「成本分析 → 详细评估」创建',
+} as const;

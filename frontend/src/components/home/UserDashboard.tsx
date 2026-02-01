@@ -86,21 +86,21 @@ export function UserDashboard({ user, recentRecords, recordCount, userDataLoadin
             <Button
               type="primary"
               icon={<CalculatorOutlined />}
-              onClick={() => navigate('/calculator')}
+              onClick={() => navigate('/cost-analysis?tab=quick')}
             >
-              新建计算
+              快速对比
             </Button>
             <Button
               icon={<FileTextOutlined />}
-              onClick={() => navigate('/detailed-calculation')}
+              onClick={() => navigate('/cost-analysis?tab=detailed')}
             >
-              详细核算
+              详细评估
             </Button>
             <Button
               icon={<HistoryOutlined />}
-              onClick={() => navigate('/calculation-records')}
+              onClick={() => navigate('/history')}
             >
-              查看记录
+              历史记录
             </Button>
           </Space>
         </Col>
@@ -114,7 +114,7 @@ export function UserDashboard({ user, recentRecords, recordCount, userDataLoadin
               <ClockCircleOutlined style={{ marginRight: 8 }} />
               最近记录
             </Text>
-            <Button type="link" size="small" onClick={() => navigate('/calculation-records')}>
+            <Button type="link" size="small" onClick={() => navigate('/history')}>
               查看全部 <ArrowRightOutlined />
             </Button>
           </div>
@@ -155,7 +155,7 @@ export function UserDashboard({ user, recentRecords, recordCount, userDataLoadin
             description="暂无核算记录"
             style={{ margin: '12px 0' }}
           >
-            <Button type="primary" onClick={() => navigate('/detailed-calculation')}>
+            <Button type="primary" onClick={() => navigate('/cost-analysis?tab=detailed')}>
               创建第一条记录
             </Button>
           </Empty>

@@ -5,7 +5,7 @@ import React, { useState, useMemo, useContext } from 'react';
 import { Layout as AntLayout, Menu, Typography, Breadcrumb, Tag, Tooltip, Button, Dropdown, Space } from 'antd';
 import type { MenuProps } from 'antd';
 import {
-  CalculatorOutlined,
+  BarChartOutlined,
   HistoryOutlined,
   UserOutlined,
   HomeOutlined,
@@ -14,8 +14,6 @@ import {
   CloudServerOutlined,
   TeamOutlined,
   DollarOutlined,
-  FileTextOutlined,
-  UnorderedListOutlined,
   LoginOutlined,
   LogoutOutlined,
   SettingOutlined,
@@ -31,11 +29,9 @@ const { Title, Text } = Typography;
 // 路由到面包屑的映射
 const breadcrumbNameMap: Record<string, string> = {
   '/': '首页',
-  '/calculator': '成本计算',
-  '/detailed-calculation': '详细核算',
-  '/calculation-records': '核算记录',
+  '/cost-analysis': '成本分析',
+  '/history': '历史记录',
   '/calculation-records/comparison': '记录对比',
-  '/evaluations': '评估记录',
   '/admin': '用户管理',
   '/admin/pricing': '定价管理',
   '/admin/system': '系统监控',
@@ -64,64 +60,36 @@ const Layout: React.FC = () => {
         label: '首页',
       },
       {
-        key: '/calculator',
-        icon: <CalculatorOutlined />,
-        label: '成本计算',
-      },
-      {
-        key: '/detailed-calculation',
-        icon: <FileTextOutlined />,
-        label: '详细核算',
+        key: '/cost-analysis',
+        icon: <BarChartOutlined />,
+        label: '成本分析',
       },
     ];
 
-    // 核算记录和评估记录 - 根据登录状态显示不同样式
+    // 历史记录 - 根据登录状态显示不同样式
     if (isUser) {
       // 已登录用户 - 正常显示
-      items.push(
-        {
-          key: '/calculation-records',
-          icon: <UnorderedListOutlined />,
-          label: '核算记录',
-        },
-        {
-          key: '/evaluations',
-          icon: <HistoryOutlined />,
-          label: '评估记录',
-        }
-      );
+      items.push({
+        key: '/history',
+        icon: <HistoryOutlined />,
+        label: '历史记录',
+      });
     } else {
       // 访客 - 直接显示"需登录"说明，减少交互成本
-      items.push(
-        {
-          key: '/calculation-records',
-          icon: <UnorderedListOutlined style={{ opacity: 0.5 }} />,
-          label: collapsed ? (
-            <Tooltip title="需登录" placement="right">
-              <span style={{ opacity: 0.5 }}>核算记录</span>
-            </Tooltip>
-          ) : (
-            <span style={{ opacity: 0.5 }}>
-              核算记录 <Text type="secondary" style={{ fontSize: 10, marginLeft: 2 }}>(需登录)</Text>
-            </span>
-          ),
-          disabled: true,
-        },
-        {
-          key: '/evaluations',
-          icon: <HistoryOutlined style={{ opacity: 0.5 }} />,
-          label: collapsed ? (
-            <Tooltip title="需登录" placement="right">
-              <span style={{ opacity: 0.5 }}>评估记录</span>
-            </Tooltip>
-          ) : (
-            <span style={{ opacity: 0.5 }}>
-              评估记录 <Text type="secondary" style={{ fontSize: 10, marginLeft: 2 }}>(需登录)</Text>
-            </span>
-          ),
-          disabled: true,
-        }
-      );
+      items.push({
+        key: '/history',
+        icon: <HistoryOutlined style={{ opacity: 0.5 }} />,
+        label: collapsed ? (
+          <Tooltip title="需登录" placement="right">
+            <span style={{ opacity: 0.5 }}>历史记录</span>
+          </Tooltip>
+        ) : (
+          <span style={{ opacity: 0.5 }}>
+            历史记录 <Text type="secondary" style={{ fontSize: 10, marginLeft: 2 }}>(需登录)</Text>
+          </span>
+        ),
+        disabled: true,
+      });
     }
 
     // 管理员菜单

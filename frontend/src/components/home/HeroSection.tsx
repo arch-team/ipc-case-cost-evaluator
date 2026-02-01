@@ -78,7 +78,7 @@ export function HeroSection({ startBtnRef, historyBtnRef, onRestartTour }: HeroS
               icon={<CalculatorOutlined />}
               className="home-primary-btn"
               style={styles.primaryButton}
-              onClick={() => navigate('/calculator')}
+              onClick={() => navigate('/cost-analysis')}
             >
               开始评估 <ArrowRightOutlined />
             </Button>
@@ -88,7 +88,7 @@ export function HeroSection({ startBtnRef, historyBtnRef, onRestartTour }: HeroS
                 size="large"
                 icon={<HistoryOutlined />}
                 style={{ height: 48, borderRadius: 8 }}
-                onClick={() => navigate('/evaluations')}
+                onClick={() => navigate('/history')}
               >
                 查看历史记录
               </Button>

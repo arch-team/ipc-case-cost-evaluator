@@ -2,18 +2,17 @@
  * 应用入口组件
  */
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider, theme, App as AntApp } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/auth';
 import Layout from './components/common/Layout';
 import Home from './pages/Home';
-import Calculator from './pages/Calculator';
-import DetailedCalculation from './pages/DetailedCalculation';
-import Evaluations from './pages/Evaluations';
+import CostAnalysis from './pages/CostAnalysis';
+import HistoryRecords from './pages/HistoryRecords';
+// 保留详情页组件
 import EvaluationDetail from './pages/EvaluationDetail';
-import CalculationRecords from './pages/CalculationRecords';
 import CalculationRecordDetail from './pages/CalculationRecordDetail';
 import RecordComparison from './pages/RecordComparison';
 import Settings from './pages/Settings';
@@ -69,29 +68,32 @@ const App: React.FC = () => {
             {/* 主应用布局 */}
             <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />
-              <Route path="calculator" element={<Calculator />} />
-              <Route path="detailed-calculation" element={<DetailedCalculation />} />
+
+              {/* 新版路由：成本分析（合并页面） */}
+              <Route path="cost-analysis" element={<CostAnalysis />} />
+
+              {/* 新版路由：历史记录（统一入口） */}
               <Route
-                path="evaluations"
+                path="history"
                 element={
                   <ProtectedRoute minRole="user">
-                    <Evaluations />
+                    <HistoryRecords />
                   </ProtectedRoute>
                 }
               />
+
+              {/* 向后兼容：旧路由重定向到新路由 */}
+              <Route path="calculator" element={<Navigate to="/cost-analysis?tab=quick" replace />} />
+              <Route path="detailed-calculation" element={<Navigate to="/cost-analysis?tab=detailed" replace />} />
+              <Route path="calculation-records" element={<Navigate to="/history?type=detailed" replace />} />
+              <Route path="evaluations" element={<Navigate to="/history?type=legacy" replace />} />
+
+              {/* 详情页保留原有路由 */}
               <Route
                 path="evaluations/:id"
                 element={
                   <ProtectedRoute minRole="user">
                     <EvaluationDetail />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="calculation-records"
-                element={
-                  <ProtectedRoute minRole="user">
-                    <CalculationRecords />
                   </ProtectedRoute>
                 }
               />
@@ -111,6 +113,8 @@ const App: React.FC = () => {
                   </ProtectedRoute>
                 }
               />
+
+              {/* 管理员路由 */}
               <Route
                 path="admin"
                 element={

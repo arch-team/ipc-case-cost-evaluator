@@ -140,7 +140,7 @@ const RecordComparison: React.FC = () => {
           title="参数错误"
           subTitle="请选择 2-4 条记录进行对比"
           extra={
-            <Button type="primary" onClick={() => navigate('/calculation-records')}>
+            <Button type="primary" onClick={() => navigate('/history')}>
               返回记录列表
             </Button>
           }
@@ -175,7 +175,7 @@ const RecordComparison: React.FC = () => {
           action={
             <Space>
               <Button onClick={() => window.location.reload()}>重试</Button>
-              <Button type="primary" onClick={() => navigate('/calculation-records')}>
+              <Button type="primary" onClick={() => navigate('/history')}>
                 返回列表
               </Button>
             </Space>
@@ -271,7 +271,7 @@ const RecordComparison: React.FC = () => {
               <Button
                 type="text"
                 icon={<ArrowLeftOutlined />}
-                onClick={() => navigate('/calculation-records')}
+                onClick={() => navigate('/history')}
               >
                 返回列表
               </Button>

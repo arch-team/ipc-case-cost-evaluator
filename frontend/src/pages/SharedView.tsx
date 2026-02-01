@@ -146,7 +146,7 @@ const SharedView: React.FC = () => {
         showIcon
         icon={<EyeOutlined />}
         action={
-          <Link to="/calculator">
+          <Link to="/cost-analysis">
             <Button type="primary" size="small">
               创建新评估
             </Button>
@@ -302,7 +302,7 @@ const SharedView: React.FC = () => {
           <Card className="shared-view-actions-card" style={{ marginTop: 24 }}>
             <Space>
               <Link
-                to={`/calculator?preset=${encodeURIComponent(
+                to={`/cost-analysis?preset=${encodeURIComponent(
                   JSON.stringify(input_data)
                 )}`}
               >

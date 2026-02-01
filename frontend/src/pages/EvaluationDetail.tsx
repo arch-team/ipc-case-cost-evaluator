@@ -69,10 +69,10 @@ const EvaluationDetail: React.FC = () => {
         const axiosError = error as { response?: { status?: number } };
         if (axiosError.response?.status === 404) {
           message.error('评估记录不存在');
-          navigate('/evaluations');
+          navigate('/history?type=legacy');
         } else if (axiosError.response?.status === 401) {
           message.warning('请先登录');
-          navigate('/evaluations');
+          navigate('/history?type=legacy');
         } else {
           message.error('获取评估记录失败');
         }
@@ -86,12 +86,12 @@ const EvaluationDetail: React.FC = () => {
 
   const handleLoad = () => {
     if (!evaluation) return;
-    navigate('/calculator', {
+    navigate('/cost-analysis?tab=quick', {
       state: {
         loadFromEvaluation: evaluation,
       },
     });
-    message.success('已加载评估配置到计算器');
+    message.success('已加载评估配置到成本分析');
   };
 
   const handleCopy = async () => {
@@ -99,7 +99,7 @@ const EvaluationDetail: React.FC = () => {
     try {
       await evaluationApi.duplicate(evaluation.id, `${evaluation.name} - 副本`);
       message.success('复制成功');
-      navigate('/evaluations');
+      navigate('/history?type=legacy');
     } catch {
       message.error('复制失败');
     }
@@ -178,7 +178,7 @@ const EvaluationDetail: React.FC = () => {
       <Card>
         <div style={{ marginBottom: 24 }}>
           <Space>
-            <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/evaluations')}>
+            <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/history?type=legacy')}>
               返回列表
             </Button>
           </Space>
