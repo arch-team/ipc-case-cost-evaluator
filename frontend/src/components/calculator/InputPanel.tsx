@@ -24,9 +24,10 @@ import {
   ShareAltOutlined,
   SaveOutlined,
   ClockCircleOutlined,
+  LoginOutlined,
 } from '@ant-design/icons';
 
-const { Text } = Typography;
+import { useNavigate } from 'react-router-dom';
 import type {
   CostCalculationInput,
   FunctionalDimensions,
@@ -40,11 +41,14 @@ import type {
   StorageClass,
 } from '../../types';
 import { scenarioApi } from '../../api/client';
+
+const { Text } = Typography;
 import FunctionalForm from './FunctionalForm';
 import TechnicalForm from './TechnicalForm';
 import PricingForm from './PricingForm';
 import MultiSchemePanel from './MultiSchemePanel';
 import { REGION_NAMES_ZH_SHORT } from '../../constants/regions';
+import { devLog } from '../../utils/errors';
 
 interface InputPanelProps {
   value: CostCalculationInput;
@@ -79,6 +83,7 @@ const InputPanel: React.FC<InputPanelProps> = ({
   onSave,
   isLoggedIn = false,
 }) => {
+  const navigate = useNavigate();
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [categories, setCategories] = useState<ScenarioCategory[]>([]);
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
@@ -97,7 +102,7 @@ const InputPanel: React.FC<InputPanelProps> = ({
       setScenarios(data.scenarios || []);
       setCategories(data.categories || []);
     } catch (error) {
-      console.error('加载预设场景失败:', error);
+      devLog.error('加载预设场景失败:', error);
     } finally {
       setLoading(false);
     }
@@ -358,22 +363,36 @@ const InputPanel: React.FC<InputPanelProps> = ({
               </Button>
             )}
             {onShare && (
-              <Button icon={<ShareAltOutlined />} onClick={onShare} style={{ flex: 1 }}>
-                分享链接
-              </Button>
+              <Tooltip title={isLoggedIn ? '生成分享链接' : '登录后可生成分享链接'}>
+                <Button
+                  icon={<ShareAltOutlined />}
+                  onClick={isLoggedIn ? onShare : () => navigate('/settings')}
+                  style={{ flex: 1 }}
+                >
+                  {isLoggedIn ? '分享链接' : '登录分享'}
+                </Button>
+              </Tooltip>
             )}
           </Space.Compact>
           {onSave && (
-            <Tooltip title={isLoggedIn ? '保存评估记录' : '请先登录'}>
+            isLoggedIn ? (
               <Button
+                type="primary"
                 icon={<SaveOutlined />}
                 onClick={onSave}
-                disabled={!isLoggedIn}
                 block
               >
                 保存评估
               </Button>
-            </Tooltip>
+            ) : (
+              <Button
+                icon={<LoginOutlined />}
+                onClick={() => navigate('/settings')}
+                block
+              >
+                登录后保存
+              </Button>
+            )
           )}
         </Space>
       </div>

@@ -206,6 +206,33 @@ export async function retryOperation<T>(
 }
 
 /**
+ * 开发环境日志工具
+ * 仅在开发环境输出日志，生产环境静默
+ */
+export const devLog = {
+  error: (message: string, ...args: unknown[]): void => {
+    if (import.meta.env.DEV) {
+      console.error(message, ...args);
+    }
+  },
+  warn: (message: string, ...args: unknown[]): void => {
+    if (import.meta.env.DEV) {
+      console.warn(message, ...args);
+    }
+  },
+  info: (message: string, ...args: unknown[]): void => {
+    if (import.meta.env.DEV) {
+      console.info(message, ...args);
+    }
+  },
+  log: (message: string, ...args: unknown[]): void => {
+    if (import.meta.env.DEV) {
+      console.log(message, ...args);
+    }
+  },
+};
+
+/**
  * 表单验证错误处理
  */
 export class ValidationErrors {

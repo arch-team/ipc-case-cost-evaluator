@@ -20,6 +20,7 @@ import Settings from './pages/Settings';
 import SharedView from './pages/SharedView';
 import AdminPage from './pages/AdminPage';
 import UserManagementPage from './pages/admin/UserManagementPage';
+import SystemMonitor from './pages/admin/SystemMonitor';
 
 // 企业级稳重风格主题配置
 const customTheme = {
@@ -123,6 +124,14 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute minRole="admin">
                     <AdminPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="admin/system"
+                element={
+                  <ProtectedRoute minRole="admin">
+                    <SystemMonitor />
                   </ProtectedRoute>
                 }
               />

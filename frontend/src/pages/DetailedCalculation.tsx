@@ -7,19 +7,18 @@
  * - 支持保存核算记录
  */
 import React, { useState, useEffect, useMemo } from 'react';
-import { Card, Typography, message, Alert, Button, Space, InputNumber, Tooltip } from 'antd';
+import { Card, Typography, message, Button, Space, InputNumber, Tooltip } from 'antd';
 import {
   CalculatorOutlined,
   SaveOutlined,
-  LoginOutlined,
   SyncOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
   ClockCircleOutlined,
   QuestionCircleOutlined,
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import LoginPrompt from '../components/auth/LoginPrompt';
 import type { CostCalculationInput } from '../types';
 import type { DetailedCalculationResult } from '../types/calculationRecords';
 import { calculationRecordApi } from '../api/calculationRecords';
@@ -30,6 +29,7 @@ import DetailedCostPreview from '../components/calculator/DetailedCostPreview';
 import SaveRecordDialog from '../components/calculator/SaveRecordDialog';
 import debounce from 'lodash/debounce';
 import { STORAGE_CLASS_DEFAULTS } from '../constants/storageClasses';
+import { devLog } from '../utils/errors';
 
 const { Title, Text } = Typography;
 
@@ -37,7 +37,6 @@ const { Title, Text } = Typography;
 type CalculationStatus = 'idle' | 'calculating' | 'success' | 'error';
 
 const DetailedCalculation: React.FC = () => {
-  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
   // 输入参数状态
@@ -80,7 +79,7 @@ const DetailedCalculation: React.FC = () => {
         const defaults = await calculationRecordApi.getDefaults();
         setInput(defaults);
       } catch (err) {
-        console.error('加载默认参数失败:', err);
+        devLog.error('加载默认参数失败:', err);
       }
     };
     loadDefaults();
@@ -94,7 +93,7 @@ const DetailedCalculation: React.FC = () => {
           const countRes = await calculationRecordApi.getCount();
           setUserRecordCount(countRes.count);
         } catch (err) {
-          console.error('获取记录数量失败:', err);
+          devLog.error('获取记录数量失败:', err);
         }
       }
     };
@@ -114,9 +113,12 @@ const DetailedCalculation: React.FC = () => {
           }
           setDetailedResult(result);
           setStatus('success');
-        } catch (err: any) {
-          console.error('计算失败:', err);
-          setError(err.response?.data?.detail || err.message || '计算失败');
+        } catch (err: unknown) {
+          devLog.error('计算失败:', err);
+          const errorMessage = err instanceof Error
+            ? (err as Error & { response?: { data?: { detail?: string } } }).response?.data?.detail || err.message
+            : '计算失败';
+          setError(errorMessage);
           setStatus('error');
         }
       }, 500),
@@ -165,8 +167,11 @@ const DetailedCalculation: React.FC = () => {
       await calculationRecordApi.create({ name, description }, input);
       setSaveDialogOpen(false);
       setUserRecordCount((prev) => prev + 1);
-    } catch (err: any) {
-      throw new Error(err.response?.data?.detail || err.message || '保存失败');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error
+        ? (err as Error & { response?: { data?: { detail?: string } } }).response?.data?.detail || err.message
+        : '保存失败';
+      throw new Error(errorMessage);
     } finally {
       setSaveLoading(false);
     }
@@ -226,18 +231,11 @@ const DetailedCalculation: React.FC = () => {
 
       {/* 未登录提示 */}
       {!isAuthenticated && (
-        <Alert
-          message="访客模式"
-          description={
-            <span>
-              您正在以访客身份使用，可正常计算但无法保存记录。
-              <a onClick={() => navigate('/settings')} style={{ marginLeft: 8 }}>
-                <LoginOutlined /> 登录后可保存核算记录
-              </a>
-            </span>
-          }
-          type="info"
-          showIcon
+        <LoginPrompt
+          variant="alert"
+          title="访客模式"
+          description="您正在以访客身份使用，可正常计算但无法保存记录。"
+          trigger="save"
           closable
           style={{ marginBottom: 24 }}
         />

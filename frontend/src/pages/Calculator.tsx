@@ -3,10 +3,11 @@
  * 左侧参数输入区 (400px) + 右侧结果展示区 (自适应)
  */
 import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
-import { Card, Empty, Spin, Typography, Badge, message, Alert } from 'antd';
-import { DollarOutlined, SyncOutlined, ExclamationCircleOutlined, LoginOutlined } from '@ant-design/icons';
+import { Card, Empty, Spin, Typography, Badge, message } from 'antd';
+import { DollarOutlined, SyncOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import LoginPrompt from '../components/auth/LoginPrompt';
 import type {
   CostCalculationInput,
   CostSummary,
@@ -26,6 +27,7 @@ import ShareDialog from '../components/calculator/ShareDialog';
 import debounce from 'lodash/debounce';
 import { STORAGE_CLASS_DEFAULTS } from '../constants/storageClasses';
 import { DEFAULT_FORM_VALUES } from '../constants/forms';
+import { devLog } from '../utils/errors';
 
 const { Title } = Typography;
 
@@ -106,7 +108,7 @@ const Calculator: React.FC = () => {
           setComparison(compResult);
           setStatus('success');
         } catch (error) {
-          console.error('计算失败:', error);
+          devLog.error('计算失败:', error);
           setStatus('error');
         }
       }, 500),
@@ -135,7 +137,7 @@ const Calculator: React.FC = () => {
           }
           setStatus('success');
         } catch (error) {
-          console.error('批量计算失败:', error);
+          devLog.error('批量计算失败:', error);
           setStatus('error');
         }
       }, 500),
@@ -212,21 +214,13 @@ const Calculator: React.FC = () => {
     if (isAuthenticated || guestAlertDismissed) return null;
 
     return (
-      <Alert
-        message="访客模式"
-        description={
-          <span>
-            您正在以访客身份使用计算器，可正常计算和对比方案。
-            <a onClick={() => navigate('/settings')} style={{ marginLeft: 8 }}>
-              <LoginOutlined /> 登录后可保存评估记录
-            </a>
-          </span>
-        }
-        type="info"
-        showIcon
+      <LoginPrompt
+        variant="alert"
+        title="访客模式"
+        description="您正在以访客身份使用计算器，可正常计算和对比方案。"
+        trigger="general"
         closable
         onClose={handleDismissGuestAlert}
-        style={{ marginBottom: 16 }}
       />
     );
   };
@@ -325,6 +319,18 @@ const Calculator: React.FC = () => {
                 />
               </Card>
             </div>
+
+            {/* 访客转化引导 - 计算完成后显示 */}
+            {!isAuthenticated && (
+              <div style={{ marginTop: 24 }}>
+                <LoginPrompt
+                  variant="card"
+                  title="保存您的评估结果"
+                  description="登录后可以永久保存此次计算结果，方便日后查看和对比"
+                  trigger="save"
+                />
+              </div>
+            )}
           </>
         )}
       </Spin>

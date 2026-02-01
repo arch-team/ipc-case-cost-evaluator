@@ -14,6 +14,12 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   /** 是否正在加载认证状态 */
   isLoading: boolean;
+  /** 是否为管理员 */
+  isAdmin: boolean;
+  /** 是否为普通用户（含管理员） */
+  isUser: boolean;
+  /** 是否为访客（未登录或 viewer 角色） */
+  isViewer: boolean;
   /** 登录 */
   login: (tokenResponse: TokenResponse) => void;
   /** 登出 */
@@ -93,18 +99,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     [user]
   );
 
+  // 计算便捷角色属性
+  const isAdmin = useMemo(() => user?.role === 'admin', [user]);
+  const isUserRole = useMemo(() => !!user && ROLE_LEVELS[user.role] >= ROLE_LEVELS['user'], [user]);
+  const isViewer = useMemo(() => !user || user.role === 'viewer', [user]);
+
   const value = useMemo<AuthContextType>(
     () => ({
       user,
       isAuthenticated: !!user,
       isLoading,
+      isAdmin,
+      isUser: isUserRole,
+      isViewer,
       login,
       logout,
       updateUser,
       hasRole,
       isRole,
     }),
-    [user, isLoading, login, logout, updateUser, hasRole, isRole]
+    [user, isLoading, isAdmin, isUserRole, isViewer, login, logout, updateUser, hasRole, isRole]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

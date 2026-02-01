@@ -2,7 +2,7 @@
  * 布局组件
  */
 import React, { useState, useMemo, useContext } from 'react';
-import { Layout as AntLayout, Menu, Typography, Space, Breadcrumb } from 'antd';
+import { Layout as AntLayout, Menu, Typography, Space, Breadcrumb, Tag, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   CalculatorOutlined,
@@ -16,9 +16,13 @@ import {
   DollarOutlined,
   FileTextOutlined,
   UnorderedListOutlined,
+  LockOutlined,
+  LoginOutlined,
+  DashboardOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet, Link } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
+import { ROLE_LABELS } from '../../types/auth';
 
 const { Header, Content, Footer, Sider } = AntLayout;
 const { Title } = Typography;
@@ -33,6 +37,7 @@ const breadcrumbNameMap: Record<string, string> = {
   '/evaluations': '评估记录',
   '/admin': '用户管理',
   '/admin/pricing': '定价管理',
+  '/admin/system': '系统监控',
   '/settings': '账户',
 };
 
@@ -42,9 +47,11 @@ const Layout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const authContext = useContext(AuthContext);
   const user = authContext?.user;
+  const isAuthenticated = authContext?.isAuthenticated ?? false;
 
-  // 判断是否为管理员
+  // 判断角色
   const isAdmin = user?.role === 'admin';
+  const isUser = isAuthenticated && (user?.role === 'user' || user?.role === 'admin');
 
   // 根据用户角色动态生成菜单
   const menuItems = useMemo(() => {
@@ -64,17 +71,52 @@ const Layout: React.FC = () => {
         icon: <FileTextOutlined />,
         label: '详细核算',
       },
-      {
-        key: '/calculation-records',
-        icon: <UnorderedListOutlined />,
-        label: '核算记录',
-      },
-      {
-        key: '/evaluations',
-        icon: <HistoryOutlined />,
-        label: '评估记录',
-      },
     ];
+
+    // 核算记录和评估记录 - 根据登录状态显示不同样式
+    if (isUser) {
+      // 已登录用户 - 正常显示
+      items.push(
+        {
+          key: '/calculation-records',
+          icon: <UnorderedListOutlined />,
+          label: '核算记录',
+        },
+        {
+          key: '/evaluations',
+          icon: <HistoryOutlined />,
+          label: '评估记录',
+        }
+      );
+    } else {
+      // 访客 - 显示锁定提示
+      items.push(
+        {
+          key: '/calculation-records',
+          icon: <UnorderedListOutlined />,
+          label: (
+            <Tooltip title="登录后可查看核算记录" placement="right">
+              <span style={{ opacity: 0.5 }}>
+                核算记录 <LockOutlined style={{ fontSize: 10, marginLeft: 4 }} />
+              </span>
+            </Tooltip>
+          ),
+          disabled: true,
+        },
+        {
+          key: '/evaluations',
+          icon: <HistoryOutlined />,
+          label: (
+            <Tooltip title="登录后可查看评估记录" placement="right">
+              <span style={{ opacity: 0.5 }}>
+                评估记录 <LockOutlined style={{ fontSize: 10, marginLeft: 4 }} />
+              </span>
+            </Tooltip>
+          ),
+          disabled: true,
+        }
+      );
+    }
 
     // 管理员菜单
     if (isAdmin) {
@@ -93,18 +135,24 @@ const Layout: React.FC = () => {
             icon: <DollarOutlined />,
             label: '定价管理',
           },
+          {
+            key: '/admin/system',
+            icon: <DashboardOutlined />,
+            label: '系统监控',
+          },
         ],
       });
     }
 
+    // 账户菜单 - 根据登录状态显示不同文案
     items.push({
       key: '/settings',
-      icon: <UserOutlined />,
-      label: '账户',
+      icon: isAuthenticated ? <UserOutlined /> : <LoginOutlined />,
+      label: isAuthenticated ? '账户' : '登录',
     });
 
     return items;
-  }, [isAdmin]);
+  }, [isAdmin, isUser, isAuthenticated]);
 
   // 计算当前选中的菜单项和展开的子菜单
   const selectedKeys = useMemo(() => {
@@ -220,6 +268,22 @@ const Layout: React.FC = () => {
             <span style={{ color: '#999', fontSize: 13 }}>
               AWS S3 云存储成本评估系统
             </span>
+            {isAuthenticated && user && (
+              <>
+                <span style={{ color: '#333', fontSize: 13, marginLeft: 16 }}>
+                  <UserOutlined style={{ marginRight: 4 }} />
+                  {user.name || user.email?.split('@')[0]}
+                </span>
+                <Tag color={isAdmin ? 'gold' : 'blue'}>
+                  {ROLE_LABELS[user.role] || user.role}
+                </Tag>
+              </>
+            )}
+            {!isAuthenticated && (
+              <Tag color="default">
+                访客模式
+              </Tag>
+            )}
           </Space>
         </Header>
         <Content
