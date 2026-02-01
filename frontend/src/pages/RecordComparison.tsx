@@ -49,7 +49,8 @@ import {
 } from '../components/comparison';
 import { COMPARISON_CONFIG } from '../constants/comparison';
 import { areValuesEqual } from '../utils/comparisonHelpers';
-import { parseIdList, handleApiError } from '../utils/errorHandlers';
+import { handleApiError } from '../utils/errors';
+import { parseIdList } from '../utils/urlHelpers';
 import { formatNumber } from '../utils/formatters';
 
 const { Text } = Typography;

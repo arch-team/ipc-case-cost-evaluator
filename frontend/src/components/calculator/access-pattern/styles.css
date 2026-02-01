@@ -1,0 +1,240 @@
+/**
+ * 访问模式选择器的样式
+ */
+
+.access-pattern-selector-v2 {
+  margin-bottom: 8px;
+}
+
+.access-mode-switch {
+  margin: 12px 0;
+}
+
+.access-mode-switch .ant-segmented {
+  background: var(--color-border-light);
+}
+
+.access-mode-switch .ant-segmented-item-selected {
+  background: var(--color-bg-card);
+}
+
+.access-simple-slider {
+  padding: 0 4px;
+}
+
+.access-presets-container {
+  margin-top: 8px;
+}
+
+/* 预设卡片 */
+.access-preset-card {
+  position: relative;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--color-bg-card);
+  min-height: 100px;
+}
+
+.access-preset-card:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.access-preset-card-selected {
+  border-color: var(--color-primary);
+  border-width: 2px;
+  background: var(--color-primary-light);
+}
+
+.access-preset-card-selected:hover {
+  transform: none;
+}
+
+.access-preset-check {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  z-index: 1;
+}
+
+.access-preset-check .anticon {
+  color: #fff;
+  font-size: 10px;
+}
+
+.access-preset-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.access-preset-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.access-preset-tag {
+  font-size: 10px;
+  padding: 1px 5px;
+  background: var(--color-success);
+  color: #fff;
+  border-radius: 8px;
+  font-weight: 400;
+}
+
+.access-preset-rate {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+/* 阶段可视化条 */
+.access-stage-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  gap: 1px;
+  margin-bottom: 8px;
+}
+
+.access-stage-segment {
+  min-width: 4px;
+  border-radius: 2px;
+  transition: opacity 0.2s;
+}
+
+.access-preset-card:hover .access-stage-segment {
+  opacity: 0.9;
+}
+
+/* 阶段标签 */
+.access-stage-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.access-stage-label {
+  font-size: 10px;
+  padding: 2px 5px;
+  background: var(--color-border-light);
+  border-radius: 3px;
+  color: var(--color-text-secondary);
+}
+
+.access-preset-card-selected .access-stage-label {
+  background: rgba(37, 99, 235, 0.15);
+  color: var(--color-primary);
+}
+
+/* 当前选中描述 */
+.access-preset-description {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: var(--color-bg-page);
+  border-radius: var(--radius-small);
+  text-align: center;
+  font-size: 12px;
+}
+
+/* 自定义配置区域 */
+.access-custom-section {
+  margin-top: 12px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-small);
+  overflow: hidden;
+}
+
+.access-custom-header {
+  position: relative;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  background: var(--color-bg-card);
+  transition: all 0.2s ease;
+}
+
+.access-custom-header:hover {
+  background: var(--color-primary-light);
+}
+
+.access-custom-header-selected {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+
+.access-custom-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+}
+
+.access-custom-editor {
+  padding: 12px;
+  background: var(--color-bg-page);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.access-custom-stages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.access-custom-stage-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.access-custom-stage-inputs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.access-custom-stage-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.access-custom-stage-inputs .ant-input-number {
+  font-size: 12px;
+}
+
+.access-custom-delete-btn {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.access-custom-delete-btn:hover {
+  color: var(--color-error);
+}
+
+.access-custom-add-btn {
+  font-size: 12px;
+}

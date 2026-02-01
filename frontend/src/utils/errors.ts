@@ -3,6 +3,7 @@
  * 提供结构化的错误类型和处理函数
  */
 import { message } from 'antd';
+import type { NavigateFunction } from 'react-router-dom';
 
 /**
  * 错误代码常量
@@ -85,6 +86,48 @@ export class AppError extends Error {
         return this.message || '操作失败，请稍后重试';
     }
   }
+}
+
+/**
+ * Axios 错误类型
+ */
+export interface AxiosErrorType {
+  response?: {
+    status?: number;
+    data?: {
+      detail?: string;
+    };
+  };
+}
+
+/**
+ * 处理 API 错误的统一函数
+ * @param error 错误对象
+ * @param defaultMessage 默认错误消息
+ * @param navigate 路由导航函数（可选，用于 401 跳转）
+ * @returns 错误详情字符串
+ */
+export function handleApiError(
+  error: unknown,
+  defaultMessage: string,
+  navigate?: NavigateFunction
+): string {
+  const axiosError = error as AxiosErrorType;
+
+  // 处理 401 未授权错误
+  if (axiosError.response?.status === 401 && navigate) {
+    message.warning('请先登录');
+    navigate('/settings');
+    return '请先登录';
+  }
+
+  // 提取错误详情
+  const detail = axiosError.response?.data?.detail || defaultMessage;
+
+  // 显示错误消息
+  message.error(detail);
+
+  return detail;
 }
 
 /**

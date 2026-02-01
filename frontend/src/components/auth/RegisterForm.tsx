@@ -13,25 +13,9 @@ import { Form, Input, Button, Alert, Typography, Progress } from 'antd';
 import { MailOutlined, LockOutlined, UserOutlined, UserAddOutlined, CheckCircleFilled, CloseCircleFilled, InfoCircleOutlined } from '@ant-design/icons';
 import { authApi } from '../../api/client';
 import { useAuth } from '../../hooks/useAuth';
+import { authStyles } from '../../constants/styles';
 
 const { Text } = Typography;
-
-// 样式常量
-const styles = {
-  primaryButton: {
-    height: 44,
-    fontSize: 15,
-    fontWeight: 600,
-    borderRadius: 8,
-    background: 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)',
-    border: 'none',
-    boxShadow: '0 4px 12px rgba(82, 196, 26, 0.35)',
-  } as React.CSSProperties,
-  input: {
-    borderRadius: 8,
-    height: 44,
-  } as React.CSSProperties,
-};
 
 interface RegisterFormProps {
   onSuccess?: () => void;
@@ -141,31 +125,31 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
           type="error"
           showIcon
           closable={{ onClose: () => setError(null) }}
-          style={{ marginBottom: 16, borderRadius: 8 }}
+          style={authStyles.alert}
           role="alert"
         />
       )}
 
       <Form.Item
         name="name"
-        label={<span style={{ fontWeight: 500 }}>用户名</span>}
+        label={<span style={authStyles.formLabel}>用户名</span>}
         rules={[
           { required: true, message: '请输入用户名' },
           { min: 1, max: 50, message: '用户名长度为 1-50 个字符' },
         ]}
       >
         <Input
-          prefix={<UserOutlined style={{ color: '#bfbfbf' }} />}
+          prefix={<UserOutlined style={authStyles.iconPrefix} />}
           placeholder="请输入用户名"
           size="large"
-          style={styles.input}
+          style={authStyles.input}
           autoComplete="username"
         />
       </Form.Item>
 
       <Form.Item
         name="email"
-        label={<span style={{ fontWeight: 500 }}>邮箱</span>}
+        label={<span style={authStyles.formLabel}>邮箱</span>}
         rules={[
           { required: true, message: '请输入邮箱' },
           { type: 'email', message: '请输入有效的邮箱地址' },
@@ -173,17 +157,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
         validateTrigger={['onChange', 'onBlur']}
       >
         <Input
-          prefix={<MailOutlined style={{ color: '#bfbfbf' }} />}
+          prefix={<MailOutlined style={authStyles.iconPrefix} />}
           placeholder="请输入邮箱"
           size="large"
-          style={styles.input}
+          style={authStyles.input}
           autoComplete="email"
         />
       </Form.Item>
 
       <Form.Item
         name="password"
-        label={<span style={{ fontWeight: 500 }}>密码</span>}
+        label={<span style={authStyles.formLabel}>密码</span>}
         rules={[
           { required: true, message: '请输入密码' },
           { min: 8, message: '密码长度至少 8 位' },
@@ -238,10 +222,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
         }
       >
         <Input.Password
-          prefix={<LockOutlined style={{ color: '#bfbfbf' }} />}
+          prefix={<LockOutlined style={authStyles.iconPrefix} />}
           placeholder="请输入密码"
           size="large"
-          style={styles.input}
+          style={authStyles.input}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="new-password"
         />
@@ -255,7 +239,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
 
       <Form.Item
         name="confirmPassword"
-        label={<span style={{ fontWeight: 500 }}>确认密码</span>}
+        label={<span style={authStyles.formLabel}>确认密码</span>}
         dependencies={['password']}
         rules={[
           { required: true, message: '请确认密码' },
@@ -271,10 +255,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
         validateTrigger={['onChange', 'onBlur']}
       >
         <Input.Password
-          prefix={<LockOutlined style={{ color: '#bfbfbf' }} />}
+          prefix={<LockOutlined style={authStyles.iconPrefix} />}
           placeholder="请再次输入密码"
           size="large"
-          style={styles.input}
+          style={authStyles.input}
           autoComplete="new-password"
         />
       </Form.Item>
@@ -287,7 +271,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
           icon={!loading && <UserAddOutlined />}
           block
           size="large"
-          style={styles.primaryButton}
+          style={authStyles.registerButton}
           disabled={loading}
         >
           {loading ? '注册中...' : '注册'}

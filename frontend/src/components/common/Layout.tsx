@@ -2,7 +2,7 @@
  * 布局组件
  */
 import React, { useState, useMemo, useContext } from 'react';
-import { Layout as AntLayout, Menu, Typography, Space, Breadcrumb, Tag, Tooltip } from 'antd';
+import { Layout as AntLayout, Menu, Typography, Space, Breadcrumb, Tag, Tooltip, Button, Divider } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   CalculatorOutlined,
@@ -19,13 +19,14 @@ import {
   LockOutlined,
   LoginOutlined,
   DashboardOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet, Link } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import { ROLE_LABELS } from '../../types/auth';
 
 const { Header, Content, Footer, Sider } = AntLayout;
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 // 路由到面包屑的映射
 const breadcrumbNameMap: Record<string, string> = {
@@ -89,29 +90,33 @@ const Layout: React.FC = () => {
         }
       );
     } else {
-      // 访客 - 显示锁定提示
+      // 访客 - 直接显示"需登录"说明，减少交互成本
       items.push(
         {
           key: '/calculation-records',
-          icon: <UnorderedListOutlined />,
-          label: (
-            <Tooltip title="登录后可查看核算记录" placement="right">
-              <span style={{ opacity: 0.5 }}>
-                核算记录 <LockOutlined style={{ fontSize: 10, marginLeft: 4 }} />
-              </span>
+          icon: <UnorderedListOutlined style={{ opacity: 0.5 }} />,
+          label: collapsed ? (
+            <Tooltip title="需登录" placement="right">
+              <span style={{ opacity: 0.5 }}>核算记录</span>
             </Tooltip>
+          ) : (
+            <span style={{ opacity: 0.5 }}>
+              核算记录 <Text type="secondary" style={{ fontSize: 10, marginLeft: 2 }}>(需登录)</Text>
+            </span>
           ),
           disabled: true,
         },
         {
           key: '/evaluations',
-          icon: <HistoryOutlined />,
-          label: (
-            <Tooltip title="登录后可查看评估记录" placement="right">
-              <span style={{ opacity: 0.5 }}>
-                评估记录 <LockOutlined style={{ fontSize: 10, marginLeft: 4 }} />
-              </span>
+          icon: <HistoryOutlined style={{ opacity: 0.5 }} />,
+          label: collapsed ? (
+            <Tooltip title="需登录" placement="right">
+              <span style={{ opacity: 0.5 }}>评估记录</span>
             </Tooltip>
+          ) : (
+            <span style={{ opacity: 0.5 }}>
+              评估记录 <Text type="secondary" style={{ fontSize: 10, marginLeft: 2 }}>(需登录)</Text>
+            </span>
           ),
           disabled: true,
         }
@@ -144,15 +149,18 @@ const Layout: React.FC = () => {
       });
     }
 
-    // 账户菜单 - 根据登录状态显示不同文案
-    items.push({
-      key: '/settings',
-      icon: isAuthenticated ? <UserOutlined /> : <LoginOutlined />,
-      label: isAuthenticated ? '账户' : '登录',
-    });
+    // 账户菜单 - 仅登录用户显示在菜单中
+    // 访客的登录入口改为侧边栏底部独立区域，避免与功能菜单混淆
+    if (isAuthenticated) {
+      items.push({
+        key: '/settings',
+        icon: <UserOutlined />,
+        label: '账户',
+      });
+    }
 
     return items;
-  }, [isAdmin, isUser, isAuthenticated]);
+  }, [isAdmin, isUser, isAuthenticated, collapsed]);
 
   // 计算当前选中的菜单项和展开的子菜单
   const selectedKeys = useMemo(() => {
@@ -202,7 +210,72 @@ const Layout: React.FC = () => {
             defaultOpenKeys={openKeys}
             items={menuItems}
             onClick={handleMenuClick}
+            style={{ borderRight: 'none' }}
           />
+
+          {/* 访客身份区域 - 独立于功能菜单，固定在底部 */}
+          {!isAuthenticated && (
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                padding: collapsed ? '12px 8px' : '12px 16px',
+                borderTop: '1px solid #f0f0f0',
+                background: '#fafafa',
+              }}
+            >
+              {collapsed ? (
+                // 折叠状态：只显示登录图标按钮
+                <Tooltip title="点击登录" placement="right">
+                  <Button
+                    type="primary"
+                    icon={<LoginOutlined />}
+                    onClick={() => navigate('/settings')}
+                    style={{ width: '100%' }}
+                  />
+                </Tooltip>
+              ) : (
+                // 展开状态：显示完整的访客信息
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    marginBottom: 8,
+                    color: '#666',
+                    fontSize: 12,
+                  }}>
+                    <UserOutlined />
+                    <span>当前为访客身份</span>
+                  </div>
+                  <Button
+                    type="primary"
+                    icon={<LoginOutlined />}
+                    onClick={() => navigate('/settings')}
+                    size="small"
+                    block
+                  >
+                    登录 / 注册
+                  </Button>
+                  <div style={{
+                    marginTop: 8,
+                    fontSize: 11,
+                    color: '#999',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 4,
+                  }}>
+                    <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                    计算功能可用
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </Sider>
         {/* 折叠按钮 - 位于侧边栏边缘 */}
         <div
@@ -280,9 +353,15 @@ const Layout: React.FC = () => {
               </>
             )}
             {!isAuthenticated && (
-              <Tag color="default">
-                访客模式
-              </Tag>
+              <Space size={4}>
+                <Tag color="default" style={{ margin: 0 }}>
+                  <UserOutlined style={{ marginRight: 4 }} />
+                  访客
+                </Tag>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  计算功能可用
+                </Text>
+              </Space>
             )}
           </Space>
         </Header>

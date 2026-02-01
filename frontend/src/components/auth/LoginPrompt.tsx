@@ -13,12 +13,14 @@ import {
   SaveOutlined,
   ShareAltOutlined,
   HistoryOutlined,
+  InfoCircleOutlined,
+  CloseOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
 const { Text, Paragraph } = Typography;
 
-export type LoginPromptVariant = 'alert' | 'card' | 'inline' | 'button';
+export type LoginPromptVariant = 'alert' | 'card' | 'inline' | 'button' | 'mini';
 
 interface LoginPromptProps {
   /** 展示模式 */
@@ -93,6 +95,39 @@ const LoginPrompt: React.FC<LoginPromptProps> = ({
   const handleRegister = () => {
     navigate('/settings', { state: { tab: 'register' } });
   };
+
+  // Mini 模式 - 轻量提示条（32px 高度）
+  if (variant === 'mini') {
+    return (
+      <div
+        style={{
+          height: 32,
+          padding: '6px 16px',
+          background: '#f0f5ff',
+          borderRadius: 4,
+          fontSize: 13,
+          color: '#595959',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 16,
+          ...style,
+        }}
+        className={className}
+      >
+        <span>
+          <InfoCircleOutlined style={{ color: '#1890ff', marginRight: 8 }} />
+          访客模式 - 登录后可保存记录
+        </span>
+        {closable && (
+          <CloseOutlined
+            onClick={onClose}
+            style={{ cursor: 'pointer', fontSize: 12, color: '#8c8c8c' }}
+          />
+        )}
+      </div>
+    );
+  }
 
   // Alert 模式 - 页面顶部提示条
   if (variant === 'alert') {

@@ -44,7 +44,8 @@ import type {
 } from '../types/calculationRecords';
 import { AuthContext } from '../contexts/AuthContext';
 import { formatNumber } from '../utils/formatters';
-import { handleApiError, encodeIdList } from '../utils/errorHandlers';
+import { handleApiError } from '../utils/errors';
+import { encodeIdList } from '../utils/urlHelpers';
 import {
   STORAGE_STRATEGY_NAMES,
   STORAGE_STRATEGY_COLORS,

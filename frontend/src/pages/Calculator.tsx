@@ -196,7 +196,20 @@ const Calculator: React.FC = () => {
   // 处理保存
   const handleSave = () => {
     if (!isAuthenticated) {
-      message.warning('请先登录后再保存评估记录');
+      message.info({
+        content: (
+          <span>
+            登录后可保存记录
+            <a
+              onClick={() => navigate('/settings')}
+              style={{ marginLeft: 8, color: '#1890ff' }}
+            >
+              去登录
+            </a>
+          </span>
+        ),
+        duration: 4,
+      });
       return;
     }
     // 跳转到详细核算页面进行保存
@@ -215,10 +228,7 @@ const Calculator: React.FC = () => {
 
     return (
       <LoginPrompt
-        variant="alert"
-        title="访客模式"
-        description="您正在以访客身份使用计算器，可正常计算和对比方案。"
-        trigger="general"
+        variant="mini"
         closable
         onClose={handleDismissGuestAlert}
       />
@@ -319,18 +329,6 @@ const Calculator: React.FC = () => {
                 />
               </Card>
             </div>
-
-            {/* 访客转化引导 - 计算完成后显示 */}
-            {!isAuthenticated && (
-              <div style={{ marginTop: 24 }}>
-                <LoginPrompt
-                  variant="card"
-                  title="保存您的评估结果"
-                  description="登录后可以永久保存此次计算结果，方便日后查看和对比"
-                  trigger="save"
-                />
-              </div>
-            )}
           </>
         )}
       </Spin>
