@@ -55,9 +55,9 @@
     }
   },
   "data_transfer": {
-    "out_first_10tb_per_gb": 0.114,
-    "out_next_40tb_per_gb": 0.089,
-    "out_next_100tb_per_gb": 0.086,
-    "out_over_150tb_per_gb": 0.084
+    "out_first_10tb_per_gb": 0.09,
+    "out_next_40tb_per_gb": 0.085,
+    "out_next_100tb_per_gb": 0.07,
+    "out_over_150tb_per_gb": 0.05
   }
 }

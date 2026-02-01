@@ -1,6 +1,6 @@
 {
   "region": "sa-east-1",
-  "region_name": "South America (São Paulo)",
+  "region_name": "South America (S\u00e3o Paulo)",
   "currency": "USD",
   "last_updated": "2026-02-01",
   "storage_classes": {
@@ -55,9 +55,9 @@
     }
   },
   "data_transfer": {
-    "out_first_10tb_per_gb": 0.114,
-    "out_next_40tb_per_gb": 0.089,
-    "out_next_100tb_per_gb": 0.086,
-    "out_over_150tb_per_gb": 0.084
+    "out_first_10tb_per_gb": 0.15,
+    "out_next_40tb_per_gb": 0.138,
+    "out_next_100tb_per_gb": 0.134,
+    "out_over_150tb_per_gb": 0.13
   }
 }

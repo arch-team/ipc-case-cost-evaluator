@@ -304,10 +304,55 @@ class AWSPricingClient:
         )
         return price or 0.0
 
+    # 各区域数据传输定价的默认回退值
+    # 当 API 查询失败时使用，基于 AWS 官方定价 (2024-2025)
+    DATA_TRANSFER_DEFAULTS = {
+        # 美国/加拿大
+        "us-east-1": {"first_10tb": 0.09, "next_40tb": 0.085, "next_100tb": 0.07, "over_150tb": 0.05},
+        "us-east-2": {"first_10tb": 0.09, "next_40tb": 0.085, "next_100tb": 0.07, "over_150tb": 0.05},
+        "us-west-1": {"first_10tb": 0.09, "next_40tb": 0.085, "next_100tb": 0.07, "over_150tb": 0.05},
+        "us-west-2": {"first_10tb": 0.09, "next_40tb": 0.085, "next_100tb": 0.07, "over_150tb": 0.05},
+        "ca-central-1": {"first_10tb": 0.09, "next_40tb": 0.085, "next_100tb": 0.07, "over_150tb": 0.05},
+        "ca-west-1": {"first_10tb": 0.09, "next_40tb": 0.085, "next_100tb": 0.07, "over_150tb": 0.05},
+        # 欧洲
+        "eu-west-1": {"first_10tb": 0.09, "next_40tb": 0.085, "next_100tb": 0.07, "over_150tb": 0.05},
+        "eu-west-2": {"first_10tb": 0.09, "next_40tb": 0.085, "next_100tb": 0.07, "over_150tb": 0.05},
+        "eu-west-3": {"first_10tb": 0.09, "next_40tb": 0.085, "next_100tb": 0.07, "over_150tb": 0.05},
+        "eu-central-1": {"first_10tb": 0.09, "next_40tb": 0.085, "next_100tb": 0.07, "over_150tb": 0.05},
+        "eu-central-2": {"first_10tb": 0.09, "next_40tb": 0.085, "next_100tb": 0.07, "over_150tb": 0.05},
+        "eu-north-1": {"first_10tb": 0.09, "next_40tb": 0.085, "next_100tb": 0.07, "over_150tb": 0.05},
+        "eu-south-1": {"first_10tb": 0.09, "next_40tb": 0.085, "next_100tb": 0.07, "over_150tb": 0.05},
+        "eu-south-2": {"first_10tb": 0.09, "next_40tb": 0.085, "next_100tb": 0.07, "over_150tb": 0.05},
+        # 亚太-低价
+        "ap-south-1": {"first_10tb": 0.1093, "next_40tb": 0.085, "next_100tb": 0.082, "over_150tb": 0.08},
+        "ap-south-2": {"first_10tb": 0.1093, "next_40tb": 0.085, "next_100tb": 0.082, "over_150tb": 0.08},
+        "ap-southeast-1": {"first_10tb": 0.1093, "next_40tb": 0.085, "next_100tb": 0.082, "over_150tb": 0.08},
+        "ap-southeast-3": {"first_10tb": 0.1093, "next_40tb": 0.085, "next_100tb": 0.082, "over_150tb": 0.08},
+        # 亚太-标准
+        "ap-northeast-1": {"first_10tb": 0.114, "next_40tb": 0.089, "next_100tb": 0.086, "over_150tb": 0.084},
+        "ap-northeast-2": {"first_10tb": 0.114, "next_40tb": 0.089, "next_100tb": 0.086, "over_150tb": 0.084},
+        "ap-northeast-3": {"first_10tb": 0.114, "next_40tb": 0.089, "next_100tb": 0.086, "over_150tb": 0.084},
+        "ap-southeast-2": {"first_10tb": 0.114, "next_40tb": 0.089, "next_100tb": 0.086, "over_150tb": 0.084},
+        "ap-southeast-4": {"first_10tb": 0.114, "next_40tb": 0.089, "next_100tb": 0.086, "over_150tb": 0.084},
+        "ap-southeast-5": {"first_10tb": 0.114, "next_40tb": 0.089, "next_100tb": 0.086, "over_150tb": 0.084},
+        "ap-east-1": {"first_10tb": 0.114, "next_40tb": 0.089, "next_100tb": 0.086, "over_150tb": 0.084},
+        # 中东/非洲
+        "me-south-1": {"first_10tb": 0.117, "next_40tb": 0.107, "next_100tb": 0.1, "over_150tb": 0.09},
+        "me-central-1": {"first_10tb": 0.117, "next_40tb": 0.107, "next_100tb": 0.1, "over_150tb": 0.09},
+        "af-south-1": {"first_10tb": 0.117, "next_40tb": 0.107, "next_100tb": 0.1, "over_150tb": 0.09},
+        "il-central-1": {"first_10tb": 0.117, "next_40tb": 0.107, "next_100tb": 0.1, "over_150tb": 0.09},
+        # 南美
+        "sa-east-1": {"first_10tb": 0.15, "next_40tb": 0.138, "next_100tb": 0.134, "over_150tb": 0.13},
+    }
+
+    # 默认回退值（使用美国区域价格作为保守估算）
+    DEFAULT_DATA_TRANSFER = {"first_10tb": 0.09, "next_40tb": 0.085, "next_100tb": 0.07, "over_150tb": 0.05}
+
     def _fetch_data_transfer_pricing(self, target_region: str) -> DataTransferPricing:
         """获取数据传输定价
 
-        AWS 数据传输采用阶梯定价。
+        AWS 数据传输采用阶梯定价，各区域价格不同。
+        首先尝试从 API 获取，失败时使用区域特定的默认值。
 
         Args:
             target_region: 目标区域
@@ -315,6 +360,11 @@ class AWSPricingClient:
         Returns:
             DataTransferPricing: 数据传输定价
         """
+        # 获取区域特定的默认值
+        region_defaults = self.DATA_TRANSFER_DEFAULTS.get(
+            target_region, self.DEFAULT_DATA_TRANSFER
+        )
+
         # 尝试查询数据传输价格
         try:
             response = self.client.get_products(
@@ -329,21 +379,30 @@ class AWSPricingClient:
 
             prices = self._extract_tiered_prices(response)
             if prices:
-                return DataTransferPricing(
-                    out_first_10tb_per_gb=prices.get("first_10tb", 0.114),
-                    out_next_40tb_per_gb=prices.get("next_40tb", 0.089),
-                    out_next_100tb_per_gb=prices.get("next_100tb", 0.086),
-                    out_over_150tb_per_gb=prices.get("over_150tb", 0.084),
+                result = DataTransferPricing(
+                    out_first_10tb_per_gb=prices.get("first_10tb", region_defaults["first_10tb"]),
+                    out_next_40tb_per_gb=prices.get("next_40tb", region_defaults["next_40tb"]),
+                    out_next_100tb_per_gb=prices.get("next_100tb", region_defaults["next_100tb"]),
+                    out_over_150tb_per_gb=prices.get("over_150tb", region_defaults["over_150tb"]),
                 )
+                logger.info(
+                    f"从 API 获取 {target_region} 数据传输定价: "
+                    f"前10TB=${result.out_first_10tb_per_gb}/GB"
+                )
+                return result
         except Exception as e:
-            logger.warning(f"获取数据传输定价失败，使用默认值: {e}")
+            logger.warning(f"从 API 获取 {target_region} 数据传输定价失败: {e}")
 
-        # 返回默认值（基于 ap-northeast-1 定价）
+        # 返回区域特定的默认值
+        logger.info(
+            f"使用 {target_region} 数据传输默认定价: "
+            f"前10TB=${region_defaults['first_10tb']}/GB"
+        )
         return DataTransferPricing(
-            out_first_10tb_per_gb=0.114,
-            out_next_40tb_per_gb=0.089,
-            out_next_100tb_per_gb=0.086,
-            out_over_150tb_per_gb=0.084,
+            out_first_10tb_per_gb=region_defaults["first_10tb"],
+            out_next_40tb_per_gb=region_defaults["next_40tb"],
+            out_next_100tb_per_gb=region_defaults["next_100tb"],
+            out_over_150tb_per_gb=region_defaults["over_150tb"],
         )
 
     def _extract_price_from_response(

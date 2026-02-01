@@ -4,10 +4,13 @@
 支持按区域加载定价数据，包含存储费用、请求费用、检索费用和数据传输费用。
 """
 import json
+import logging
 from pathlib import Path
 from typing import Dict, List
 
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 from app.models.enums import StorageClass
 
@@ -215,6 +218,10 @@ class PricingLoader:
         cls._cache[region] = pricing
         return pricing
 
+    # 数据传输定价的合理范围 (USD/GB)
+    DATA_TRANSFER_MIN = 0.05  # 最低合理价格 (美国区域最高层级)
+    DATA_TRANSFER_MAX = 0.20  # 最高合理价格 (南美等高价区域)
+
     @classmethod
     def _load_from_file(cls, region: str) -> S3Pricing:
         """从文件加载定价数据
@@ -242,7 +249,41 @@ class PricingLoader:
         data["storage_classes"] = cls._parse_storage_classes(data["storage_classes"])
         data["data_transfer"] = DataTransferPricing(**data["data_transfer"])
 
+        # 验证数据传输定价合理性
+        cls._validate_data_transfer_pricing(region, data["data_transfer"], data.get("last_updated", "unknown"))
+
         return S3Pricing(**data)
+
+    @classmethod
+    def _validate_data_transfer_pricing(
+        cls, region: str, pricing: DataTransferPricing, last_updated: str
+    ) -> None:
+        """验证数据传输定价的合理性
+
+        检查定价是否在预期范围内，如果不在则记录警告。
+
+        Args:
+            region: 区域代码
+            pricing: 数据传输定价
+            last_updated: 定价更新日期
+        """
+        first_10tb_price = pricing.out_first_10tb_per_gb
+
+        if first_10tb_price < cls.DATA_TRANSFER_MIN:
+            logger.warning(
+                f"[{region}] 数据传输定价 ${first_10tb_price}/GB 低于预期最低值 "
+                f"${cls.DATA_TRANSFER_MIN}/GB (更新日期: {last_updated})"
+            )
+        elif first_10tb_price > cls.DATA_TRANSFER_MAX:
+            logger.warning(
+                f"[{region}] 数据传输定价 ${first_10tb_price}/GB 高于预期最高值 "
+                f"${cls.DATA_TRANSFER_MAX}/GB (更新日期: {last_updated})"
+            )
+        else:
+            logger.debug(
+                f"[{region}] 数据传输定价: 前10TB=${first_10tb_price}/GB "
+                f"(来源: 本地文件, 更新日期: {last_updated})"
+            )
 
     @classmethod
     def _parse_storage_classes(cls, storage_data: Dict) -> Dict[StorageClass, StorageClassPricing]:
