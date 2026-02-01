@@ -24,6 +24,8 @@ import {
   Modal,
   Skeleton,
   Alert,
+  Checkbox,
+  Tooltip,
 } from 'antd';
 import {
   DeleteOutlined,
@@ -32,6 +34,7 @@ import {
   EyeOutlined,
   FileTextOutlined,
   ExclamationCircleOutlined,
+  SwapOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { calculationRecordApi } from '../api/calculationRecords';
@@ -75,6 +78,9 @@ const CalculationRecords: React.FC = () => {
 
   // 删除操作状态
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // 对比选中状态
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   // 获取记录列表
   const fetchRecords = useCallback(async () => {
@@ -166,6 +172,29 @@ const CalculationRecords: React.FC = () => {
     });
   };
 
+  // 选择记录处理
+  const handleSelect = (recordId: string, checked: boolean) => {
+    if (checked) {
+      if (selectedIds.length < 4) {
+        setSelectedIds([...selectedIds, recordId]);
+      }
+    } else {
+      setSelectedIds(selectedIds.filter((id) => id !== recordId));
+    }
+  };
+
+  // 跳转对比页面
+  const handleCompare = () => {
+    if (selectedIds.length >= 2 && selectedIds.length <= 4) {
+      navigate(`/calculation-records/comparison?ids=${selectedIds.join(',')}`);
+    }
+  };
+
+  // 清除选择
+  const handleClearSelection = () => {
+    setSelectedIds([]);
+  };
+
   // 表格分页配置
   const handleTableChange = (pagination: { current?: number; pageSize?: number }) => {
     if (pagination.current) {
@@ -178,6 +207,28 @@ const CalculationRecords: React.FC = () => {
 
   // 表格列定义
   const columns = [
+    {
+      title: '',
+      key: 'selection',
+      width: 50,
+      render: (_: unknown, record: CalculationRecordSummary) => (
+        <Tooltip
+          title={
+            selectedIds.length >= 4 && !selectedIds.includes(record.record_id)
+              ? '最多选择 4 条记录'
+              : undefined
+          }
+        >
+          <Checkbox
+            checked={selectedIds.includes(record.record_id)}
+            onChange={(e) => handleSelect(record.record_id, e.target.checked)}
+            disabled={
+              selectedIds.length >= 4 && !selectedIds.includes(record.record_id)
+            }
+          />
+        </Tooltip>
+      ),
+    },
     {
       title: '名称',
       dataIndex: 'name',
@@ -338,6 +389,21 @@ const CalculationRecords: React.FC = () => {
               { value: 'name-desc', label: '名称 Z-A' },
             ]}
           />
+        </Col>
+        <Col>
+          <Space>
+            <Button
+              type="primary"
+              icon={<SwapOutlined />}
+              disabled={selectedIds.length < 2}
+              onClick={handleCompare}
+            >
+              对比 {selectedIds.length > 0 && `(${selectedIds.length})`}
+            </Button>
+            {selectedIds.length > 0 && (
+              <Button onClick={handleClearSelection}>清除选择</Button>
+            )}
+          </Space>
         </Col>
       </Row>
 
