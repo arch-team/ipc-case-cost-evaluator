@@ -9,6 +9,8 @@ export const RECORD_COLORS = COMPARISON_CONFIG.recordColors;
 
 /**
  * 获取数值对应的高亮颜色
+ * 优化策略：仅高亮最优值，不再用红色标记最差值，减少视觉焦虑
+ *
  * @param value 当前值
  * @param allValues 所有对比值
  * @param isLowerBetter 是否越低越好（默认 true，成本类指标）
@@ -27,12 +29,11 @@ export const getValueColor = (
 
   if (min === max) return undefined;
 
+  // 仅高亮最优值（使用绿色），不再标记最差值
   if (isLowerBetter) {
-    if (value === min) return COMPARISON_CONFIG.highlightColors.best; // 绿色：最低（最优）
-    if (value === max) return COMPARISON_CONFIG.highlightColors.worst; // 红色：最高（最差）
+    if (value === min) return COMPARISON_CONFIG.semanticColors.saving; // 绿色：最低（最优）
   } else {
-    if (value === max) return COMPARISON_CONFIG.highlightColors.best; // 绿色：最高（最优）
-    if (value === min) return COMPARISON_CONFIG.highlightColors.worst; // 红色：最低（最差）
+    if (value === max) return COMPARISON_CONFIG.semanticColors.saving; // 绿色：最高（最优）
   }
   return undefined;
 };

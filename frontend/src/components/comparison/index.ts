@@ -18,3 +18,7 @@ export { default as PricingComparison } from './PricingComparison';
 // 通用组件
 export { default as ComparisonTable } from './ComparisonTable';
 export type { ComparisonRow } from './ComparisonTable';
+
+// 新增优化组件
+export { default as ComparisonConclusion } from './ComparisonConclusion';
+export { default as CostOverviewCards } from './CostOverviewCards';

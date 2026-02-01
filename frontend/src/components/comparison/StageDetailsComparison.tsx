@@ -1,8 +1,11 @@
 /**
  * 分阶段费用明细对比组件
+ *
+ * 优化：用卡片式布局展示记录与阶段信息的层级关系
  */
 import React from 'react';
-import { Tabs, Table, Descriptions, Typography, Tag, Empty } from 'antd';
+import { Tabs, Table, Typography, Tag, Empty, Row, Col, Card } from 'antd';
+import { CalendarOutlined, PercentageOutlined } from '@ant-design/icons';
 import type { CalculationRecord, StageCostDetail, CostItemDetail } from '../../types/calculationRecords';
 import { RECORD_COLORS, getValueColor } from '../../utils/comparisonHelpers';
 import { formatNumber } from '../../utils/formatters';
@@ -107,21 +110,35 @@ const StageDetailsComparison: React.FC<Props> = ({ records }) => {
       isTotal: item.isTotal,
     }));
 
+  // 计算列宽（根据记录数量）
+  const getColSpan = () => {
+    if (records.length === 2) return 12;
+    if (records.length === 3) return 8;
+    return 6;
+  };
+
   // Tab 项
   const tabItems = Array.from({ length: maxStages }, (_, stageIdx) => ({
     key: String(stageIdx),
     label: `阶段 ${stageIdx + 1}`,
     children: (
       <div>
-        {/* 阶段基本信息 */}
-        <Descriptions size="small" column={records.length} bordered style={{ marginBottom: 16 }}>
+        {/* 阶段基本信息 - 卡片式布局 */}
+        <Row gutter={16} style={{ marginBottom: 16 }}>
           {records.map((r, i) => {
             const stage = r.stage_details[stageIdx];
             return (
-              <Descriptions.Item
-                key={r.record_id}
-                label={
-                  <span>
+              <Col key={r.record_id} span={getColSpan()}>
+                <Card
+                  size="small"
+                  style={{
+                    borderLeft: `3px solid ${RECORD_COLORS[i]}`,
+                    background: '#fafafa',
+                  }}
+                  bodyStyle={{ padding: '12px 16px' }}
+                >
+                  {/* 记录名称 */}
+                  <div style={{ marginBottom: 8 }}>
                     <span
                       style={{
                         display: 'inline-block',
@@ -132,27 +149,40 @@ const StageDetailsComparison: React.FC<Props> = ({ records }) => {
                         marginRight: 8,
                       }}
                     />
-                    {r.name}
-                  </span>
-                }
-              >
-                {stage ? (
-                  <div>
-                    <Tag color="blue">{stage.storage_class}</Tag>
-                    <span style={{ marginLeft: 8 }}>
-                      第 {stage.start_day}-{stage.end_day} 天
-                    </span>
-                    <span style={{ marginLeft: 8, color: '#888' }}>
-                      访问率 {((stage.access_rate ?? 0) * 100).toFixed(1)}%
-                    </span>
+                    <Text strong style={{ fontSize: 13 }}>{r.name}</Text>
                   </div>
-                ) : (
-                  <Text type="secondary">无此阶段</Text>
-                )}
-              </Descriptions.Item>
+
+                  {/* 阶段详情 - 层级缩进展示 */}
+                  {stage ? (
+                    <div
+                      style={{
+                        marginLeft: 16,
+                        paddingLeft: 12,
+                        borderLeft: '2px solid #e8e8e8',
+                      }}
+                    >
+                      <div style={{ marginBottom: 4 }}>
+                        <Tag color="blue" style={{ marginRight: 0 }}>{stage.storage_class}</Tag>
+                      </div>
+                      <div style={{ fontSize: 12, color: '#666' }}>
+                        <CalendarOutlined style={{ marginRight: 4 }} />
+                        第 {stage.start_day}-{stage.end_day} 天
+                      </div>
+                      <div style={{ fontSize: 12, color: '#666' }}>
+                        <PercentageOutlined style={{ marginRight: 4 }} />
+                        访问率 {((stage.access_rate ?? 0) * 100).toFixed(1)}%
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ marginLeft: 16, paddingLeft: 12, borderLeft: '2px solid #e8e8e8' }}>
+                      <Text type="secondary" style={{ fontSize: 12 }}>无此阶段</Text>
+                    </div>
+                  )}
+                </Card>
+              </Col>
             );
           })}
-        </Descriptions>
+        </Row>
 
         {/* 费用明细表格 */}
         <Table

@@ -7,34 +7,73 @@ import {
   STORAGE_CLASS_LABELS,
   getStorageClassLabel,
 } from './storageClasses';
+import { COST_ITEM_METADATA } from './costItems';
 import {
-  COST_ITEM_METADATA,
-  SCHEME_COLORS as COST_SCHEME_COLORS,
-} from './costItems';
+  SCHEME_COLOR_LIST,
+  SEMANTIC_COLORS,
+  HIGHLIGHT_COLORS as COLOR_HIGHLIGHT,
+  CARD_STYLES,
+  CONCLUSION_STYLES,
+} from './colors';
 
 // 存储类型名称映射（从统一数据源导出）
 export const STORAGE_CLASS_NAMES: Record<string, string> = STORAGE_CLASS_LABELS;
 
 // 方案颜色（从统一数据源导出）
-export const SCHEME_COLORS = COST_SCHEME_COLORS;
+export const SCHEME_COLORS = SCHEME_COLOR_LIST;
 
 // 费用项配置（从统一数据源导出）
 export const COST_ITEMS = COST_ITEM_METADATA;
 
 /**
  * 对比配置 - 集中管理对比功能使用的颜色和样式
+ *
+ * 配色设计理念：
+ * - 方案色与语义色分离，避免一色多义
+ * - 蓝青紫靛色系用于方案标识（纯标识，无语义）
+ * - 绿色专用于"节省/正向"语义
+ * - 橙色专用于"提醒"语义
+ * - 移除黄色洞察区背景，改为中性灰
  */
 export const COMPARISON_CONFIG = {
-  /** 记录颜色（最多支持 4 条记录对比） */
-  recordColors: ['#1890ff', '#52c41a', '#faad14', '#f5222d'] as const,
+  /** 记录颜色（最多支持 4 条记录对比）- 蓝青紫靛色系 */
+  recordColors: SCHEME_COLOR_LIST,
 
-  /** 高亮颜色 */
-  highlightColors: {
-    /** 最优值颜色（绿色） */
-    best: '#52c41a',
-    /** 最差值颜色（红色） */
-    worst: '#ff4d4f',
+  /** 语义化配色 - 用于差异对比 */
+  semanticColors: {
+    /** 节省金额（正向结果）- 绿色 */
+    saving: SEMANTIC_COLORS.saving,
+    /** 额外支出（中性提醒）- 柔和橙 */
+    extra: SEMANTIC_COLORS.warning,
+    /** 普通数字（无色彩干扰）- 深灰 */
+    neutral: SEMANTIC_COLORS.neutral,
+    /** 次要文字 - 中灰 */
+    secondary: SEMANTIC_COLORS.secondary,
   },
+
+  /** 高亮颜色 - 用于推荐方案和最优值标记 */
+  highlightColors: COLOR_HIGHLIGHT,
+
+  /** 卡片样式配置 */
+  cardStyles: CARD_STYLES,
+
+  /** 结论区样式配置 */
+  conclusionStyles: CONCLUSION_STYLES,
+} as const;
+
+/**
+ * 图表配色方案 - 用于柱状图、饼图等可视化
+ * 蓝青紫靛色系，色相差异明显，便于区分
+ */
+export const CHART_COLORS = {
+  /** 方案1：品牌蓝 */
+  scheme1: SCHEME_COLOR_LIST[0],
+  /** 方案2：青碧色 */
+  scheme2: SCHEME_COLOR_LIST[1],
+  /** 方案3：极光紫 */
+  scheme3: SCHEME_COLOR_LIST[2],
+  /** 方案4：深邃靛 */
+  scheme4: SCHEME_COLOR_LIST[3],
 } as const;
 
 /**

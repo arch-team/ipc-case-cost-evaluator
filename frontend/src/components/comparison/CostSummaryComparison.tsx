@@ -1,9 +1,15 @@
 /**
  * 费用汇总对比表格组件
+ *
+ * 样式优化：
+ * - 数字使用等宽字体（tabular-nums）便于对齐
+ * - 仅最优值使用绿色高亮，其他使用中性深灰色
+ * - 移除红色标记，减少视觉焦虑
  */
 import React from 'react';
 import { Typography, Tag } from 'antd';
 import type { CalculationRecord } from '../../types/calculationRecords';
+import { COMPARISON_CONFIG } from '../../constants/comparison';
 import { getValueColor } from '../../utils/comparisonHelpers';
 import { formatNumber } from '../../utils/formatters';
 import {
@@ -123,13 +129,19 @@ const CostSummaryComparison: React.FC<Props> = ({ records }) => {
       return <Text>{value}</Text>;
     }
 
-    // 数值类型：计算颜色
+    // 数值类型：计算颜色（仅高亮最优值）
     const numValue = value as number;
     const allNumValues = costRow.values as number[];
     const color = costRow.isCost ? getValueColor(numValue, allNumValues, true) : undefined;
 
     return (
-      <Text style={{ color }} strong={!!color}>
+      <Text
+        style={{
+          color: color || COMPARISON_CONFIG.semanticColors.neutral,
+          fontVariantNumeric: 'tabular-nums',
+        }}
+        strong={!!color}
+      >
         ${formatNumber(numValue, 4)}
       </Text>
     );
