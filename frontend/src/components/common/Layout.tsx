@@ -2,7 +2,7 @@
  * 布局组件
  */
 import React, { useState, useMemo, useContext } from 'react';
-import { Layout as AntLayout, Menu, Typography, Space, Breadcrumb, Tag, Tooltip, Button } from 'antd';
+import { Layout as AntLayout, Menu, Typography, Breadcrumb, Tag, Tooltip, Button, Dropdown, Space } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   CalculatorOutlined,
@@ -17,12 +17,13 @@ import {
   FileTextOutlined,
   UnorderedListOutlined,
   LoginOutlined,
+  LogoutOutlined,
+  SettingOutlined,
   DashboardOutlined,
-  CheckCircleOutlined,
+  DownOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet, Link } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
-import { ROLE_LABELS } from '../../types/auth';
 
 const { Header, Content, Footer, Sider } = AntLayout;
 const { Title, Text } = Typography;
@@ -48,6 +49,7 @@ const Layout: React.FC = () => {
   const authContext = useContext(AuthContext);
   const user = authContext?.user;
   const isAuthenticated = authContext?.isAuthenticated ?? false;
+  const logout = authContext?.logout;
 
   // 判断角色
   const isAdmin = user?.role === 'admin';
@@ -148,18 +150,8 @@ const Layout: React.FC = () => {
       });
     }
 
-    // 账户菜单 - 仅登录用户显示在菜单中
-    // 访客的登录入口改为侧边栏底部独立区域，避免与功能菜单混淆
-    if (isAuthenticated) {
-      items.push({
-        key: '/settings',
-        icon: <UserOutlined />,
-        label: '账户',
-      });
-    }
-
     return items;
-  }, [isAdmin, isUser, isAuthenticated, collapsed]);
+  }, [isAdmin, isUser, collapsed]);
 
   // 计算当前选中的菜单项和展开的子菜单
   const selectedKeys = useMemo(() => {
@@ -211,70 +203,6 @@ const Layout: React.FC = () => {
             onClick={handleMenuClick}
             style={{ borderRight: 'none' }}
           />
-
-          {/* 访客身份区域 - 独立于功能菜单，固定在底部 */}
-          {!isAuthenticated && (
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                padding: collapsed ? '12px 8px' : '12px 16px',
-                borderTop: '1px solid #f0f0f0',
-                background: '#fafafa',
-              }}
-            >
-              {collapsed ? (
-                // 折叠状态：只显示登录图标按钮
-                <Tooltip title="点击登录" placement="right">
-                  <Button
-                    type="primary"
-                    icon={<LoginOutlined />}
-                    onClick={() => navigate('/settings')}
-                    style={{ width: '100%' }}
-                  />
-                </Tooltip>
-              ) : (
-                // 展开状态：显示完整的访客信息
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                    marginBottom: 8,
-                    color: '#666',
-                    fontSize: 12,
-                  }}>
-                    <UserOutlined />
-                    <span>当前为访客身份</span>
-                  </div>
-                  <Button
-                    type="primary"
-                    icon={<LoginOutlined />}
-                    onClick={() => navigate('/settings')}
-                    size="small"
-                    block
-                  >
-                    登录 / 注册
-                  </Button>
-                  <div style={{
-                    marginTop: 8,
-                    fontSize: 11,
-                    color: '#999',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 4,
-                  }}>
-                    <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                    计算功能可用
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </Sider>
         {/* 折叠按钮 - 位于侧边栏边缘 */}
         <div
@@ -336,31 +264,70 @@ const Layout: React.FC = () => {
             }
             style={{ fontSize: 14 }}
           />
-          <Space>
-            <span style={{ color: '#999', fontSize: 13 }}>
-              AWS S3 云存储成本评估系统
-            </span>
-            {isAuthenticated && user && (
-              <>
-                <span style={{ color: '#333', fontSize: 13, marginLeft: 16 }}>
-                  <UserOutlined style={{ marginRight: 4 }} />
-                  {user.name || user.email?.split('@')[0]}
-                </span>
-                <Tag color={isAdmin ? 'gold' : 'blue'}>
-                  {ROLE_LABELS[user.role] || user.role}
-                </Tag>
-              </>
-            )}
-            {!isAuthenticated && (
-              <Space size={4}>
-                <Tag color="default" style={{ margin: 0 }}>
-                  <UserOutlined style={{ marginRight: 4 }} />
-                  访客
-                </Tag>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  计算功能可用
-                </Text>
-              </Space>
+          <Space size={12}>
+            {/* 模式标签 */}
+            <Tag color={isAdmin ? 'gold' : isAuthenticated ? 'blue' : 'default'}>
+              {isAdmin ? '管理员模式' : isAuthenticated ? '用户模式' : '访客模式'}
+            </Tag>
+
+            {isAuthenticated && user ? (
+              <Dropdown
+                menu={{
+                  items: [
+                    {
+                      key: 'settings',
+                      icon: <SettingOutlined />,
+                      label: '账户设置',
+                      onClick: () => navigate('/settings'),
+                    },
+                    {
+                      type: 'divider',
+                    },
+                    {
+                      key: 'logout',
+                      icon: <LogoutOutlined />,
+                      label: '退出登录',
+                      onClick: () => {
+                        logout?.();
+                        navigate('/');
+                      },
+                    },
+                  ],
+                }}
+                placement="bottomRight"
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '4px 8px',
+                    borderRadius: 4,
+                    cursor: 'pointer',
+                    transition: 'background 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#f5f5f5';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  <UserOutlined style={{ color: '#333', fontSize: 14 }} />
+                  <span style={{ color: '#333', fontSize: 13 }}>
+                    {user.name || user.email?.split('@')[0]}
+                  </span>
+                  <DownOutlined style={{ color: '#999', fontSize: 10 }} />
+                </div>
+              </Dropdown>
+            ) : (
+              <Button
+                type="primary"
+                icon={<LoginOutlined />}
+                onClick={() => navigate('/settings')}
+              >
+                登录 / 注册
+              </Button>
             )}
           </Space>
         </Header>

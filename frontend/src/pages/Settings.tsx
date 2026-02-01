@@ -9,7 +9,7 @@
  * - 增强 Tab 切换器视觉反馈
  */
 import React, { useState, useMemo, useEffect } from 'react';
-import { Card, Typography, Tag, Row, Col, Tabs, Button, message, Modal, Form, Input, Progress, Switch, Select, Divider, Space } from 'antd';
+import { Card, Typography, Tag, Row, Col, Tabs, Button, message, Modal, Form, Input, Progress, Switch, Select, Divider, Space, Collapse } from 'antd';
 import { UserOutlined, LogoutOutlined, EditOutlined, InfoCircleOutlined, SaveOutlined, CheckCircleFilled, CloseCircleFilled, LockOutlined, SettingOutlined, BellOutlined, GlobalOutlined, ApiOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { useAuth } from '../hooks/useAuth';
 import { authApi } from '../api/client';
@@ -337,21 +337,16 @@ const Settings: React.FC = () => {
             </div>
 
             <div className="settings-info-list">
-              <div className="settings-info-item">
-                <span className="settings-info-label">用户名</span>
-                <span className="settings-info-value">{user.name}</span>
-              </div>
+              {/* 仅当用户名存在且不等于邮箱时显示用户名行，避免重复 */}
+              {user.name && user.name !== user.email && (
+                <div className="settings-info-item">
+                  <span className="settings-info-label">用户名</span>
+                  <span className="settings-info-value">{user.name}</span>
+                </div>
+              )}
               <div className="settings-info-item">
                 <span className="settings-info-label">邮箱</span>
                 <span className="settings-info-value">{user.email}</span>
-              </div>
-              <div className="settings-info-item">
-                <span className="settings-info-label">角色</span>
-                <span className="settings-info-value">
-                  <Tag color={user.role === 'admin' ? 'blue' : 'default'} style={{ margin: 0 }}>
-                    {ROLE_LABELS[user.role]}
-                  </Tag>
-                </span>
               </div>
               {user.created_at && (
                 <div className="settings-info-item">
@@ -445,19 +440,23 @@ const Settings: React.FC = () => {
         </Col>
       </Row>
 
-      {/* 系统信息卡片 */}
-      <Card className="settings-card-v2 settings-system-card" style={{ marginTop: 24 }}>
-        <div className="settings-card-header-v2">
-          <div className="settings-card-icon-v2">
-            <InfoCircleOutlined />
-          </div>
-          <div>
-            <div className="settings-card-title-v2">系统信息</div>
-            <Text type="secondary" style={{ fontSize: 13 }}>应用运行状态和版本信息</Text>
-          </div>
-        </div>
-        <SystemInfoPanel expanded={true} />
-      </Card>
+      {/* 系统信息 - 折叠显示，减少视觉噪音 */}
+      <Collapse
+        ghost
+        style={{ marginTop: 24 }}
+        items={[
+          {
+            key: 'system',
+            label: (
+              <Space>
+                <InfoCircleOutlined style={{ color: '#8c8c8c' }} />
+                <span style={{ color: '#8c8c8c' }}>系统信息</span>
+              </Space>
+            ),
+            children: <SystemInfoPanel expanded={true} />,
+          },
+        ]}
+      />
 
       {/* 编辑用户信息对话框 */}
       <Modal
