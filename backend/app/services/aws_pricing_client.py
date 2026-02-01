@@ -521,7 +521,12 @@ class AWSPricingClient:
             "lifecycle": 0.0,
         },
         StorageClass.INTELLIGENT_TIERING: {
-            "storage": 0.0045,  # 与 ap-northeast-1.json 同步 (修复：从 0.023 改为 0.0045)
+            # Frequent Access tier 价格，与 S3 Standard 相同
+            # 注：Intelligent-Tiering 有多个层级，对象会根据访问模式自动移动
+            # - Frequent Access: $0.025/GB (默认层级)
+            # - Infrequent Access: $0.0138/GB (30天未访问)
+            # - Archive Instant Access: $0.005/GB (90天未访问)
+            "storage": 0.025,
             "put": 0.005,
             "get": 0.0004,
             "retrieval": 0.0,

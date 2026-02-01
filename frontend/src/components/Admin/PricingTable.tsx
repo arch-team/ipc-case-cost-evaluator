@@ -18,6 +18,7 @@ import {
   STORAGE_CLASS_METADATA,
   STORAGE_CLASS_LABELS,
   STORAGE_CLASS_ANT_COLORS,
+  getStorageClassHint,
 } from '../../constants/storageClasses';
 
 const { Title, Text } = Typography;
@@ -28,69 +29,124 @@ interface PricingTableProps {
   comparisonSlot?: React.ReactNode;
 }
 
-// 存储类型显示名称映射（从统一数据源获取）
-const storageClassNames = STORAGE_CLASS_LABELS;
+/**
+ * 存储类型扩展信息
+ */
+interface StorageClassExtendedInfo {
+  chineseName: string;
+  useCase: string;
+  minDuration: string;
+  minSize: string;
+}
 
-// 存储类型中文名称映射
-const storageClassChineseNames: { [key: string]: string } = {
-  STANDARD: '标准存储',
-  INTELLIGENT_TIERING: '智能分层',
-  STANDARD_IA: '标准低频访问',
-  ONEZONE_IA: '单区低频访问',
-  GLACIER_IR: '即时检索归档',
-  GLACIER_FR: '灵活检索归档',
-  DEEP_ARCHIVE: '深度归档',
+/**
+ * 存储类型扩展信息映射
+ * 将特定于定价表的额外信息集中管理
+ */
+const STORAGE_CLASS_EXTENDED_INFO: Record<string, StorageClassExtendedInfo> = {
+  STANDARD: {
+    chineseName: '标准存储',
+    useCase: '热数据、网站内容、移动应用',
+    minDuration: '-',
+    minSize: '-',
+  },
+  INTELLIGENT_TIERING: {
+    chineseName: '智能分层',
+    useCase: '访问模式变化的数据',
+    minDuration: '-',
+    minSize: '-',
+  },
+  STANDARD_IA: {
+    chineseName: '标准低频访问',
+    useCase: '备份、灾难恢复',
+    minDuration: '30 天',
+    minSize: '128 KB',
+  },
+  ONEZONE_IA: {
+    chineseName: '单区低频访问',
+    useCase: '可重建数据、次要备份',
+    minDuration: '30 天',
+    minSize: '128 KB',
+  },
+  GLACIER_IR: {
+    chineseName: '即时检索归档',
+    useCase: '医疗影像、媒体资产',
+    minDuration: '90 天',
+    minSize: '128 KB',
+  },
+  GLACIER_FR: {
+    chineseName: '灵活检索归档',
+    useCase: '归档、合规数据',
+    minDuration: '90 天',
+    minSize: '-',
+  },
+  DEEP_ARCHIVE: {
+    chineseName: '深度归档',
+    useCase: '长期保留、合规归档',
+    minDuration: '180 天',
+    minSize: '-',
+  },
 };
 
-// 存储类型描述
-const storageClassDescriptions: { [key: string]: string } = {
-  STANDARD: '频繁访问数据，毫秒级延迟',
-  INTELLIGENT_TIERING: '访问模式不确定，自动优化成本',
-  STANDARD_IA: '30+天存储，偶尔访问',
-  ONEZONE_IA: '单可用区，非关键数据',
-  GLACIER_IR: '长期归档，毫秒级检索',
-  GLACIER_FR: '归档数据，分钟到小时检索',
-  DEEP_ARCHIVE: '长期归档，12-48小时检索',
-};
+/**
+ * 获取存储类型的扩展信息
+ */
+function getExtendedInfo(storageClass: string): StorageClassExtendedInfo {
+  return STORAGE_CLASS_EXTENDED_INFO[storageClass] || {
+    chineseName: storageClass,
+    useCase: '-',
+    minDuration: '-',
+    minSize: '-',
+  };
+}
 
-// 存储类型应用场景
-const storageClassUseCases: { [key: string]: string } = {
-  STANDARD: '热数据、网站内容、移动应用',
-  INTELLIGENT_TIERING: '访问模式变化的数据',
-  STANDARD_IA: '备份、灾难恢复',
-  ONEZONE_IA: '可重建数据、次要备份',
-  GLACIER_IR: '医疗影像、媒体资产',
-  GLACIER_FR: '归档、合规数据',
-  DEEP_ARCHIVE: '长期保留、合规归档',
-};
+/**
+ * 格式化价格显示
+ */
+function formatPrice(value: number, unit: string, isStrong = false): React.ReactNode {
+  const priceText = (
+    <>
+      ${value.toFixed(4)}
+      <Text type="secondary" style={{ fontSize: 11 }}>{unit}</Text>
+    </>
+  );
 
-// 存储类型颜色映射（从统一数据源获取）
-const storageClassColors = STORAGE_CLASS_ANT_COLORS;
+  if (isStrong) {
+    return (
+      <Text strong style={{ color: '#1677ff', whiteSpace: 'nowrap' }}>
+        {priceText}
+      </Text>
+    );
+  }
 
-// 存储类型排序顺序（从统一数据源获取）
-const storageClassOrder: string[] = STORAGE_CLASS_METADATA.map(m => m.value);
+  return <Text style={{ whiteSpace: 'nowrap' }}>{priceText}</Text>;
+}
 
-// 最小存储期限（天）
-const storageClassMinDuration: { [key: string]: string } = {
-  STANDARD: '-',
-  INTELLIGENT_TIERING: '-',
-  STANDARD_IA: '30 天',
-  ONEZONE_IA: '30 天',
-  GLACIER_IR: '90 天',
-  GLACIER_FR: '90 天',
-  DEEP_ARCHIVE: '180 天',
-};
+/**
+ * 格式化可选价格（0 值显示为 "-"）
+ */
+function formatOptionalPrice(value: number, unit: string): React.ReactNode {
+  if (value === 0) {
+    return <Text type="secondary">-</Text>;
+  }
+  return formatPrice(value, unit);
+}
 
-// 最小计费大小
-const storageClassMinSize: { [key: string]: string } = {
-  STANDARD: '-',
-  INTELLIGENT_TIERING: '128 KB',
-  STANDARD_IA: '128 KB',
-  ONEZONE_IA: '128 KB',
-  GLACIER_IR: '128 KB',
-  GLACIER_FR: '-',
-  DEEP_ARCHIVE: '-',
-};
+/**
+ * 创建带 Tooltip 的表格标题
+ */
+function createTooltipTitle(tooltip: string, icon?: React.ReactNode, text?: string): React.ReactNode {
+  const content = icon && text ? (
+    <Space size={4}>
+      {icon}
+      {text}
+    </Space>
+  ) : (
+    <span style={{ whiteSpace: 'nowrap' }}>{text || tooltip}</span>
+  );
+
+  return <Tooltip title={tooltip}>{content}</Tooltip>;
+}
 
 const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false, comparisonSlot }) => {
   if (!pricing) {
@@ -110,8 +166,8 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false, c
       width: 180,
       fixed: 'left' as const,
       render: (value: string) => (
-        <Tag color={storageClassColors[value] || 'default'}>
-          {storageClassNames[value] || value}
+        <Tag color={STORAGE_CLASS_ANT_COLORS[value] || 'default'}>
+          {STORAGE_CLASS_LABELS[value] || value}
         </Tag>
       ),
     },
@@ -120,11 +176,14 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false, c
       dataIndex: 'storageClass',
       key: 'chineseName',
       width: 120,
-      render: (value: string) => (
-        <Text strong style={{ fontSize: 14, color: '#262626' }}>
-          {storageClassChineseNames[value] || value}
-        </Text>
-      ),
+      render: (value: string) => {
+        const info = getExtendedInfo(value);
+        return (
+          <Text strong style={{ fontSize: 14, color: '#262626' }}>
+            {info.chineseName}
+          </Text>
+        );
+      },
     },
     {
       title: '描述',
@@ -133,7 +192,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false, c
       width: 200,
       render: (value: string) => (
         <Text style={{ color: '#595959', whiteSpace: 'nowrap' }}>
-          {storageClassDescriptions[value]}
+          {getStorageClassHint(value)}
         </Text>
       ),
     },
@@ -142,146 +201,118 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false, c
       dataIndex: 'storageClass',
       key: 'useCase',
       width: 200,
-      render: (value: string) => (
-        <Tag color="default" style={{ margin: 0 }}>
-          {storageClassUseCases[value]}
-        </Tag>
-      ),
+      render: (value: string) => {
+        const info = getExtendedInfo(value);
+        return (
+          <Tag color="default" style={{ margin: 0 }}>
+            {info.useCase}
+          </Tag>
+        );
+      },
     },
     {
-      title: (
-        <Tooltip title="删除对象前的最小存储时间，提前删除仍按此时长计费">
-          <span style={{ whiteSpace: 'nowrap' }}>最小存储期限</span>
-        </Tooltip>
+      title: createTooltipTitle(
+        '删除对象前的最小存储时间，提前删除仍按此时长计费',
+        undefined,
+        '最小存储期限'
       ),
       dataIndex: 'storageClass',
       key: 'minDuration',
       width: 120,
       align: 'center' as const,
-      render: (value: string) => (
-        <Text>{storageClassMinDuration[value]}</Text>
-      ),
+      render: (value: string) => {
+        const info = getExtendedInfo(value);
+        return <Text>{info.minDuration}</Text>;
+      },
     },
     {
-      title: (
-        <Tooltip title="小于此大小的对象按此大小计费">
-          <span style={{ whiteSpace: 'nowrap' }}>最小计费大小</span>
-        </Tooltip>
+      title: createTooltipTitle(
+        '小于此大小的对象按此大小计费',
+        undefined,
+        '最小计费大小'
       ),
       dataIndex: 'storageClass',
       key: 'minSize',
       width: 120,
       align: 'center' as const,
-      render: (value: string) => (
-        <Text>{storageClassMinSize[value]}</Text>
-      ),
+      render: (value: string) => {
+        const info = getExtendedInfo(value);
+        return <Text>{info.minSize}</Text>;
+      },
     },
     {
-      title: (
-        <Tooltip title="每 GB 每月存储费用">
-          <Space size={4}>
-            <DatabaseOutlined />
-            存储
-          </Space>
-        </Tooltip>
+      title: createTooltipTitle(
+        '每 GB 每月存储费用',
+        <DatabaseOutlined />,
+        '存储'
       ),
       dataIndex: 'storage_per_gb_month',
       key: 'storage',
-      width: 130,
+      width: 150,
       align: 'right' as const,
-      render: (value: number) => (
-        <Text strong style={{ color: '#1677ff', whiteSpace: 'nowrap' }}>
-          ${value.toFixed(4)}
-          <Text type="secondary" style={{ fontSize: 11 }}>/GB-月</Text>
-        </Text>
-      ),
+      render: (value: number, record: { storageClass: string }) => {
+        const priceNode = formatPrice(value, '/GB-月', true);
+        // S3 Intelligent-Tiering 显示的是 Frequent Access tier 价格，添加备注说明
+        if (record.storageClass === 'INTELLIGENT_TIERING') {
+          return (
+            <Tooltip title="显示的是 Frequent Access tier（默认层级）价格。对象会根据访问模式自动移动到更低成本的层级。">
+              <span style={{ cursor: 'help' }}>
+                {priceNode}
+                <Text type="secondary" style={{ fontSize: 10, marginLeft: 2 }}>*</Text>
+              </span>
+            </Tooltip>
+          );
+        }
+        return priceNode;
+      },
     },
     {
-      title: (
-        <Tooltip title="每千次 PUT/POST/LIST 请求费用">
-          <Space size={4}>
-            <CloudUploadOutlined />
-            PUT
-          </Space>
-        </Tooltip>
+      title: createTooltipTitle(
+        '每千次 PUT/POST/LIST 请求费用',
+        <CloudUploadOutlined />,
+        'PUT'
       ),
       dataIndex: 'put_per_1000',
       key: 'put',
       width: 120,
       align: 'right' as const,
-      render: (value: number) => (
-        <Text style={{ whiteSpace: 'nowrap' }}>
-          ${value.toFixed(4)}
-          <Text type="secondary" style={{ fontSize: 11 }}>/千次</Text>
-        </Text>
-      ),
+      render: (value: number) => formatPrice(value, '/千次'),
     },
     {
-      title: (
-        <Tooltip title="每千次 GET/SELECT 请求费用">
-          <Space size={4}>
-            <CloudDownloadOutlined />
-            GET
-          </Space>
-        </Tooltip>
+      title: createTooltipTitle(
+        '每千次 GET/SELECT 请求费用',
+        <CloudDownloadOutlined />,
+        'GET'
       ),
       dataIndex: 'get_per_1000',
       key: 'get',
       width: 120,
       align: 'right' as const,
-      render: (value: number) => (
-        <Text style={{ whiteSpace: 'nowrap' }}>
-          ${value.toFixed(4)}
-          <Text type="secondary" style={{ fontSize: 11 }}>/千次</Text>
-        </Text>
-      ),
+      render: (value: number) => formatPrice(value, '/千次'),
     },
     {
-      title: (
-        <Tooltip title="每 GB 数据检索费用（仅适用于 Glacier 类型）">
-          检索
-        </Tooltip>
+      title: createTooltipTitle(
+        '每 GB 数据检索费用（仅适用于 Glacier 类型）',
+        undefined,
+        '检索'
       ),
       dataIndex: 'retrieval_per_gb',
       key: 'retrieval',
       width: 110,
       align: 'right' as const,
-      render: (value: number) => {
-        if (value === 0) {
-          return <Text type="secondary">-</Text>;
-        }
-        return (
-          <Text style={{ whiteSpace: 'nowrap' }}>
-            ${value.toFixed(4)}
-            <Text type="secondary" style={{ fontSize: 11 }}>/GB</Text>
-          </Text>
-        );
-      },
+      render: (value: number) => formatOptionalPrice(value, '/GB'),
     },
     {
-      title: (
-        <Tooltip title="每千次生命周期转换费用">
-          <Space size={4}>
-            <SwapOutlined />
-            转换
-          </Space>
-        </Tooltip>
+      title: createTooltipTitle(
+        '每千次生命周期转换费用',
+        <SwapOutlined />,
+        '转换'
       ),
       dataIndex: 'lifecycle_transition_per_1000',
       key: 'lifecycle',
       width: 120,
       align: 'right' as const,
-      render: (value: number) => {
-        if (value === 0) {
-          return <Text type="secondary">-</Text>;
-        }
-        return (
-          <Text style={{ whiteSpace: 'nowrap' }}>
-            ${value.toFixed(4)}
-            <Text type="secondary" style={{ fontSize: 11 }}>/千次</Text>
-          </Text>
-        );
-      },
+      render: (value: number) => formatOptionalPrice(value, '/千次'),
     },
   ];
 
@@ -293,39 +324,27 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false, c
       ...value,
     }))
     .sort((a, b) => {
-      const orderA = storageClassOrder.indexOf(a.storageClass);
-      const orderB = storageClassOrder.indexOf(b.storageClass);
+      const indexA = STORAGE_CLASS_METADATA.findIndex(m => m.value === a.storageClass);
+      const indexB = STORAGE_CLASS_METADATA.findIndex(m => m.value === b.storageClass);
       // 如果不在排序列表中，放到最后
-      return (orderA === -1 ? 999 : orderA) - (orderB === -1 ? 999 : orderB);
+      return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
     });
 
-  // 数据传输阶梯定价
-  const transferTiers = [
-    {
-      key: '1',
-      tier: '前 10 TB',
-      range: '0 - 10 TB/月',
-      price: pricing.data_transfer.out_first_10tb_per_gb,
-    },
-    {
-      key: '2',
-      tier: '10-50 TB',
-      range: '10 TB - 50 TB/月',
-      price: pricing.data_transfer.out_next_40tb_per_gb,
-    },
-    {
-      key: '3',
-      tier: '50-150 TB',
-      range: '50 TB - 150 TB/月',
-      price: pricing.data_transfer.out_next_100tb_per_gb,
-    },
-    {
-      key: '4',
-      tier: '150 TB 以上',
-      range: '> 150 TB/月',
-      price: pricing.data_transfer.out_over_150tb_per_gb,
-    },
+  // 数据传输阶梯定价配置
+  const transferTierConfig = [
+    { tier: '前 10 TB', range: '0 - 10 TB/月', field: 'out_first_10tb_per_gb' },
+    { tier: '10-50 TB', range: '10 TB - 50 TB/月', field: 'out_next_40tb_per_gb' },
+    { tier: '50-150 TB', range: '50 TB - 150 TB/月', field: 'out_next_100tb_per_gb' },
+    { tier: '150 TB 以上', range: '> 150 TB/月', field: 'out_over_150tb_per_gb' },
   ];
+
+  // 生成数据传输阶梯定价数据
+  const transferTiers = transferTierConfig.map((config, index) => ({
+    key: String(index + 1),
+    tier: config.tier,
+    range: config.range,
+    price: pricing.data_transfer[config.field as keyof typeof pricing.data_transfer] as number,
+  }));
 
   const transferColumns = [
     {
@@ -344,94 +363,97 @@ const PricingTable: React.FC<PricingTableProps> = ({ pricing, loading = false, c
       dataIndex: 'price',
       key: 'price',
       align: 'right' as const,
-      render: (value: number) => (
-        <Text strong style={{ color: '#1677ff' }}>
-          ${value.toFixed(4)}
-          <Text type="secondary" style={{ fontSize: 11 }}>/GB</Text>
-        </Text>
-      ),
+      render: (value: number) => formatPrice(value, '/GB', true),
     },
   ];
 
+  // 渲染区域信息卡片
+  const renderRegionCard = () => (
+    <Card style={{ marginBottom: 16 }}>
+      <Row gutter={24} align="middle">
+        <Col flex="auto">
+          <Space>
+            <GlobalOutlined style={{ fontSize: 20, color: '#1677ff' }} />
+            <Title level={5} style={{ margin: 0 }}>
+              {pricing.region_name}
+            </Title>
+            <Tag color="blue">{pricing.region}</Tag>
+          </Space>
+        </Col>
+        <Col>
+          <Space split={<Divider type="vertical" />}>
+            <Space>
+              <DollarOutlined />
+              <Text type="secondary">货币: </Text>
+              <Text strong>{pricing.currency}</Text>
+            </Space>
+            <Space>
+              <Text type="secondary">最后更新: </Text>
+              <Text strong>{pricing.last_updated}</Text>
+            </Space>
+          </Space>
+        </Col>
+      </Row>
+    </Card>
+  );
+
+  // 渲染存储类型定价表格
+  const renderStoragePricingCard = () => (
+    <Card
+      title={
+        <Space>
+          <DatabaseOutlined />
+          存储类型定价
+        </Space>
+      }
+      style={{ marginBottom: 16 }}
+      styles={{ body: { padding: 0 } }}
+    >
+      <Table
+        columns={storageColumns}
+        dataSource={storageData}
+        pagination={false}
+        loading={loading}
+        size="large"
+        scroll={{ x: 1600 }}
+        style={{
+          '--ant-table-cell-padding-block': '16px',
+          '--ant-table-cell-padding-inline': '16px',
+        } as React.CSSProperties}
+      />
+    </Card>
+  );
+
+  // 渲染数据传输定价卡片
+  const renderTransferPricingCard = () => (
+    <Card
+      title={
+        <Space>
+          <SwapOutlined />
+          数据传输出站定价（阶梯定价）
+        </Space>
+      }
+      styles={{ body: { paddingBottom: 8 } }}
+    >
+      <Table
+        columns={transferColumns}
+        dataSource={transferTiers}
+        pagination={false}
+        size="middle"
+      />
+      <Divider style={{ margin: '12px 0' }} />
+      <Text type="secondary" style={{ fontSize: 12 }}>
+        数据传输入站免费，同区域内传输免费。以上价格为传输至互联网的出站费用。
+      </Text>
+    </Card>
+  );
+
   return (
     <div>
-      {/* 区域信息 */}
-      <Card style={{ marginBottom: 16 }}>
-        <Row gutter={24} align="middle">
-          <Col flex="auto">
-            <Space>
-              <GlobalOutlined style={{ fontSize: 20, color: '#1677ff' }} />
-              <Title level={5} style={{ margin: 0 }}>
-                {pricing.region_name}
-              </Title>
-              <Tag color="blue">{pricing.region}</Tag>
-            </Space>
-          </Col>
-          <Col>
-            <Space split={<Divider type="vertical" />}>
-              <Space>
-                <DollarOutlined />
-                <Text type="secondary">货币: </Text>
-                <Text strong>{pricing.currency}</Text>
-              </Space>
-              <Space>
-                <Text type="secondary">最后更新: </Text>
-                <Text strong>{pricing.last_updated}</Text>
-              </Space>
-            </Space>
-          </Col>
-        </Row>
-      </Card>
-
-      {/* 存储类型定价 */}
-      <Card
-        title={
-          <Space>
-            <DatabaseOutlined />
-            存储类型定价
-          </Space>
-        }
-        style={{ marginBottom: 16 }}
-        styles={{ body: { padding: 0 } }}
-      >
-        <Table
-          columns={storageColumns}
-          dataSource={storageData}
-          pagination={false}
-          loading={loading}
-          size="large"
-          scroll={{ x: 1600 }}
-          style={{
-            '--ant-table-cell-padding-block': '16px',
-            '--ant-table-cell-padding-inline': '16px',
-          } as React.CSSProperties}
-        />
-      </Card>
-
-      {/* 定价对比插槽 */}
+      {renderRegionCard()}
+      {renderStoragePricingCard()}
       {comparisonSlot}
-
-      {/* 数据传输定价 */}
-      <Card
-        title={
-          <Space>
-            <SwapOutlined />
-            数据传输出站定价（阶梯定价）
-          </Space>
-        }
-        styles={{ body: { paddingBottom: 8 } }}
-      >
-        <Table
-          columns={transferColumns}
-          dataSource={transferTiers}
-          pagination={false}
-          size="middle"
-        />
-        <Divider style={{ margin: '12px 0' }} />
-        <Text type="secondary" style={{ fontSize: 12 }}>
-          数据传输入站免费，同区域内传输免费。以上价格为传输至互联网的出站费用。
-        </Text>
-      </Card>
+      {renderTransferPricingCard()}
     </div>
   );
 };
