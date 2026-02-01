@@ -3,14 +3,17 @@
  * 包含标题、描述、主要操作按钮和统计卡片
  */
 import React from 'react';
-import { Card, Row, Col, Statistic, Button, Typography, Space } from 'antd';
+import { Card, Row, Col, Statistic, Button, Typography, Space, Tooltip } from 'antd';
 import {
   CalculatorOutlined,
   ArrowRightOutlined,
   QuestionCircleOutlined,
+  HistoryOutlined,
+  LoginOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { STORAGE_CLASS_METADATA } from '../../constants/storageClasses';
+import { useAuth } from '../../hooks/useAuth';
 
 const { Paragraph } = Typography;
 
@@ -45,6 +48,7 @@ const styles = {
 
 export function HeroSection({ startBtnRef, historyBtnRef, onRestartTour }: HeroSectionProps) {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   return (
     <Card
@@ -78,14 +82,29 @@ export function HeroSection({ startBtnRef, historyBtnRef, onRestartTour }: HeroS
             >
               开始评估 <ArrowRightOutlined />
             </Button>
-            <Button
-              ref={historyBtnRef}
-              size="large"
-              style={{ height: 48, borderRadius: 8 }}
-              onClick={() => navigate('/evaluations')}
-            >
-              查看历史记录
-            </Button>
+            {isAuthenticated ? (
+              <Button
+                ref={historyBtnRef}
+                size="large"
+                icon={<HistoryOutlined />}
+                style={{ height: 48, borderRadius: 8 }}
+                onClick={() => navigate('/evaluations')}
+              >
+                查看历史记录
+              </Button>
+            ) : (
+              <Tooltip title="登录后可保存和查看评估历史">
+                <Button
+                  ref={historyBtnRef}
+                  size="large"
+                  icon={<LoginOutlined />}
+                  style={{ height: 48, borderRadius: 8 }}
+                  onClick={() => navigate('/settings')}
+                >
+                  登录以保存记录
+                </Button>
+              </Tooltip>
+            )}
             <Button
               type="text"
               icon={<QuestionCircleOutlined />}

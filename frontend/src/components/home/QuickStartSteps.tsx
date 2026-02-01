@@ -2,12 +2,13 @@
  * 快速开始步骤组件
  * 为访客展示使用流程
  */
-import { Card, Typography, Steps } from 'antd';
+import { Card, Typography, Steps, Alert } from 'antd';
 import {
   CheckCircleOutlined,
   SettingOutlined,
   CloudServerOutlined,
   BarChartOutlined,
+  InfoCircleOutlined,
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -52,6 +53,25 @@ export function QuickStartSteps() {
           只需三步，即可获取完整的成本评估报告
         </Text>
       </div>
+
+      {/* 访客专属提示 - 明确告知可用功能 */}
+      <Alert
+        type="info"
+        showIcon
+        icon={<InfoCircleOutlined />}
+        message={
+          <span style={{ fontSize: 13 }}>
+            <strong>无需登录</strong>，成本计算功能完全可用。登录后可保存记录、查看历史。
+          </span>
+        }
+        style={{
+          marginBottom: 16,
+          borderRadius: 8,
+          background: 'linear-gradient(135deg, #e6f7ff 0%, #f0f5ff 100%)',
+          border: '1px solid #91d5ff',
+        }}
+      />
+
       <Steps
         items={quickStartSteps.map((step) => ({
           title: step.title,
