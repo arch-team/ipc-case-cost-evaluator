@@ -3,12 +3,12 @@
  * 蓝色渐变背景，左侧显示核心指标，右侧显示迷你饼图
  */
 import React, { useMemo } from 'react';
-import { Tag, Typography } from 'antd';
-import { CheckCircleOutlined } from '@ant-design/icons';
+import { Tag, Typography, Tooltip } from 'antd';
+import { CheckCircleOutlined, BranchesOutlined } from '@ant-design/icons';
 import { Pie } from '@ant-design/charts';
 import type { CostSummary, CostBreakdown, TechnicalDimensions } from '../../types';
 import { formatNumber } from '../../utils/formatters';
-import { STORAGE_CLASS_LABELS } from '../../constants/storageClasses';
+import { STORAGE_CLASS_LABELS, STORAGE_CLASS_LABELS_SHORT } from '../../constants/storageClasses';
 
 const { Text } = Typography;
 
@@ -43,11 +43,36 @@ const CostHeroCard: React.FC<CostHeroCardProps> = ({
     return result.monthly_total / avgStorageGb;
   }, [result.monthly_total, result.metrics?.avg_storage_gb]);
 
-  // 获取存储类型名称
-  const storageClassName = useMemo(() => {
-    if (!schemeInfo?.technical.storage_class) return '';
+  // 检查是否启用生命周期策略
+  const lifecyclePolicy = schemeInfo?.technical.lifecycle_policy;
+  const isLifecycleEnabled = lifecyclePolicy?.enabled && lifecyclePolicy.stages && lifecyclePolicy.stages.length > 0;
+
+  // 获取存储策略标签（简短）
+  const storageLabel = useMemo(() => {
+    if (!schemeInfo?.technical) return '';
+
+    if (isLifecycleEnabled && lifecyclePolicy?.stages) {
+      const stageCount = lifecyclePolicy.stages.length;
+      return `生命周期 (${stageCount}阶段)`;
+    }
+
     return STORAGE_CLASS_LABELS[schemeInfo.technical.storage_class] || schemeInfo.technical.storage_class;
-  }, [schemeInfo]);
+  }, [schemeInfo, isLifecycleEnabled, lifecyclePolicy?.stages]);
+
+  // 获取生命周期阶段详情描述
+  const lifecycleDetail = useMemo(() => {
+    if (!isLifecycleEnabled || !lifecyclePolicy?.stages) return '';
+
+    const stages = lifecyclePolicy.stages;
+    const stageDescriptions = stages.map((stage) => {
+      const className = STORAGE_CLASS_LABELS_SHORT[stage.storage_class] || stage.storage_class;
+      const days = stage.end_day - stage.start_day;
+      return `${className}:${days}天`;
+    });
+
+    const totalDays = stages[stages.length - 1]?.end_day || 0;
+    return `${stageDescriptions.join(' + ')} = 共${totalDays}天`;
+  }, [isLifecycleEnabled, lifecyclePolicy?.stages]);
 
   // 饼图数据
   const pieData = useMemo<ChartData[]>(() => {
@@ -103,9 +128,24 @@ const CostHeroCard: React.FC<CostHeroCardProps> = ({
           {/* 标签区 */}
           <div className="cost-hero-card-tags">
             {schemeInfo && (
-              <Tag className="cost-hero-storage-tag">
-                {storageClassName}
-              </Tag>
+              <>
+                {/* 存储策略标签 */}
+                {isLifecycleEnabled ? (
+                  <Tooltip title={lifecycleDetail}>
+                    <Tag
+                      className="cost-hero-storage-tag"
+                      icon={<BranchesOutlined />}
+                      color="purple"
+                    >
+                      {storageLabel}
+                    </Tag>
+                  </Tooltip>
+                ) : (
+                  <Tag className="cost-hero-storage-tag">
+                    {storageLabel}
+                  </Tag>
+                )}
+              </>
             )}
             {isRecommended && (
               <Tag
@@ -117,6 +157,14 @@ const CostHeroCard: React.FC<CostHeroCardProps> = ({
               </Tag>
             )}
           </div>
+          {/* 生命周期详情（如果启用） */}
+          {isLifecycleEnabled && lifecycleDetail && (
+            <div className="cost-hero-lifecycle-detail">
+              <Text style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.85)' }}>
+                {lifecycleDetail}
+              </Text>
+            </div>
+          )}
 
           {/* 主指标：月度总成本 */}
           <div className="cost-hero-card-main">

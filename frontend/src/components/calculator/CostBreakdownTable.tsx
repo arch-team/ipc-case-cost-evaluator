@@ -111,6 +111,35 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
     return pricing.data_transfer.out_first_10tb_per_gb;
   };
 
+  // 构建数据传输阶梯明细
+  const buildDataTransferTiers = (transferGb: number): TierDetail[] => {
+    if (!pricing || transferGb <= 0) return [];
+
+    const tierConfigs = [
+      { name: '前 10TB', start: 0, end: 10 * 1024, price: pricing.data_transfer.out_first_10tb_per_gb },
+      { name: '10-50TB', start: 10 * 1024, end: 50 * 1024, price: pricing.data_transfer.out_next_40tb_per_gb },
+      { name: '50-150TB', start: 50 * 1024, end: 150 * 1024, price: pricing.data_transfer.out_next_100tb_per_gb },
+      { name: '150TB 以上', start: 150 * 1024, end: Infinity, price: pricing.data_transfer.out_over_150tb_per_gb },
+    ];
+
+    let remaining = transferGb;
+    return tierConfigs
+      .map(tier => {
+        const tierCapacity = tier.end - tier.start;
+        const quantity = Math.min(remaining, tierCapacity);
+        remaining = Math.max(0, remaining - tierCapacity);
+        return {
+          tierName: tier.name,
+          rangeStartGb: tier.start,
+          rangeEndGb: tier.end === Infinity ? undefined : tier.end,
+          unitPrice: tier.price,
+          quantityGb: quantity,
+          amount: quantity * tier.price,
+        };
+      })
+      .filter(tier => tier.quantityGb > 0);
+  };
+
   // 构建费用明细数据
   const buildBreakdownData = (): EnhancedCostItem[] => {
     const items: EnhancedCostItem[] = [];
@@ -204,19 +233,11 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
 
     // 数据传输费用（带阶梯）
     if (breakdown.data_transfer_cost > 0) {
-      // 构建阶梯明细子行
-      let tierChildren: EnhancedCostItem[] | undefined;
-      const tiers = detailedBreakdown?.dataTransferTiers || (metrics?.monthly_transfer_gb ? [
-        {
-          tierName: '前 10TB',
-          rangeStartGb: 0,
-          rangeEndGb: 10240,
-          unitPrice: transferPrice,
-          quantityGb: Math.min(metrics.monthly_transfer_gb, 10240),
-          amount: Math.min(metrics.monthly_transfer_gb, 10240) * transferPrice,
-        },
-      ] : undefined);
+      // 构建阶梯明细子行：优先使用后端返回的详细数据，否则动态构建
+      const tiers = detailedBreakdown?.dataTransferTiers ||
+        (metrics?.monthly_transfer_gb ? buildDataTransferTiers(metrics.monthly_transfer_gb) : undefined);
 
+      let tierChildren: EnhancedCostItem[] | undefined;
       if (tiers && tiers.length > 0) {
         tierChildren = tiers.map((tier, index) => ({
           key: `transfer_tier_${index}`,
@@ -231,10 +252,15 @@ const CostBreakdownTable: React.FC<CostBreakdownTableProps> = ({
         }));
       }
 
+      // 计算加权平均单价（当有多个阶梯时）
+      const avgTransferPrice = tiers && tiers.length > 0 && metrics?.monthly_transfer_gb
+        ? tiers.reduce((sum, t) => sum + t.amount, 0) / metrics.monthly_transfer_gb
+        : transferPrice;
+
       items.push({
         key: 'transfer',
         name: '数据传输费用',
-        unitPrice: transferPrice,
+        unitPrice: avgTransferPrice,
         unitPriceUnit: 'USD/GB',
         quantity: metrics?.monthly_transfer_gb,
         quantityUnit: 'GB',

@@ -2657,6 +2657,16 @@ body {
   padding: 4px 10px !important;
 }
 
+/* 生命周期详情 */
+.cost-hero-lifecycle-detail {
+  margin-top: 4px;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  display: inline-block;
+}
+
 /* 主指标 */
 .cost-hero-card-main {
   margin-bottom: 16px;
