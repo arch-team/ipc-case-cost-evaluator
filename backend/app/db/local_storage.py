@@ -31,39 +31,55 @@ class LocalStorage:
                 self._data[table] = {}
             self._data[table][key] = item.copy()
 
-    def get(self, table: str, key: str) -> Optional[Dict[str, Any]]:
+    def _get_actual_key(self, key: str, sort_key: Optional[str] = None) -> str:
+        """获取实际使用的键值"""
+        return sort_key if sort_key is not None else key
+
+    def get(
+        self, table: str, key: str, sort_key: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
         """
         获取项目
 
         Args:
             table: 表名
             key: 主键
+            sort_key: 排序键（用于复合键表）
 
         Returns:
             数据项，不存在返回 None
+
+        Note:
+            如果提供了 sort_key，则使用 sort_key 作为实际键（与 DynamoDB 行为一致）
         """
         with self._lock:
             if table not in self._data:
                 return None
-            item = self._data[table].get(key)
+            actual_key = self._get_actual_key(key, sort_key)
+            item = self._data[table].get(actual_key)
             return item.copy() if item else None
 
-    def delete(self, table: str, key: str) -> bool:
+    def delete(self, table: str, key: str, sort_key: Optional[str] = None) -> bool:
         """
         删除项目
 
         Args:
             table: 表名
             key: 主键
+            sort_key: 排序键（用于复合键表）
 
         Returns:
             是否删除成功
+
+        Note:
+            如果提供了 sort_key，则使用 sort_key 作为实际键（与 DynamoDB 行为一致）
         """
         with self._lock:
             if table not in self._data:
                 return False
-            if key in self._data[table]:
-                del self._data[table][key]
+            actual_key = self._get_actual_key(key, sort_key)
+            if actual_key in self._data[table]:
+                del self._data[table][actual_key]
                 return True
             return False
 

@@ -64,18 +64,15 @@ class CalculationRecordRepository:
         """获取单条核算记录
 
         Args:
-            user_id: 用户 ID
-            record_id: 记录 ID
+            user_id: 用户 ID (作为 pk)
+            record_id: 记录 ID (作为 sk)
 
         Returns:
             核算记录，不存在返回 None
         """
-        data = self.storage.get(self.table, record_id)
+        # 使用 user_id 作为 pk，record_id 作为 sk 进行查询
+        data = self.storage.get(self.table, user_id, sort_key=record_id)
         if not data:
-            return None
-
-        # 验证用户权限
-        if data.get("user_id") != user_id:
             return None
 
         return self._parse_record(data)
@@ -114,25 +111,14 @@ class CalculationRecordRepository:
             ]
 
         # 排序
-        reverse = sort_order == "desc"
-        if sort_by == "name":
-            records = sorted(
-                records,
-                key=lambda x: x.get("name", "").lower(),
-                reverse=reverse,
-            )
-        elif sort_by == "total_cost":
-            records = sorted(
-                records,
-                key=lambda x: x.get("cost_summary", {}).get("total_cost", 0),
-                reverse=reverse,
-            )
-        else:  # created_at
-            records = sorted(
-                records,
-                key=lambda x: x.get("created_at", ""),
-                reverse=reverse,
-            )
+        sort_keys = {
+            "name": lambda x: x.get("name", "").lower(),
+            "total_cost": lambda x: x.get("cost_summary", {}).get("total_cost", 0),
+            "created_at": lambda x: x.get("created_at", ""),
+        }
+
+        sort_key_func = sort_keys.get(sort_by, sort_keys["created_at"])
+        records = sorted(records, key=sort_key_func, reverse=(sort_order == "desc"))
 
         # 计算总数
         total = len(records)
@@ -156,18 +142,14 @@ class CalculationRecordRepository:
         """删除核算记录
 
         Args:
-            user_id: 用户 ID
-            record_id: 记录 ID
+            user_id: 用户 ID (作为 pk)
+            record_id: 记录 ID (作为 sk)
 
         Returns:
             是否删除成功
         """
-        # 先验证记录存在且属于该用户
-        record = self.get(user_id, record_id)
-        if not record:
-            return False
-
-        return self.storage.delete(self.table, record_id)
+        # 使用 user_id 作为 pk，record_id 作为 sk 进行删除
+        return self.storage.delete(self.table, user_id, sort_key=record_id)
 
     def count_by_user(self, user_id: str) -> int:
         """统计用户的记录数量
@@ -198,6 +180,12 @@ class CalculationRecordRepository:
                 records.append(record)
         return records
 
+    def _parse_datetime(self, datetime_str: Any) -> datetime:
+        """解析日期时间字符串"""
+        if isinstance(datetime_str, str):
+            return datetime.fromisoformat(datetime_str.replace("Z", "+00:00"))
+        return datetime_str
+
     def _parse_record(self, data: Dict[str, Any]) -> CalculationRecord:
         """解析存储数据为 CalculationRecord"""
         # 移除存储层字段
@@ -209,28 +197,19 @@ class CalculationRecordRepository:
             data["storage_strategy"] = StorageStrategy(data["storage_strategy"])
 
         # 处理日期时间
-        if "created_at" in data and isinstance(data["created_at"], str):
-            data["created_at"] = datetime.fromisoformat(
-                data["created_at"].replace("Z", "+00:00")
-            )
+        if "created_at" in data:
+            data["created_at"] = self._parse_datetime(data["created_at"])
 
         return CalculationRecord(**data)
 
     def _to_summary(self, data: Dict[str, Any]) -> CalculationRecordSummary:
         """转换为摘要"""
         cost_summary = data.get("cost_summary", {})
-        created_at = data.get("created_at", "")
-
-        # 处理日期时间
-        if isinstance(created_at, str):
-            created_at = datetime.fromisoformat(
-                created_at.replace("Z", "+00:00")
-            )
 
         return CalculationRecordSummary(
             record_id=data.get("record_id", ""),
             name=data.get("name", ""),
             storage_strategy=StorageStrategy(data.get("storage_strategy", "single_standard")),
             total_cost=cost_summary.get("total_cost", 0),
-            created_at=created_at,
+            created_at=self._parse_datetime(data.get("created_at", "")),
         )
