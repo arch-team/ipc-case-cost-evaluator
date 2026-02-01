@@ -37,9 +37,12 @@ const RecordComparison: React.FC = () => {
   const authContext = useContext(AuthContext);
   const isLoggedIn = !!authContext?.user;
 
-  // 解析 URL 参数
+  // 解析 URL 参数（需要解码，因为 ID 可能包含 # 等特殊字符）
   const idsParam = searchParams.get('ids') || '';
-  const ids = idsParam.split(',').filter((id) => id.trim());
+  const ids = idsParam
+    .split(',')
+    .filter((id) => id.trim())
+    .map((id) => decodeURIComponent(id.trim()));
 
   // 数据状态
   const [records, setRecords] = useState<CalculationRecord[]>([]);

@@ -186,7 +186,9 @@ const CalculationRecords: React.FC = () => {
   // 跳转对比页面
   const handleCompare = () => {
     if (selectedIds.length >= 2 && selectedIds.length <= 4) {
-      navigate(`/calculation-records/comparison?ids=${selectedIds.join(',')}`);
+      // 对 ID 进行 URL 编码，避免 # 等特殊字符问题
+      const encodedIds = selectedIds.map((id) => encodeURIComponent(id)).join(',');
+      navigate(`/calculation-records/comparison?ids=${encodedIds}`);
     }
   };
 
