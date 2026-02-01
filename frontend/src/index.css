@@ -2600,6 +2600,145 @@ body {
 }
 
 /* ============================================
+   定价管理页面样式
+   ============================================ */
+
+/* 快速概览条 */
+.pricing-overview-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.pricing-overview-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  transition: all var(--transition-normal);
+}
+
+.pricing-overview-item:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.pricing-overview-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.pricing-overview-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pricing-overview-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.pricing-overview-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+}
+
+.pricing-overview-value-highlight {
+  color: var(--color-success);
+  font-size: 15px;
+}
+
+/* 顶部操作栏 */
+.pricing-action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  margin-bottom: 16px;
+}
+
+.pricing-action-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.pricing-action-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 服务状态折叠面板 */
+.pricing-service-status-collapse {
+  margin-top: 16px;
+}
+
+.pricing-service-status-collapse .ant-collapse-header {
+  padding: 12px 16px !important;
+  background: var(--color-bg-card);
+}
+
+.pricing-service-status-collapse .ant-collapse-content-box {
+  padding: 16px !important;
+}
+
+/* 定价页面头部简化 */
+.pricing-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.pricing-page-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pricing-page-title h4 {
+  margin: 0;
+}
+
+/* 响应式调整 */
+@media (max-width: 992px) {
+  .pricing-overview-bar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .pricing-overview-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .pricing-action-bar {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .pricing-action-bar-left,
+  .pricing-action-bar-right {
+    flex-wrap: wrap;
+  }
+}
+
+/* ============================================
    费用摘要 Hero 卡片样式
    ============================================ */
 

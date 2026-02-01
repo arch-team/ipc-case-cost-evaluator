@@ -2,10 +2,10 @@
  * 管理员页面 - 定价数据管理
  *
  * 提供 AWS S3 定价数据的查看和刷新功能
+ * 优化版：信息架构重构，操作栏整合，快速概览条
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Card,
   Button,
   Typography,
   Space,
@@ -16,10 +16,10 @@ import {
   Row,
   Col,
   Statistic,
-  Tabs,
   Tooltip,
   Progress,
   Collapse,
+  Card,
 } from 'antd';
 import {
   ReloadOutlined,
@@ -32,10 +32,13 @@ import {
   SyncOutlined,
   InfoCircleOutlined,
   DollarOutlined,
+  DownloadOutlined,
+  SwapOutlined,
 } from '@ant-design/icons';
 import RegionSelector from '../components/admin/RegionSelector';
 import PricingTable from '../components/admin/PricingTable';
 import PricingComparison from '../components/admin/PricingComparison';
+import PricingOverviewBar from '../components/admin/PricingOverviewBar';
 import type {
   RegionInfo,
   PricingDetailResponse,
@@ -58,6 +61,7 @@ const AdminPage: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
+  const [showComparison, setShowComparison] = useState(false);
 
   // 加载区域列表
   const loadRegions = useCallback(async () => {
@@ -155,6 +159,34 @@ const AdminPage: React.FC = () => {
     }
   };
 
+  // 导出定价数据
+  const exportPricingData = () => {
+    if (!pricing) {
+      message.warning('暂无定价数据可导出');
+      return;
+    }
+
+    const exportData = {
+      region: selectedRegion,
+      export_time: new Date().toISOString(),
+      pricing_data: pricing,
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `pricing-${selectedRegion}-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    message.success('定价数据导出成功');
+  };
+
   // 初始化加载
   useEffect(() => {
     loadRegions();
@@ -191,7 +223,7 @@ const AdminPage: React.FC = () => {
     return `${minutes} 分钟`;
   };
 
-  // 服务状态标签页内容
+  // 服务状态面板内容
   const ServiceStatusContent = () => (
     <Row gutter={[16, 16]}>
       <Col xs={24} sm={12} md={6}>
@@ -288,6 +320,34 @@ const AdminPage: React.FC = () => {
           />
         </Card>
       </Col>
+      {/* 缓存状态详情 */}
+      {serviceStatus?.cache?.[selectedRegion] && (
+        <Col span={24}>
+          <Card size="small" bordered style={{ borderRadius: 8 }}>
+            <Space direction="vertical" style={{ width: '100%' }} size="small">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text strong>当前区域缓存状态</Text>
+                {serviceStatus.cache[selectedRegion].is_fallback ? (
+                  <Tag color="warning">本地数据</Tag>
+                ) : (
+                  <Tag color="success">AWS API</Tag>
+                )}
+              </div>
+              <div>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  缓存有效期剩余
+                </Text>
+                <Progress
+                  percent={getCacheProgress()}
+                  size="small"
+                  format={() => formatTimeRemaining(serviceStatus.cache[selectedRegion].expires_in_seconds)}
+                  strokeColor={getCacheProgress() > 20 ? '#52c41a' : '#faad14'}
+                />
+              </div>
+            </Space>
+          </Card>
+        </Col>
+      )}
       {!serviceStatus?.api_available && serviceStatus?.fallback_enabled && (
         <Col span={24}>
           <Alert
@@ -364,112 +424,69 @@ const AdminPage: React.FC = () => {
   return (
     <div>
       {/* 页面标题 */}
-      <Card style={{ marginBottom: 16 }}>
-        <Row gutter={24} align="middle">
-          <Col flex="auto">
-            <Space direction="vertical" size={4}>
-              <Title level={4} style={{ margin: 0 }}>
-                <DollarOutlined style={{ marginRight: 8 }} />
-                定价数据管理
-              </Title>
-              <Text type="secondary">
-                查看和刷新 AWS S3 各区域的定价数据，确保成本计算的准确性
-              </Text>
-            </Space>
-          </Col>
-          <Col>
-            <Space direction="vertical" size={4} align="end">
-              <Button
-                type="primary"
-                icon={<ReloadOutlined spin={refreshing} />}
-                onClick={refreshPricing}
-                loading={refreshing}
-                size="large"
-              >
-                刷新定价数据
-              </Button>
-              {lastRefreshTime && (
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  上次刷新: {lastRefreshTime.toLocaleTimeString()}
-                </Text>
-              )}
-            </Space>
-          </Col>
-        </Row>
-      </Card>
+      <div className="pricing-page-header">
+        <div className="pricing-page-title">
+          <DollarOutlined style={{ fontSize: 24, color: 'var(--color-primary)' }} />
+          <Title level={4} style={{ margin: 0 }}>
+            定价数据管理
+          </Title>
+        </div>
+        {lastRefreshTime && (
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            上次刷新: {lastRefreshTime.toLocaleTimeString()}
+          </Text>
+        )}
+      </div>
 
-      {/* 服务状态 - 使用 Tabs 组织 */}
-      {serviceStatus && (
-        <Card style={{ marginBottom: 16 }}>
-          <Tabs
-            defaultActiveKey="status"
-            items={[
-              {
-                key: 'status',
-                label: (
-                  <Space>
-                    <DatabaseOutlined />
-                    服务状态
-                  </Space>
-                ),
-                children: <ServiceStatusContent />,
-              },
-              {
-                key: 'help',
-                label: (
-                  <Space>
-                    <QuestionCircleOutlined />
-                    帮助说明
-                  </Space>
-                ),
-                children: <HelpContent />,
-              },
-            ]}
+      {/* 快速概览条 */}
+      <PricingOverviewBar
+        selectedRegion={selectedRegion}
+        regions={regions}
+        pricing={pricing}
+        serviceStatus={serviceStatus}
+        loading={loading}
+      />
+
+      {/* 顶部操作栏 */}
+      <div className="pricing-action-bar">
+        <div className="pricing-action-bar-left">
+          <RegionSelector
+            regions={regions}
+            selectedRegion={selectedRegion}
+            onRegionChange={handleRegionChange}
+            cacheStatus={serviceStatus?.cache}
+            loading={loading}
           />
-        </Card>
-      )}
-
-      {/* 区域选择器与缓存状态 */}
-      <Card style={{ marginBottom: 16 }}>
-        <Row gutter={24} align="middle">
-          <Col xs={24} md={12}>
-            <RegionSelector
-              regions={regions}
-              selectedRegion={selectedRegion}
-              onRegionChange={handleRegionChange}
-              cacheStatus={serviceStatus?.cache}
-              loading={loading}
-            />
-          </Col>
-          <Col xs={24} md={12}>
-            {serviceStatus?.cache?.[selectedRegion] && (
-              <Card size="small" bordered style={{ borderRadius: 8 }}>
-                <Space direction="vertical" style={{ width: '100%' }} size="small">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text strong>缓存状态</Text>
-                    {serviceStatus.cache[selectedRegion].is_fallback ? (
-                      <Tag color="warning">本地数据</Tag>
-                    ) : (
-                      <Tag color="success">AWS API</Tag>
-                    )}
-                  </div>
-                  <div>
-                    <Text type="secondary" style={{ fontSize: 12 }}>
-                      缓存有效期剩余
-                    </Text>
-                    <Progress
-                      percent={getCacheProgress()}
-                      size="small"
-                      format={() => formatTimeRemaining(serviceStatus.cache[selectedRegion].expires_in_seconds)}
-                      strokeColor={getCacheProgress() > 20 ? '#52c41a' : '#faad14'}
-                    />
-                  </div>
-                </Space>
-              </Card>
-            )}
-          </Col>
-        </Row>
-      </Card>
+        </div>
+        <div className="pricing-action-bar-right">
+          <Tooltip title="区域对比">
+            <Button
+              icon={<SwapOutlined />}
+              onClick={() => setShowComparison(!showComparison)}
+              type={showComparison ? 'primary' : 'default'}
+            >
+              对比
+            </Button>
+          </Tooltip>
+          <Tooltip title="导出当前区域定价数据">
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={exportPricingData}
+              disabled={!pricing}
+            >
+              导出
+            </Button>
+          </Tooltip>
+          <Button
+            type="primary"
+            icon={<ReloadOutlined spin={refreshing} />}
+            onClick={refreshPricing}
+            loading={refreshing}
+          >
+            刷新
+          </Button>
+        </div>
+      </div>
 
       {/* 错误提示 */}
       {error && (
@@ -490,13 +507,49 @@ const AdminPage: React.FC = () => {
           pricing={pricing}
           loading={loading}
           comparisonSlot={
-            <PricingComparison
-              regions={regions}
-              onLoadPricing={fetchRegionPricing}
-            />
+            showComparison ? (
+              <PricingComparison
+                regions={regions}
+                onLoadPricing={fetchRegionPricing}
+              />
+            ) : null
           }
         />
       </Spin>
+
+      {/* 服务状态 - 底部折叠面板 */}
+      {serviceStatus && (
+        <Collapse
+          className="pricing-service-status-collapse"
+          ghost
+          items={[
+            {
+              key: 'status',
+              label: (
+                <Space>
+                  <DatabaseOutlined />
+                  <span>服务状态与帮助</span>
+                  {serviceStatus.api_available ? (
+                    <Tag color="success" style={{ marginLeft: 8 }}>
+                      服务正常
+                    </Tag>
+                  ) : (
+                    <Tag color="warning" style={{ marginLeft: 8 }}>
+                      使用本地数据
+                    </Tag>
+                  )}
+                </Space>
+              ),
+              children: (
+                <Space direction="vertical" style={{ width: '100%' }} size="large">
+                  <ServiceStatusContent />
+                  <HelpContent />
+                </Space>
+              ),
+            },
+          ]}
+        />
+      )}
     </div>
   );
 };
