@@ -2,15 +2,12 @@
  * 左侧参数输入面板
  * 双栏布局中的输入区域，使用折叠面板组织三类维度
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Collapse,
-  Select,
   Button,
   Space,
-  Tag,
   Tooltip,
-  message,
   InputNumber,
   Typography,
 } from 'antd';
@@ -18,7 +15,6 @@ import {
   SettingOutlined,
   CloudOutlined,
   DollarOutlined,
-  RocketOutlined,
   QuestionCircleOutlined,
   DownloadOutlined,
   ShareAltOutlined,
@@ -33,14 +29,8 @@ import type {
   FunctionalDimensions,
   TechnicalDimensions,
   PricingDimensions,
-  Scenario,
-  ScenarioCategory,
   MultiTechnicalConfig,
-  RecordingMode,
-  VideoQuality,
-  StorageClass,
 } from '../../types';
-import { scenarioApi } from '../../api/client';
 
 const { Text } = Typography;
 import FunctionalForm from './FunctionalForm';
@@ -48,7 +38,6 @@ import TechnicalForm from './TechnicalForm';
 import PricingForm from './PricingForm';
 import MultiSchemePanel from './MultiSchemePanel';
 import { REGION_NAMES_ZH_SHORT } from '../../constants/regions';
-import { devLog } from '../../utils/errors';
 
 interface InputPanelProps {
   value: CostCalculationInput;
@@ -84,81 +73,25 @@ const InputPanel: React.FC<InputPanelProps> = ({
   isLoggedIn = false,
 }) => {
   const navigate = useNavigate();
-  const [scenarios, setScenarios] = useState<Scenario[]>([]);
-  const [categories, setCategories] = useState<ScenarioCategory[]>([]);
-  const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
-  const [isCustomized, setIsCustomized] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [activeKeys, setActiveKeys] = useState<string[]>(['quick-start']);
-
-  // 加载预设场景
-  useEffect(() => {
-    loadScenarios();
-  }, []);
-
-  const loadScenarios = async () => {
-    try {
-      const data = await scenarioApi.list();
-      setScenarios(data.scenarios || []);
-      setCategories(data.categories || []);
-    } catch (error) {
-      devLog.error('加载预设场景失败:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 处理场景选择
-  const handleScenarioSelect = (scenarioId: string) => {
-    const scenario = scenarios.find((s) => s.id === scenarioId);
-    if (!scenario) return;
-
-    const input: CostCalculationInput = {
-      functional: {
-        device_count: scenario.functional.device_count,
-        recording_mode: scenario.functional.recording_mode as RecordingMode,
-        video_quality: scenario.functional.video_quality as VideoQuality,
-        events_per_day: scenario.functional.events_per_day || 400,
-        event_duration_sec: scenario.functional.event_duration_sec || 15,
-        retention_days: scenario.functional.retention_days,
-        access_pattern: scenario.functional.access_pattern,
-      },
-      technical: {
-        storage_class: scenario.technical.storage_class as StorageClass,
-      },
-      pricing: {
-        region: scenario.pricing.region,
-        discount_percent: scenario.pricing.discount_percent,
-      },
-    };
-
-    setSelectedScenarioId(scenarioId);
-    setIsCustomized(false);
-    onChange(input);
-    message.success(`已加载场景: ${scenario.name}`);
-  };
+  const [activeKeys, setActiveKeys] = useState<string[]>(['functional', 'technical']);
 
   // 处理功能维度变化
   const handleFunctionalChange = (functional: FunctionalDimensions) => {
-    setIsCustomized(true);
     onChange({ ...value, functional });
   };
 
   // 处理技术维度变化
   const handleTechnicalChange = (technical: TechnicalDimensions) => {
-    setIsCustomized(true);
     onChange({ ...value, technical });
   };
 
   // 处理价格维度变化
   const handlePricingChange = (pricing: PricingDimensions) => {
-    setIsCustomized(true);
     onChange({ ...value, pricing });
   };
 
   // 处理保留天数变化（从技术维度面板调用）
   const handleRetentionDaysChange = (days: number) => {
-    setIsCustomized(true);
     onChange({
       ...value,
       functional: {
@@ -173,7 +106,6 @@ const InputPanel: React.FC<InputPanelProps> = ({
     if (onMultiConfigChange) {
       onMultiConfigChange(config);
     }
-    setIsCustomized(true);
   };
 
   // 获取功能维度摘要
@@ -203,55 +135,8 @@ const InputPanel: React.FC<InputPanelProps> = ({
     return region;
   };
 
-  // 构建场景选择器选项
-  const scenarioOptions = categories.map((cat) => ({
-    label: cat.name,
-    options: scenarios
-      .filter((s) => s.category === cat.id)
-      .map((s) => ({
-        value: s.id,
-        label: s.name,
-      })),
-  }));
-
   // 折叠面板项
   const collapseItems = [
-    {
-      key: 'quick-start',
-      label: (
-        <div className="input-panel-header">
-          <span className="input-panel-header-title">
-            <RocketOutlined style={{ marginRight: 8 }} />
-            快速开始
-          </span>
-          {selectedScenarioId && (
-            <Tag
-              color={isCustomized ? 'orange' : 'green'}
-              style={{ marginLeft: 'auto', marginRight: 8 }}
-            >
-              {isCustomized ? '已自定义' : '已预设'}
-            </Tag>
-          )}
-        </div>
-      ),
-      children: (
-        <div className="input-panel-quick-start-content">
-          <Select
-            placeholder="选择预设场景..."
-            style={{ width: '100%' }}
-            loading={loading}
-            value={selectedScenarioId}
-            onChange={handleScenarioSelect}
-            options={scenarioOptions}
-            allowClear
-            showSearch
-            filterOption={(input, option) =>
-              (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-            }
-          />
-        </div>
-      ),
-    },
     {
       key: 'functional',
       label: (
