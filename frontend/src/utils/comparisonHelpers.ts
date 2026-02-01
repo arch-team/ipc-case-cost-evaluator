@@ -2,8 +2,10 @@
  * 核算记录对比工具函数
  */
 
-// 记录对应的颜色
-export const RECORD_COLORS = ['#1890ff', '#52c41a', '#faad14', '#f5222d'];
+import { COMPARISON_CONFIG } from '../constants/comparison';
+
+// 记录对应的颜色 - 从常量文件导入
+export const RECORD_COLORS = COMPARISON_CONFIG.recordColors;
 
 /**
  * 获取数值对应的高亮颜色
@@ -26,11 +28,11 @@ export const getValueColor = (
   if (min === max) return undefined;
 
   if (isLowerBetter) {
-    if (value === min) return '#52c41a'; // 绿色：最低（最优）
-    if (value === max) return '#ff4d4f'; // 红色：最高（最差）
+    if (value === min) return COMPARISON_CONFIG.highlightColors.best; // 绿色：最低（最优）
+    if (value === max) return COMPARISON_CONFIG.highlightColors.worst; // 红色：最高（最差）
   } else {
-    if (value === max) return '#52c41a'; // 绿色：最高（最优）
-    if (value === min) return '#ff4d4f'; // 红色：最低（最差）
+    if (value === max) return COMPARISON_CONFIG.highlightColors.best; // 绿色：最高（最优）
+    if (value === min) return COMPARISON_CONFIG.highlightColors.worst; // 红色：最低（最差）
   }
   return undefined;
 };

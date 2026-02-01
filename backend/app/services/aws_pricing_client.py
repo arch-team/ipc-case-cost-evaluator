@@ -451,17 +451,18 @@ class AWSPricingClient:
             lifecycle_transition_per_1000=self._get_default_lifecycle_price(storage_class),
         )
 
-    # 默认定价数据（基于 ap-northeast-1 的典型价格）
+    # 默认定价数据（基于 ap-northeast-1.json 的实际价格）
+    # 注意：此数据必须与 backend/app/data/aws_pricing/ap-northeast-1.json 保持同步
     DEFAULT_PRICING = {
         StorageClass.STANDARD: {
-            "storage": 0.023,
+            "storage": 0.025,  # 与 ap-northeast-1.json 同步
             "put": 0.005,
             "get": 0.0004,
             "retrieval": 0.0,
             "lifecycle": 0.0,
         },
         StorageClass.INTELLIGENT_TIERING: {
-            "storage": 0.023,
+            "storage": 0.0045,  # 与 ap-northeast-1.json 同步 (修复：从 0.023 改为 0.0045)
             "put": 0.005,
             "get": 0.0004,
             "retrieval": 0.0,

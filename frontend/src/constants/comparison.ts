@@ -22,6 +22,33 @@ export const SCHEME_COLORS = COST_SCHEME_COLORS;
 export const COST_ITEMS = COST_ITEM_METADATA;
 
 /**
+ * 对比配置 - 集中管理对比功能使用的颜色和样式
+ */
+export const COMPARISON_CONFIG = {
+  /** 记录颜色（最多支持 4 条记录对比） */
+  recordColors: ['#1890ff', '#52c41a', '#faad14', '#f5222d'] as const,
+
+  /** 高亮颜色 */
+  highlightColors: {
+    /** 最优值颜色（绿色） */
+    best: '#52c41a',
+    /** 最差值颜色（红色） */
+    worst: '#ff4d4f',
+  },
+} as const;
+
+/**
+ * 记录对应的颜色
+ * @deprecated 推荐使用 COMPARISON_CONFIG.recordColors
+ */
+export const RECORD_COLORS = COMPARISON_CONFIG.recordColors;
+
+/**
+ * 高亮颜色
+ */
+export const HIGHLIGHT_COLORS = COMPARISON_CONFIG.highlightColors;
+
+/**
  * 生成技术配置描述
  * @param item 对比项
  * @returns 技术配置描述行数组

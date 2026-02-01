@@ -15,9 +15,11 @@ export const RECORDING_MODE_NAMES: Record<string, string> = {
 
 /**
  * 视频质量显示名称
+ * 注意：键名必须与类型定义 VideoQuality 保持一致（区分大小写）
  */
 export const VIDEO_QUALITY_NAMES: Record<string, string> = {
-  '2k': '2K (2560x1440)',
+  '4K': '4K (3840x2160)',
+  '2K': '2K (2560x1440)',
   '1080p': '1080P (1920x1080)',
   '720p': '720P (1280x720)',
   '480p': '480P (854x480)',

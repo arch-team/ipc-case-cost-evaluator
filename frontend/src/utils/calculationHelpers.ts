@@ -143,13 +143,14 @@ export function createFormulaGenerator(
   return {
     getDailyRecordingFormula: () => {
       if (!f) return '';
+      // 公式返回每日录像秒数，与 calculateDailyRecordingSeconds 函数保持一致
       switch (f.recording_mode) {
         case 'event_triggered':
-          return `${f.events_per_day || 0} × ${f.event_duration_sec || 0} ÷ 3600`;
+          return `${f.events_per_day || 0} × ${f.event_duration_sec || 0}`;
         case 'continuous':
-          return '86400 ÷ 3600 = 24';
+          return '86400 (24小时 × 3600秒)';
         case 'scheduled':
-          return `${f.scheduled_hours || 0}`;
+          return `${f.scheduled_hours || 0} × 3600`;
         default:
           return '';
       }

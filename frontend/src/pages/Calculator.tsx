@@ -25,6 +25,7 @@ import ExportDialog from '../components/calculator/ExportDialog';
 import ShareDialog from '../components/calculator/ShareDialog';
 import debounce from 'lodash/debounce';
 import { STORAGE_CLASS_DEFAULTS } from '../constants/storageClasses';
+import { DEFAULT_FORM_VALUES } from '../constants/forms';
 
 const { Title } = Typography;
 
@@ -37,23 +38,23 @@ const Calculator: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const loadedFromEvaluation = useRef(false);
 
-  // 输入参数状态
+  // 输入参数状态 - 使用 constants/forms.ts 中的默认值
   const [input, setInput] = useState<CostCalculationInput>({
     functional: {
-      device_count: 100,
+      device_count: DEFAULT_FORM_VALUES.deviceCount,
       recording_mode: 'event_triggered',
       video_quality: '1080p',
-      events_per_day: 400,
-      event_duration_sec: 15,
-      retention_days: 30,
-      access_pattern: 0.1,
+      events_per_day: DEFAULT_FORM_VALUES.eventsPerDay,
+      event_duration_sec: DEFAULT_FORM_VALUES.eventDurationSec,
+      retention_days: DEFAULT_FORM_VALUES.retentionDays,
+      access_pattern: DEFAULT_FORM_VALUES.accessPattern,
     },
     technical: {
       storage_class: STORAGE_CLASS_DEFAULTS.primary,
     },
     pricing: {
       region: 'ap-northeast-1',
-      discount_percent: 0,
+      discount_percent: DEFAULT_FORM_VALUES.discountPercent,
     },
   });
 
