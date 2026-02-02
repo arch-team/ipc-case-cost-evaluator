@@ -4,15 +4,12 @@
 """
 import logging
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 import boto3
 from botocore.exceptions import ClientError
 
 from app.core.config import settings
-
-if TYPE_CHECKING:
-    from mypy_boto3_dynamodb.service_resource import Table
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +141,7 @@ class DynamoDBClient:
             })
         return boto3.resource("dynamodb", **kwargs)
 
-    def _get_table(self, table: str) -> "Table":
+    def _get_table(self, table: str):
         """
         获取 DynamoDB 表对象
 
